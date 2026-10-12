@@ -153,6 +153,50 @@ Stars, notes and accessibility decisions are saved next to the run (`notes.json`
 The viewer is built with [Bun](https://bun.sh): `cd web && bun install && bun run build`, or `bun run dev` for
 live reload. See [`web/README.md`](web/README.md) and the UI rules in [`web/DESIGN.md`](web/DESIGN.md).
 
+## Accessibility report
+
+<p align="center">
+  <img src="docs/media/a11y-report.png" alt="The generated accessibility report for the Playground sample: WCAG 2.2 Level AA, a summary of how many of the 55 criteria fail, have issues, need review, are clean or are not tested, then findings grouped by success criterion with the fix and screenshot evidence">
+</p>
+
+Every crawl writes `a11y-report.html` (self-contained, light and dark, easy to attach to a ticket) and an
+`.md` twin. It is organised by **WCAG 2.2 success criterion**, not by a flat list of problems:
+
+- **A status for every A and AA criterion.** Fails, Issues found, Needs review, No issues detected, Check in
+  viewer, or **Not tested**. A criterion that needs a person or a device is shown as not tested, never as a pass,
+  and the report says it is evidence, not a conformance claim.
+- **Findings with the fix and the screenshot.** Each finding names the criterion, says what to change (with the
+  Compose or View API where there is one), and shows the screen with the element highlighted.
+- **The criteria that are new in WCAG 2.2**: target size (2.5.8), dragging alternatives (2.5.7), focus not
+  obscured (2.4.11), consistent help (3.2.6), redundant entry (3.3.7) and accessible authentication (3.3.8).
+  Others checked from the crawl include label in name (2.5.3), roles (4.1.2), consistent navigation (3.2.3),
+  orientation (1.3.4), truncated text (1.4.4) and image alternatives (1.1.1).
+- **Resize-text pass.** `crawl --font-scale 2.0` re-crawls at 200% text and records what truncates or clips.
+- **Triage that feeds the report.** In the viewer you mark findings Needs fix, Won't fix or False positive. The
+  decisions are saved in `notes.json` next to the run, and the report includes the ones you confirmed.
+
+```bash
+uv run appscreenmap a11y runs/<project>/<run-id> --report     # rebuild the report (level A/AA by default)
+```
+
+In the viewer it opens inside the Accessibility tab, with a separate Download button. Automated checks catch
+only part of WCAG; the [`a11y-audit` skill](.claude/skills/a11y-audit/SKILL.md) covers the device and manual
+tests (rotation, keyboard, TalkBack) the crawl can't do.
+
+## What's different
+
+- **The crawl is deterministic and makes no model calls.** Same build, same settings, same map, so runs are
+  comparable and a regression is a diff, not noise. An agent drives it; it doesn't improvise the crawl.
+- **It maps first, then everything reads the map.** Tests, diffs, accessibility, performance, `verify` for CI
+  and the MCP server all work from one plain `map.json`, so a coding agent can ask "how do I reach Settings"
+  instead of exploring the app again.
+- **Diffs read the view hierarchy, not just pixels.** Text added, removed, moved or changed is reported from the
+  exact strings and positions on screen, with no OCR, next to the changed pixel regions.
+- **Navigation is measured, not slept through.** It waits until the app stops drawing (`dumpsys gfxinfo`), so each
+  transition gets a load time with jank and frozen frames, and cold start is recorded on every relaunch.
+- **Safe by default.** The app stays pinned so the crawl can't wander off; it never taps log out, delete or pay;
+  and test passwords can be `${ENV}` placeholders that never reach `map.json`.
+
 ## How it explores
 
 <p align="center">
