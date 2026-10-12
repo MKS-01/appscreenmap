@@ -242,7 +242,7 @@ long-press.
 | **0. Plan + scaffold** | This doc, repo layout, MIT license, CI-ready tooling | ✅ |
 | **1. Android MVP** | ADB driver, analyzer, explorer, live map.json, Maestro + Mermaid export, visual diff, web viewer (runs, map, gallery, detail, compare), WCAG 2.2 checks + report, navigation load times | ✅ crawler · viewer in progress |
 | 2. Robustness | uiautomator2 backend (5× faster), WebView handling, better dialog/IME handling, model reuse to resume a crawl, `--from-run` to recrawl only changed screens | |
-| 3. iOS | Simulator driver via XCUITest (WebDriverAgent) or `idb`; same map format and viewer | |
+| 3. iOS | **After Android is solid.** Simulator driver via XCUITest (WebDriverAgent) or `idb`; same map format and viewer | |
 | 4. Intelligence | Optional LLM step: semantic screen names, smarter form inputs, goal-directed exploration ("reach checkout") | |
 | 5. Team | Docker image + GitHub Action, `appscreenmap publish` to a static site, Appium/Espresso page-object export | |
 | 6. Localisation | Crawl in several locales (incl. pseudo-locales), match screens across locales, l10n review in the viewer (untranslated text, truncation, overflow, RTL mirroring), side-by-side locale gallery, context screenshots for translators. Depends only on phase 1, so it can ship before 3–5. See §8.1 | |

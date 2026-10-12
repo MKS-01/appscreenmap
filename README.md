@@ -60,7 +60,8 @@ looks off, then leaves you a browsable map, test flows and accessibility finding
 
 ## Getting started
 
-> Android is built and tested day to day. iOS is on the [roadmap](docs/PLAN.md#8-roadmap).
+> **Android only for now.** iOS is planned, but it comes after the Android side is solid. The map format and
+> viewer are platform-neutral, so an iOS driver can slot in later. See the [roadmap](docs/PLAN.md#8-roadmap).
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
