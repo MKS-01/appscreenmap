@@ -82,11 +82,13 @@ def shortest_path(data: dict, src: str, dst: str) -> list[dict] | None:
 
 
 def transition_steps(data: dict, transitions: list[dict]) -> list[dict]:
-    """Recorded transitions as replayable steps (the reach_path format)."""
+    """Recorded transitions as replayable steps (the reach_path format). An element that only appears
+    after same-screen steps (`revealed_by`) gets those steps first."""
     screens = {s["id"]: s for s in data["screens"]}
     steps = []
     for t in transitions:
         el = next((e for e in screens[t["from"]].get("elements", []) if e["key"] == t["key"]), {})
+        steps += [{**st, "to": t["from"]} for st in el.get("revealed_by") or []]
         steps.append(
             {
                 "screen": t["from"],

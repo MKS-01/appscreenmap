@@ -165,3 +165,38 @@ def test_crawl_status_reads_the_run_from_the_log(tools, tmp_path, monkeypatch):
     st = tools.crawl_status()
     assert st["status"] == "done" and st["run"] == "proj-1" and st["screens"] == 3
     assert load_map(run_dir)["run"]["status"] == st["run_status"]
+
+
+def test_transition_steps_include_revealed_by():
+    from appscreenmap.mcp_server import transition_steps
+
+    start = {
+        "screen": "a",
+        "key": "k0",
+        "action": "click",
+        "label": "15 MIN",
+        "selector": {},
+        "scroll_depth": 0,
+    }
+    data = {
+        "screens": [
+            {
+                "id": "a",
+                "kind": "app",
+                "elements": [
+                    {
+                        "key": "k1",
+                        "label": "OPEN",
+                        "text": "OPEN",
+                        "bounds": [0, 0, 10, 10],
+                        "revealed_by": [start],
+                    }
+                ],
+            },
+            {"id": "b", "kind": "app", "elements": []},
+        ],
+        "transitions": [],
+    }
+    t = {"from": "a", "to": "b", "key": "k1", "action": "click", "label": "OPEN", "kind": "button"}
+    steps = transition_steps(data, [t])
+    assert [(s["label"], s["to"]) for s in steps] == [("15 MIN", "a"), ("OPEN", "b")]

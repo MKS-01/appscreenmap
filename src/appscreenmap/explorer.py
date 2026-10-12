@@ -26,6 +26,8 @@ from .perf import LoadMeter, Timing, has_loading_indicator
 
 SCROLL_SAME_SCREEN = 0.4  # token similarity above which a scrolled view is still the same screen
 MAX_GRAPH_PATH = 8
+IN_PLACE_FIXED_SIMILARITY = 0.9  # fixed chrome nearly identical…
+IN_PLACE_SIMILARITY = 0.5  # …and the screen as a whole still mostly the same
 MAX_DATA_RESETS = 5  # per crawl
 PIN_TOAST_SECONDS = 2.5
 
@@ -138,7 +140,7 @@ class Explorer:
             obs.activity = None  # the focused window belongs to another app (dialog, keyboard, …)
         return obs
 
-    def arrive(self, obs: Observation | None = None) -> tuple[Screen, bool]:
+    def arrive(self, obs: Observation | None = None, hint: Screen | None = None) -> tuple[Screen, bool]:
         """Observe the device, deal with system UI, and identify (or register) the current screen."""
         obs = obs or self.observe()
         for _ in range(3):
@@ -149,10 +151,10 @@ class Explorer:
             else:
                 break
 
-        if is_crash_dialog(obs):
+        if is_crash_dialog(obs) or (obs.package != self.pkg and self._app_crashed()):
             screen, is_new = self._register_crash(obs)
         else:
-            screen, is_new = self.identify(obs)
+            screen, is_new = self.identify(obs, hint)
         self.cur, self.obs = screen, obs
         if screen.kind == "app":
             screen.visits += 1
@@ -163,7 +165,20 @@ class Explorer:
                 self.autofill(screen)
         return self.cur, is_new
 
-    def identify(self, obs: Observation) -> tuple[Screen, bool]:
+    @staticmethod
+    def _same_after_in_place_change(hint: Screen, obs: Observation) -> bool:
+        fixed = obs.fixed_tokens
+        has_text = any(t.startswith(("T:", "D:")) for t in fixed)
+        return (
+            hint.kind == "app"
+            and (hint.activity or "") == (obs.activity or "")
+            and len(fixed) >= 4
+            and has_text
+            and jaccard(hint.fixed_tokens, fixed) >= IN_PLACE_FIXED_SIMILARITY
+            and jaccard(hint.tokens, obs.tokens) >= IN_PLACE_SIMILARITY
+        )
+
+    def identify(self, obs: Observation, hint: Screen | None = None) -> tuple[Screen, bool]:
         if obs.package != self.pkg:
             sid = f"x:{obs.package}"
             if sid in self.map.screens:
@@ -190,6 +205,12 @@ class Explorer:
             best.signatures.add(obs.signature)
             self.map.merge_elements(best, obs, 0)
             return best, False
+        if hint is not None and self._same_after_in_place_change(hint, obs):
+            # The action changed only scrolled content (scrolled into view, expanded a WebView…):
+            # the fixed part (title, toolbar, nav) is unchanged, so it's still the same screen.
+            hint.signatures.add(obs.signature)
+            self.map.merge_elements(hint, obs, 0)
+            return hint, False
 
         screen = self.map.new_screen(obs, self.step)
         self._capture(screen, obs)
@@ -211,6 +232,13 @@ class Explorer:
             self.log(f"  ! screenshot failed for {screen.id}: {e}")
         (self.dir / "screens" / f"{safe}.xml").write_text(obs.xml)
         screen.hierarchy = f"screens/{safe}.xml"
+
+    def _app_crashed(self) -> bool:
+        """The app left the foreground: did it crash? (Android 10+ often shows no dialog.)"""
+        try:
+            return f"Process: {self.pkg}," in self.d.crash_log()
+        except DriverError:
+            return False
 
     def _allow_permission(self, obs: Observation) -> bool:
         node = obs.find_rid(*PERMISSION_ALLOW_IDS)
@@ -254,8 +282,9 @@ class Explorer:
         close = obs.find_rid("aerr_close", "aerr_wait")
         if close is not None:
             self.d.tap(*close.center)
-        else:
+        elif is_crash_dialog(obs):
             self.d.back()
+        # Recent Android shows no dialog for a first crash: the app is just gone (restart() relaunches it).
         return screen, is_new
 
     def autofill(self, screen: Screen) -> None:
@@ -374,6 +403,8 @@ class Explorer:
         """Perform one element's action on the current screen and record what happened."""
         src = self.cur
         info = self.locate(el)
+        if info is None and el.revealed_by and self._replay_reveal(el):
+            src, info = self.cur, self.locate(el)
         if info is None:
             if explore:
                 el.status, el.effect = "failed", "not_found"
@@ -395,10 +426,29 @@ class Explorer:
         elif el.info.action == "back":
             self.d.back()
         self.step += 1
+        known_before = set(src.elements)
         timing, obs = self.wait_after_action()
-        dst, is_new = self.arrive(obs)
+        dst, is_new = self.arrive(obs, hint=src)
+        if dst is src and el.info.action != "back":
+            # Elements this action revealed on the same screen need it replayed before them.
+            step = self._step(src, el)
+            for key in set(src.elements) - known_before:
+                src.elements[key].revealed_by = [*el.revealed_by, step]
         self.record(src, el, dst, is_new, explore, timing)
         return True
+
+    @staticmethod
+    def _step(src: Screen, el: Element) -> Step:
+        return Step(src.id, el.key, el.info.action, el.info.label, selector_for(el.info), el.scroll_depth)
+
+    def _replay_reveal(self, el: Element) -> bool:
+        """Perform the same-screen steps that make `el` appear; True if we're still on that screen."""
+        screen = self.cur
+        for st in el.revealed_by:
+            prior = screen.elements.get(st.key)
+            if prior is None or self.cur is not screen or not self.act(prior, explore=False):
+                return False
+        return self.cur is screen
 
     def wait_after_action(self) -> tuple[Timing | None, Observation | None]:
         """Wait until the app has finished drawing (or a fixed sleep when not measuring)."""
@@ -428,12 +478,7 @@ class Explorer:
             )
             if dst.kind == "app" and (is_new or dst.origin == "unknown") and src.origin != "unknown":
                 # First recorded way here (or a path for a screen first seen without one).
-                dst.reach_path = [
-                    *src.reach_path,
-                    Step(
-                        src.id, el.key, el.info.action, el.info.label, selector_for(el.info), el.scroll_depth
-                    ),
-                ]
+                dst.reach_path = [*src.reach_path, *el.revealed_by, self._step(src, el)]
                 dst.depth, dst.origin = src.depth + 1, "action"
             if is_new and dst.kind == "app":
                 self.last_new_step = self.step

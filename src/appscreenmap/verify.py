@@ -40,12 +40,33 @@ def origin(screen: dict) -> str:
     return screen.get("origin") or ("action" if screen.get("reach_path") else "launch")
 
 
-def plan(data: dict, only: list[str] | None = None) -> tuple[list[str], list[str]]:
-    """(screens to replay, longest path first; screens without a recorded path)."""
-    app = [s for s in data["screens"] if s["kind"] == "app" and (not only or s["id"] in only)]
-    skipped = [s["id"] for s in app if origin(s) == "unknown"]
+def path_key(screen: dict) -> tuple:
+    return tuple((st["screen"], st["key"]) for st in screen.get("reach_path") or [])
+
+
+def plan(data: dict, only: list[str] | None = None) -> tuple[list[str], dict[str, str]]:
+    """(screens to replay, longest path first; {screen: why it is skipped}).
+
+    Skipped: screens without a recorded path, and screens whose path is the same as an earlier
+    screen's. Those were reached through app state (a list that filled up, a timer that ran); the
+    steps alone can't tell them apart, so replaying would only ever check the first one."""
+    app = sorted(
+        (s for s in data["screens"] if s["kind"] == "app" and (not only or s["id"] in only)),
+        key=lambda s: (s.get("first_step", 0), s["id"]),
+    )
+    skipped: dict[str, str] = {}
+    first_with_path: dict[tuple, str] = {}
+    for s in app:
+        if origin(s) == "unknown":
+            skipped[s["id"]] = "no recorded path"
+        elif (k := path_key(s)) and k in first_with_path:
+            skipped[s["id"]] = (
+                f"same recorded path as {first_with_path[k]}: which of them opens depends on app state"
+            )
+        elif k:
+            first_with_path[k] = s["id"]
     targets = sorted(
-        (s for s in app if origin(s) != "unknown"), key=lambda s: (-len(s.get("reach_path") or []), s["id"])
+        (s for s in app if s["id"] not in skipped), key=lambda s: (-len(s.get("reach_path") or []), s["id"])
     )
     return [s["id"] for s in targets], skipped
 
@@ -101,12 +122,38 @@ def verify_run(
             "screen": sid,
             "title": screens[sid].get("title"),
             "status": "skipped",
-            "note": "no recorded path",
+            "note": note,
         }
-        for sid in skipped
+        for sid, note in skipped.items()
     }
-    failed_prefixes: dict[tuple, str] = {}  # (screen, key) steps up to a broken one → the screen it broke
+    # (screen, key) steps up to a broken one → (the screen it broke, whether the path depends on app state)
+    failed_prefixes: dict[tuple, tuple[str, bool]] = {}
     rp = Replayer(driver, data, threshold, measure=cfg.get("measure_load", True), log=log)
+    captured: dict[str, set[str]] = {}
+
+    def state_dependent(step: dict | None) -> bool:
+        """The step's element wasn't on its screen when the crawl first captured it (and it isn't
+        found by scrolling): something the crawl did earlier made it appear, e.g. a running timer."""
+        if step is None or step.get("scroll_depth") or step["action"] == "back":
+            return False
+        s = screens[step["screen"]]
+        el = next((e for e in s.get("elements", []) if e["key"] == step["key"]), {})
+        if el.get("revealed_by"):
+            return False  # the path replays what reveals it: still missing means the build changed
+        if not s.get("hierarchy") or not (base_dir / s["hierarchy"]).is_file():
+            return False
+        if s["id"] not in captured:
+            obs = analyze(
+                (base_dir / s["hierarchy"]).read_text(),
+                None,
+                s.get("activity"),
+                s.get("width") or rp.width,
+                s.get("height") or rp.height,
+                long_click=cfg.get("long_click", False),
+                explore_toggles=cfg.get("explore_toggles", True),
+            )
+            captured[s["id"]] = {e.key for e in obs.elements}
+        return step["key"] not in captured[s["id"]]
 
     anim = None
     font = None
@@ -122,15 +169,9 @@ def verify_run(
                 continue
             path = screens[target].get("reach_path") or []
             keys = tuple((st["screen"], st["key"]) for st in path)
-            blocker = next((sid for fp, sid in failed_prefixes.items() if keys[: len(fp)] == fp), None)
+            blocker = next((v for fp, v in failed_prefixes.items() if keys[: len(fp)] == fp), None)
             if blocker is not None:
-                results[target] = {
-                    "screen": target,
-                    "title": screens[target].get("title"),
-                    "status": "blocked",
-                    "blocked_by": blocker,
-                    "path": [st["screen"] for st in path],
-                }
+                results[target] = _behind(target, screens, [st["screen"] for st in path], *blocker)
                 continue
             expected = [st["screen"] for st in path] + [target]
             log(f"▶ {target} {screens[target].get('title')!r} ({len(path)} step{'s' * (len(path) != 1)})")
@@ -159,7 +200,17 @@ def verify_run(
                 rp.replay(target, clear_data=clear, on_arrival=on_arrival)
             except ReplayFailed as e:
                 _record_failure(
-                    e, expected, path, target, out, driver, screens, results, failed_prefixes, log
+                    e,
+                    expected,
+                    path,
+                    target,
+                    out,
+                    driver,
+                    screens,
+                    results,
+                    failed_prefixes,
+                    state_dependent,
+                    log,
                 )
         report["status"] = "done"
     except (DriverError, KeyboardInterrupt) as e:
@@ -212,7 +263,17 @@ def verify_run(
     return report
 
 
-def _record_failure(e, expected, path, target, out, driver, screens, results, failed_prefixes, log) -> None:
+def _behind(sid: str, screens: dict, path: list[str], broken: str, state_dep: bool) -> dict:
+    """A screen whose path runs through a step that broke on `broken`."""
+    row = {"screen": sid, "title": screens[sid].get("title"), "path": path}
+    if state_dep:
+        return {**row, "status": "skipped", "note": f"behind {broken}, whose path depends on app state"}
+    return {**row, "status": "blocked", "blocked_by": broken}
+
+
+def _record_failure(
+    e, expected, path, target, out, driver, screens, results, failed_prefixes, state_dependent, log
+) -> None:
     if e.reason == "not_found":
         # The element of step `index` is missing: the screen after it was never reached.
         step_i, failed_i = e.index, e.index + 1
@@ -242,28 +303,29 @@ def _record_failure(e, expected, path, target, out, driver, screens, results, fa
         "got": e.got,
         **evidence,
     }
+    # Not a regression when the path can't work from a fresh launch even on the base build.
+    state_dep = e.reason in ("not_found", "wrong_screen") and state_dependent(step)
     if failed not in results:
         results[failed] = {
             "screen": failed,
             "title": screens[failed].get("title"),
-            "status": "failed",
+            "status": "skipped" if state_dep else "failed",
             "path": expected[:failed_i],
             "failure": failure,
         }
-    failed_prefixes[prefix] = failed
+        if state_dep:
+            results[failed]["note"] = (
+                f"{step['label']!r} wasn't on {step['screen']} when the crawl first saw it: the crawl "
+                f"reached {failed} through app state its path doesn't record"
+            )
+    failed_prefixes[prefix] = (failed, state_dep)
     for sid in expected[failed_i + 1 :]:
-        results.setdefault(
-            sid,
-            {
-                "screen": sid,
-                "title": screens[sid].get("title"),
-                "status": "blocked",
-                "blocked_by": failed,
-                "path": expected[: expected.index(sid)],
-            },
-        )
+        results.setdefault(sid, _behind(sid, screens, expected[: expected.index(sid)], failed, state_dep))
     what = "launch" if step is None else f"{step['action']} {step['label']!r} on {step['screen']}"
-    log(f"  ✘ {failed}: {e.detail} (after {what})")
+    if state_dep:
+        log(f"  ~ {failed}: skipped, its path depends on app state ({e.detail} after {what})")
+    else:
+        log(f"  ✘ {failed}: {e.detail} (after {what})")
 
 
 def update_baselines(base_dir: str | Path, report: dict) -> list[str]:
@@ -306,6 +368,8 @@ def format_verify(rep: dict) -> str:
                 lines.append(f"      evidence: {Path(rep['dir']) / f['screenshot']}")
         elif r["status"] == "blocked":
             lines.append(f"  ⊘ {r['screen']} {r['title']!r}: blocked by {r['blocked_by']}")
+        elif r["status"] == "skipped" and r.get("note") != "no recorded path":
+            lines.append(f"  ~ {r['screen']} {r['title']!r}: skipped, {r['note']}")
         elif r.get("changed"):
             v = r["visual"]
             t = v.get("text") or {}

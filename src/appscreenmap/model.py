@@ -28,6 +28,9 @@ class Element:
     target: str | None = None
     scroll_depth: int = 0
     note: str | None = None
+    # Same-screen steps that made this element appear (e.g. "15 MIN" starts a timer that shows "OPEN").
+    # Paths through this element replay them first.
+    revealed_by: list[Step] = field(default_factory=list)
 
     @property
     def key(self) -> str:
@@ -53,6 +56,8 @@ class Element:
         }
         if self.note:
             d["note"] = self.note
+        if self.revealed_by:
+            d["revealed_by"] = [s.to_dict() for s in self.revealed_by]
         return d
 
 
@@ -110,6 +115,7 @@ class Screen:
     )
 
     layout: Counter = field(default_factory=Counter)
+    fixed_tokens: frozenset[str] = frozenset()
 
     def pending(self) -> list[Element]:
         return sorted((e for e in self.elements.values() if e.status == "pending"), key=lambda e: e.priority)
@@ -212,6 +218,7 @@ class AppMap:
             kind=kind,
             signature=obs.signature,
             tokens=obs.tokens,
+            fixed_tokens=obs.fixed_tokens,
             layout=obs.layout,
             package=obs.package,
             activity=obs.activity,

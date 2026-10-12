@@ -143,6 +143,7 @@ class Observation:
     width: int
     height: int
     tokens: frozenset[str]
+    fixed_tokens: frozenset[str]  # tokens outside scroll containers / WebViews
     signature: str
     layout: Counter  # depth-aware node counts: compares layouts even when every node is a plain View
     elements: list[ElementInfo]
@@ -308,14 +309,21 @@ def analyze(
         package = counts.most_common(1)[0][0] if counts else None
 
     tokens: set[str] = set()
+    fixed: set[str] = set()  # tokens of the part that doesn't scroll (title, toolbar, nav)
     for n in nodes:
-        tokens.add(f"S:{n.short_cls}|{n.short_rid}")
+        scrolling = any(a.scrollable or "WebView" in a.cls for a in _ancestors(n))
+        tok = f"S:{n.short_cls}|{n.short_rid}"
+        tokens.add(tok)
+        if not scrolling:
+            fixed.add(tok)
         if n.in_repeat or n.is_input:
             continue
-        if n.text.strip():
-            tokens.add("T:" + normalize_text(n.text))
-        if n.desc.strip():
-            tokens.add("D:" + normalize_text(n.desc))
+        for prefix, value in (("T:", n.text), ("D:", n.desc)):
+            if value.strip():
+                t = prefix + normalize_text(value)
+                tokens.add(t)
+                if not scrolling:
+                    fixed.add(t)
     tokens.discard("S:|")
     act = (activity or "").rsplit(".", 1)[-1]
     sig = hashlib.sha1((f"{package}|{act}\n" + "\n".join(sorted(tokens))).encode()).hexdigest()[:12]
@@ -329,6 +337,7 @@ def analyze(
         width=width,
         height=height,
         tokens=frozenset(tokens),
+        fixed_tokens=frozenset(fixed - {"S:|"}),
         layout=layout_fingerprint(nodes),
         signature=sig,
         elements=elements,

@@ -307,7 +307,10 @@ class Replayer:
                 on_arrival(arrival)
             if i == len(path):
                 break
-            obs = self.autofill(sid, obs)
+            if i == 0 or expected[i - 1] != sid:
+                # Once per arrival: a path can take several steps on one screen (`revealed_by` steps
+                # that make an element appear), and the fields are filled by then.
+                obs = self.autofill(sid, obs)
             try:
                 via, load_ms = self.step(path[i], obs)
             except ReplayFailed as e:

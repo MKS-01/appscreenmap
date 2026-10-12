@@ -110,6 +110,8 @@ rather than building them. Paths are relative to the run directory.
       "effect": "new_screen | known_screen | same_screen | left_app | crash | inferred | not_found | null",
       "target": "s004",                 // screen it leads to (when known)
       "scroll_depth": 0,                // swipes needed before it is visible
+      "revealed_by": [ {step}, … ],     // optional: same-screen steps that make it appear (replayed first;
+                                        // already included in reach_paths through this element)
       "note": "list pattern: first 2 items all lead to s006"   // optional, explains skipped/blocked/inferred
     } ]
   } ],
@@ -272,8 +274,16 @@ Written by `appscreenmap verify <base-run>` inside the base run. Paths are relat
     },
     // blocked
     "blocked_by": "s005",
-    // skipped
-    "note": "no recorded path"
+    // skipped (not a failure): "no recorded path"; "same recorded path as s005: …" (two screens behind the
+    // same steps, told apart only by app state); "'14:59 / OPEN' wasn't on s002 when the crawl first saw
+    // it: …" (keeps "failure" as evidence); "behind s008, whose path depends on app state"
+    "note": "…"
   } ]
 }
 ```
+
+A step whose element is missing on the new build fails if the base run's capture of that screen had the
+element, or if the element has `revealed_by` (those steps are in the path and were replayed first). If
+neither, the crawl reached the screen through app state its path doesn't record (runs from before
+`revealed_by`), so the path can't work from a fresh launch on any build, and the screen is skipped.
+Replay fills a screen's `autofill` fields once per arrival, not before every step taken on it.
