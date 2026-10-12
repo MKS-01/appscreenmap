@@ -137,6 +137,10 @@ Useful `crawl` flags: `--clear-data` (map the first-run state), `--keep-animatio
 
 `appscreenmap serve` opens a viewer for your `runs/` folder. It has no backend and updates live while a crawl runs.
 
+<p align="center">
+  <img src="docs/media/home.png" alt="The viewer's home page: totals across all runs, a prompt to ask your agent to map an app, and one card per app with a strip of its screens, the latest run's stats and links to each view">
+</p>
+
 - **Map** in three layouts (Tree, Graph, Storyboard). Each screen is shown whole, at the device's own shape.
   Click one to light up the path from launch.
 - **Screens** gallery with search over titles, element text and resource-ids; per-screen detail with tappable
@@ -150,6 +154,12 @@ The viewer is built with [Bun](https://bun.sh): `cd web && bun install && bun ru
 live reload. See [`web/README.md`](web/README.md) and the UI rules in [`web/DESIGN.md`](web/DESIGN.md).
 
 ## How it explores
+
+<p align="center">
+  <img src="docs/media/how-it-runs.png" alt="The viewer's How it works page: the five steps of the crawl loop (launch, observe, identify, act, record), with the Observe step showing the elements found on a real screen">
+</p>
+
+The viewer's **How it works** page walks through this loop on your own latest run.
 
 1. **Observe**: dump the UI hierarchy and screenshot, and read the foreground activity.
 2. **Identify the screen**: fingerprint the layout, ignoring list contents and digits (clocks,
