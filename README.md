@@ -183,6 +183,68 @@ In the viewer it opens inside the Accessibility tab, with a separate Download bu
 only part of WCAG; the [`a11y-audit` skill](.claude/skills/a11y-audit/SKILL.md) covers the device and manual
 tests (rotation, keyboard, TalkBack) the crawl can't do.
 
+## Performance
+
+Every transition is timed, so the crawl doubles as a speed survey of the app. Rather than sleeping a fixed
+time, it waits until the app stops drawing (`dumpsys gfxinfo`), then records the **load time**, **janky and
+frozen frames** and whether a loading spinner was still showing. Cold start is recorded on every relaunch.
+
+```bash
+uv run appscreenmap perf runs/<project>/<run-id> --budget 1000
+```
+
+```
+Navigation performance for playground-v1-20261013-024928 (budget 1000 ms, animations off)
+  cold start: 166 ms median, 187 ms max over 17 launch(es)
+  screens, slowest first (median / p90 / max ms, samples):
+   🔴  s018 'Reports'     2742 / 2752 / 2752  ×2  loading indicator, never settled
+   🟠  s019 'Gallery'     1818 / 1826 / 1826  ×2  97.8% janky
+   🟢  s005 'Article'      210 /  221 /  228  ×16
+  findings:
+    • s018 'Reports' never stopped drawing within the timeout (continuous animation or polling UI)
+    • s019 'Gallery' renders janky: 97.8% slow frames
+```
+
+Screens are rated against your budget (green, orange, red) with median, p90 and max over every visit, and the
+report lists the slowest transitions and a plain-language finding for each problem. The same numbers are in
+`perf.json` and in the MCP `perf_summary` tool, so an agent can ask "which screens are slow" without re-crawling.
+By default animations are switched off during a crawl for stable results; use `--keep-animations` to measure
+load time as users see it.
+
+## End-to-end tests
+
+Every screen gets a ready-made [Maestro](https://maestro.mobile.dev) flow that launches the app fresh, follows
+the recorded path (typing into forms on the way) and asserts it arrived:
+
+```yaml
+# excerpt of flows/s003.yaml
+# AppScreenMap: reach s003 — Search
+appId: dev.appscreenmap.playground
+---
+- launchApp:
+    stopApp: true
+- tapOn: { id: "email" }
+- inputText: "demo@playground.dev"
+- tapOn: { id: "sign_in" }       # on s001
+- tapOn: { id: "tab_search" }    # on s002
+- assertVisible: { id: "tab_home" }
+```
+
+Selectors prefer a stable resource-id, then text or content description, and fall back to a screen position only
+when nothing else exists. Run one flow as a smoke test, or all of them to prove every screen is still reachable:
+
+```bash
+maestro test runs/<project>/<run-id>/flows/             # every screen
+uv run appscreenmap verify runs/<project>/<run-id> --apk new.apk   # replay the paths on a new build, for CI
+```
+
+`verify` is the CI-friendly version: it replays every path on a new build, exits non-zero when one breaks, and
+saves a screenshot of each failed step ([details](#ci-verify-a-new-build)).
+
+**Maestro is the only test format exported today.** Letting you pick your own tool (Appium, Espresso, Playwright-style
+page objects, or a custom template) through a plug-in interface is planned; until then the neutral `map.json`
+has everything a generator needs. AppScreenMap writes the files and doesn't bundle or run Maestro.
+
 ## What's different
 
 - **The crawl is deterministic and makes no model calls.** Same build, same settings, same map, so runs are
@@ -288,7 +350,9 @@ uv run appscreenmap verify runs/duskread/<run-id> --apk app-release.apk
 `verify` replays every screen's recorded path from a fresh launch on the new build (longest paths
 first; screens passed along the way count as checked). A path fails when a step's element is gone, or
 it leads to a different screen, out of the app, or to a crash. Screens behind a broken step are reported
-as blocked. Every screen it reaches is diffed against the base run. Example output:
+as blocked. Screens whose recorded path can't work from a fresh launch even on the base build (reached
+through app state, such as a running timer) are skipped with a note, not failed. Every screen it reaches
+is diffed against the base run. Example output:
 
 ```
 ✘ 9 passed, 1 failed, 1 blocked, 0 skipped · 2 visually changed   (1.3.0 vs base 1.2.0)
