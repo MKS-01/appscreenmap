@@ -1,0 +1,48 @@
+flowchart LR
+  s001["s001 · DuskRead"]
+  s002["s002 · Hello, test"]
+  s003["s003 · FOLLOWING"]
+  s004["s004 · SAVED · 0"]
+  s005["s005 · Settings"]
+  s006["s006 · FOCUS · 15 MIN"]
+  s007["s007 · FOCUS"]
+  s008["s008 · FOLLOWING"]
+  s009["s009 · Connect Notion"]
+  s010["s010 · Settings"]
+  s011["s011 · FOCUS"]
+  s001 -->|"Get started"| s002
+  s002 -->|"Following"| s003
+  s003 -->|"Home"| s002
+  s004 -->|"Home"| s002
+  s004 -->|"Following"| s003
+  s002 -->|"Saved"| s004
+  s002 -->|"Settings"| s005
+  s005 -->|"Close settings"| s002
+  s002 -->|"14:59 / OPEN"| s006
+  s006 -->|"Close focus mode"| s002
+  s002 -->|"OPEN"| s006
+  s006 -->|"RESET"| s007
+  s007 -->|"15 MIN"| s006
+  s006 -->|"Back (system)"| s002
+  s003 -->|"Saved"| s004
+  s002 -->|"Follow a blog / Whatever it pu"| s003
+  s008 -->|"Home"| s002
+  s008 -->|"Following"| s003
+  s008 -->|"Saved"| s004
+  s003 -->|"Done"| s008
+  s008 -->|"Manage"| s003
+  s005 -->|"Set up"| s009
+  s009 -->|"Close setup"| s005
+  s005 -->|"Erase everything"| s010
+  s010 -->|"Close settings"| s002
+  s005 -->|"DuskRead 1.2.0"| s010
+  s010 -->|"Set up"| s009
+  s009 -->|"Back (system)"| s005
+  s005 -->|"Set up again"| s009
+  s005 -->|"Back (system)"| s002
+  s007 -->|"25 MIN"| s006
+  s007 -->|"30 MIN"| s006
+  s007 -->|"CUSTOM"| s011
+  s011 -->|"Close focus mode"| s002
+  s010 -->|"Erase"| s001
+  s010 -->|"Back (system)"| s002

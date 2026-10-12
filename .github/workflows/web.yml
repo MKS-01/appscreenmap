@@ -1,0 +1,19 @@
+name: web
+
+on:
+  push:
+    paths: ["web/**", "docs/MAP_SCHEMA.md", ".github/workflows/web.yml"]
+  pull_request:
+    paths: ["web/**", "docs/MAP_SCHEMA.md", ".github/workflows/web.yml"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build

@@ -1,0 +1,15 @@
+# AppScreenMap: reach s003 — FOLLOWING
+# Generated from run duskread-20261013-023451
+appId: dev.mks.duskread
+---
+- launchApp:
+    stopApp: true
+- tapOn: { point: "50%,60%" }
+- inputText: "test"
+- hideKeyboard
+# on s001: click 'Get started'
+- tapOn: "Get started"
+# on s002: click 'Following'
+- tapOn: { point: "43%,94%" }
+- assertVisible: "FOLLOWING"
+- takeScreenshot: s003

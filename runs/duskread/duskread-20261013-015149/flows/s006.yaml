@@ -1,0 +1,15 @@
+# AppScreenMap: reach s006 — FOCUS · 15 MIN
+# Generated from run duskread-20261013-015149
+appId: dev.mks.duskread
+---
+- launchApp:
+    stopApp: true
+- tapOn: { point: "50%,60%" }
+- inputText: "test"
+- hideKeyboard
+# on s001: click 'Get started'
+- tapOn: "Get started"
+# on s002: click '14:59 / OPEN'
+- tapOn: { point: "50%,34%" }
+- assertVisible: "FOCUS · 15 MIN"
+- takeScreenshot: s006

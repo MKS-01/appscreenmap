@@ -1,0 +1,40 @@
+# AppScreenMap crawl config. Pass with: appscreenmap crawl --package com.example --config appscreenmap.toml
+# Every key is optional; these are the defaults unless noted.
+
+[crawl]
+max_steps = 300            # hard cap on device actions
+max_minutes = 30
+stop_after_no_new = 30     # stop once this many steps in a row found no new screen (0 = off)
+max_depth = 15             # don't explore deeper than this many taps from launch
+settle_seconds = 0.8       # wait after each action before reading the screen
+launch_wait_seconds = 2.5
+similarity = 0.80          # token similarity at which two observations are the same screen
+max_list_items = 2         # list rows tried before deciding "all rows lead to the same screen"
+max_scrolls = 3            # swipes per scroll container when looking for off-screen elements
+stay_in_app = true         # pin the app (lock task mode): BACK at root and other apps are blocked
+clear_data = false         # wipe app data first to map the first-run / empty state (also --clear-data)
+fill_forms = true          # type into empty fields on arrival, using [inputs]
+explore_toggles = true
+long_click = false
+grant_permissions = true
+disable_animations = true
+measure_load = true        # wait for the app to stop drawing and record load times (perf.json)
+load_quiet_ms = 400        # no new frames for this long = settled
+load_timeout_s = 10        # stop waiting (endless animation, polling UI)
+perf_budget_ms = 1000      # screens slower than this (median) are flagged
+font_scale = 0             # e.g. 2.0 to audit WCAG 1.4.4 Resize Text (0 = keep the device setting)
+
+[inputs]
+# regex (matched against resource-id, hint, text, content-desc) = value to type.
+# Your rules win over the built-in ones (email, password, phone, name, search, …).
+# "${NAME}" is read from the environment when typed; only the placeholder is written to the run
+# (map.json, Maestro flows). crawl/verify stop if NAME is not set. Use it for anything secret.
+"e-?mail|user" = "qa.tester@example.com"
+"pass" = "${APP_PASSWORD}"
+default = "test"
+
+[safety]
+# Elements whose label matches are never tapped. Added to the built-in list
+# (log out, sign out, delete, pay, purchase, subscribe, uninstall, call, …) unless extend_defaults = false.
+blocked_text = ["unsubscribe", "clear history"]
+extend_defaults = true

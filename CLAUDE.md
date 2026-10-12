@@ -1,0 +1,48 @@
+# AppScreenMap
+
+Open-source (MIT) tool that crawls a mobile app on an emulator and maps every screen and
+transition. The design and roadmap are in `docs/PLAN.md`; the data contract is in `docs/MAP_SCHEMA.md`.
+
+## Layout
+
+- `src/appscreenmap/`: Python crawler (driver → analyzer → explorer → model → export/visual/report → cli)
+- `tests/`: unit tests on synthetic hierarchies (`tests/helpers.py`); no device needed
+- `web/`: React viewer, **owned by a separate session**. Don't edit it from crawler work.
+- `samples/`: the end-to-end playground. `playground-app/` (purpose-built Compose app, v1/v2 APKs + source,
+  every screen = a scenario) and `duskread/` (real app APK). `samples/demo.sh` runs every scenario.
+- `runs/<project>/<run-id>/`: crawl output, **committed** as sample maps (one folder per app). Run ids
+  are flat and unique; `appscreenmap serve` resolves `/runs/<run-id>/…` to the project folder.
+
+## Rules
+
+- `map.json` is the contract with `web/`. Within schema 1, only add fields; never rename or remove
+  them. Update `docs/MAP_SCHEMA.md` in the same change.
+- Test against the samples (Playground for known answers, DuskRead for a real app), not stock apps. Use
+  `--clear-data` to map the first-run state. When a feature needs a new scenario, add a screen to the
+  Playground (mark deliberate bugs `A11Y BUG (WCAG x.y.z)`), rebuild with `samples/playground-app/build.sh`,
+  and list it in `samples/README.md`.
+- The crawl must stay inside the target app (`stay_in_app`, lock task pinning). Never ship a change
+  that presses BACK or opens other apps to recover.
+- Every exploration fix gets a synthetic regression test in `tests/` before re-crawling.
+- No git tags or releases until asked.
+
+## Commands
+
+```bash
+uv sync && uv run pytest -q && uv run ruff check src tests && uv run ruff format src
+uv run appscreenmap doctor
+uv run appscreenmap crawl --package dev.mks.duskread --clear-data --max-steps 200
+uv run appscreenmap report runs/duskread/<run-id>   # health: wasted steps, identity issues, nav failures
+uv run appscreenmap perf runs/duskread/<run-id>     # load time per screen, jank, cold start
+```
+
+## Skills (`.claude/skills/`)
+
+- `crawl-app`: run a crawl and review the result
+- `tune-crawler`: turn a bad crawl into a test and a fix (screen identity, wasted taps, routing)
+- `extend-crawler`: add features (drivers, exports, patterns, config, schema fields, CLI)
+- `maintain-crawler`: dependency/Android upgrades, compatibility checks, schema migrations
+- `wcag-mobile-rules`: WCAG 2.2 → Android reference (thresholds, what's new, who checks what)
+- `a11y-audit`: full WCAG 2.2 audit (automated + 200% font crawl + device tests + manual + triage + report)
+- `add-a11y-rule`: add or fix an automated a11y check (crawler `a11y.py`; viewer rules belong to the web session)
+- `add-exporter`: generate tests for an E2E tool (Maestro, Appium, Espresso, …) and build the pluggable exporter interface

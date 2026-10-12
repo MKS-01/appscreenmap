@@ -1,0 +1,21 @@
+# AppScreenMap: reach s017 — Scanner
+# Generated from run playground-v1-20261013-024928
+appId: dev.appscreenmap.playground
+---
+- launchApp:
+    stopApp: true
+- tapOn: { id: "email" }
+- inputText: "demo@playground.dev"
+- tapOn: { id: "password" }
+- inputText: "playground-demo"
+- hideKeyboard
+# on s001: click 'Sign in'
+- tapOn: { id: "sign_in" }
+# on s002: click 'Profile'
+- tapOn: { id: "tab_profile" }
+# on s007: click 'Developer options'
+- tapOn: { id: "profile_row" }
+# on s014: click 'Open scanner'
+- tapOn: { id: "open_scanner" }
+- assertVisible: "Scanner"
+- takeScreenshot: s017

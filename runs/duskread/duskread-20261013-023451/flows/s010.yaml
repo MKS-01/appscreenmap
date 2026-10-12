@@ -1,0 +1,17 @@
+# AppScreenMap: reach s010 — Connect Notion
+# Generated from run duskread-20261013-023451
+appId: dev.mks.duskread
+---
+- launchApp:
+    stopApp: true
+- tapOn: { point: "50%,60%" }
+- inputText: "test"
+- hideKeyboard
+# on s001: click 'Get started'
+- tapOn: "Get started"
+# on s002: click 'Settings'
+- tapOn: "Settings"
+# on s007: click 'Set up'
+- tapOn: "Set up"
+- assertVisible: "Connect Notion"
+- takeScreenshot: s010

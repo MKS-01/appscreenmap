@@ -1,0 +1,20 @@
+# AppScreenMap: reach s020 — Discover
+# Generated from run playground-v1-20261013-024928
+appId: dev.appscreenmap.playground
+---
+- launchApp:
+    stopApp: true
+- tapOn: { id: "email" }
+- inputText: "demo@playground.dev"
+- tapOn: { id: "password" }
+- inputText: "playground-demo"
+- hideKeyboard
+# on s001: click 'Sign in'
+- tapOn: { id: "sign_in" }
+# on s002: click 'bookmark'
+- scrollUntilVisible:
+    element: { id: "bookmark" }
+    direction: DOWN
+- tapOn: { id: "bookmark" }
+- assertVisible: { id: "tab_search" }
+- takeScreenshot: s020

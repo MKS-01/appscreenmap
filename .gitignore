@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# Node
+web/node_modules/
+web/dist/
+
+# Crawl output: runs/ is committed (sample maps, grouped per project); only temp files are ignored
+runs/**/.tmp-*
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code (personal settings; project skills in .claude/skills are committed)
+.claude/settings.local.json

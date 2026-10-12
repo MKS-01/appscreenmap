@@ -1,0 +1,14 @@
+# Crawl config for the AppScreenMap Playground demo app.
+# appscreenmap crawl --apk samples/playground-app/apk/playground-v1.apk --config samples/playground-app/appscreenmap.toml --clear-data
+
+[crawl]
+max_steps = 250
+stop_after_no_new = 40
+perf_budget_ms = 1000
+
+[inputs]
+# The sign-in screen accepts any email; the crawler fills it on arrival.
+"email" = "demo@playground.dev"
+# A secret: typed from the environment, stored as the placeholder in map.json, flows and the trace.
+"pass" = "${APP_PASSWORD}"
+default = "test"

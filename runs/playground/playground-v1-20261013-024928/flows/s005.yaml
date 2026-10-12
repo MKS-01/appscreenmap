@@ -1,0 +1,22 @@
+# AppScreenMap: reach s005 — Article
+# Generated from run playground-v1-20261013-024928
+appId: dev.appscreenmap.playground
+---
+- launchApp:
+    stopApp: true
+- tapOn: { id: "email" }
+- inputText: "demo@playground.dev"
+- tapOn: { id: "password" }
+- inputText: "playground-demo"
+- hideKeyboard
+# on s001: click 'Sign in'
+- tapOn: { id: "sign_in" }
+# on s002: click 'Search'
+- tapOn: { id: "tab_search" }
+- tapOn: { id: "search_field" }
+- inputText: "test"
+- hideKeyboard
+# on s003: click 'Getting started with the Playground / playground.dev'
+- tapOn: { id: "result" }
+- assertVisible: { id: "navigate_up" }
+- takeScreenshot: s005

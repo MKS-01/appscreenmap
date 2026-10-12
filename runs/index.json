@@ -1,0 +1,119 @@
+{
+ "runs": [
+  {
+   "id": "playground-v1-20261013-024928",
+   "project": "playground",
+   "path": "playground/playground-v1-20261013-024928",
+   "status": "done",
+   "started_at": "2026-10-12T21:19:28+00:00",
+   "finished_at": "2026-10-12T21:29:05+00:00",
+   "app": {
+    "package": "dev.appscreenmap.playground",
+    "version": "1.0",
+    "label": "Playground",
+    "launch_activity": "dev.appscreenmap.playground.MainActivity",
+    "activities": [
+     "dev.appscreenmap.playground.MainActivity",
+     "dev.appscreenmap.playground.ScannerActivity"
+    ],
+    "orientation_locked": {
+     "dev.appscreenmap.playground.ScannerActivity": "portrait"
+    }
+   },
+   "device": {
+    "serial": "emulator-5554",
+    "model": "sdk_gphone16k_arm64",
+    "manufacturer": "Google",
+    "android": "17",
+    "sdk": "37",
+    "width": 1080,
+    "height": 2400,
+    "density": 420,
+    "font_scale": 1.0
+   },
+   "steps": 151,
+   "elapsed_s": 576.3,
+   "screens": 21,
+   "transitions": 79,
+   "crashes": 0,
+   "thumb": "playground/playground-v1-20261013-024928/screens/s001.jpg",
+   "diffs": [],
+   "verifies": []
+  },
+  {
+   "id": "duskread-20261013-023451",
+   "project": "duskread",
+   "path": "duskread/duskread-20261013-023451",
+   "status": "done",
+   "started_at": "2026-10-12T21:04:51+00:00",
+   "finished_at": "2026-10-12T21:11:14+00:00",
+   "app": {
+    "package": "dev.mks.duskread",
+    "version": "1.2.0",
+    "label": "DuskRead",
+    "launch_activity": "dev.mks.duskread.android.MainActivity",
+    "activities": [
+     "com.google.android.gms.common.api.GoogleApiActivity",
+     "dev.mks.duskread.android.MainActivity",
+     "dev.mks.duskread.android.widget.ClipboardSaveActivity"
+    ],
+    "orientation_locked": {}
+   },
+   "device": {
+    "serial": "emulator-5554",
+    "model": "sdk_gphone16k_arm64",
+    "manufacturer": "Google",
+    "android": "17",
+    "sdk": "37",
+    "width": 1080,
+    "height": 2400,
+    "density": 420,
+    "font_scale": 1.0
+   },
+   "steps": 88,
+   "elapsed_s": 382.6,
+   "screens": 11,
+   "transitions": 32,
+   "crashes": 0,
+   "thumb": "duskread/duskread-20261013-023451/screens/s001.jpg",
+   "diffs": [],
+   "verifies": []
+  },
+  {
+   "id": "duskread-20261013-015149",
+   "project": "duskread",
+   "path": "duskread/duskread-20261013-015149",
+   "status": "done",
+   "started_at": "2026-10-12T20:21:49+00:00",
+   "finished_at": "2026-10-12T20:27:40+00:00",
+   "app": {
+    "package": "dev.mks.duskread",
+    "version": "1.2.0",
+    "label": "DuskRead",
+    "launch_activity": "dev.mks.duskread.android.MainActivity",
+    "activities": [
+     "com.google.android.gms.common.api.GoogleApiActivity",
+     "dev.mks.duskread.android.MainActivity",
+     "dev.mks.duskread.android.widget.ClipboardSaveActivity"
+    ]
+   },
+   "device": {
+    "serial": "emulator-5554",
+    "model": "sdk_gphone16k_arm64",
+    "manufacturer": "Google",
+    "android": "17",
+    "sdk": "37",
+    "width": 1080,
+    "height": 2400
+   },
+   "steps": 95,
+   "elapsed_s": 350.1,
+   "screens": 11,
+   "transitions": 36,
+   "crashes": 0,
+   "thumb": "duskread/duskread-20261013-015149/screens/s001.jpg",
+   "diffs": [],
+   "verifies": []
+  }
+ ]
+}

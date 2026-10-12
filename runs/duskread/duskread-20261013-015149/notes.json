@@ -1,0 +1,11 @@
+{
+ "appscreenmap_notes": 1,
+ "run": "duskread-20261013-015149",
+ "notes": {},
+ "a11y": {
+  "s011::field-unlabeled::EditText::text field::452,1913": {
+   "status": "false_positive",
+   "updated": "2026-10-12T20:39:30.058Z"
+  }
+ }
+}

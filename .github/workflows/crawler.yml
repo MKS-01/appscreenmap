@@ -1,0 +1,23 @@
+name: crawler
+
+on:
+  push:
+    paths: ["src/**", "tests/**", "pyproject.toml", "uv.lock", ".github/workflows/crawler.yml"]
+  pull_request:
+    paths: ["src/**", "tests/**", "pyproject.toml", "uv.lock", ".github/workflows/crawler.yml"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked
+      - run: uv run ruff check src tests
+      - run: uv run ruff format --check src
+      - run: uv run pytest -q
