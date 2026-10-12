@@ -62,6 +62,13 @@ Never fix exploration by guessing. Each fix follows this loop:
 - A screen first seen outside a recorded action has `origin: unknown` and gets a path the first time a known
   screen leads there. Only `restart()` may mark `origin: launch` (an empty path means "launch lands here").
   The viewer builds its tree from `reach_path`, so never leave a pathless screen looking like a root.
+- An action that only changes scrolled content (a tap that scrolls the list, a WebView exposing its text)
+  must not create a new screen. `identify(obs, hint=src)` keeps the source screen when the *fixed* part
+  (`fixed_tokens`: outside scrollers/WebViews: title, toolbar, nav) is unchanged.
+- Android 10+ often shows no crash dialog: the app just disappears and another app comes to the front.
+  When the app leaves the foreground, check `logcat -b crash` for `Process: <pkg>,` before calling it "left the app".
+- First-run screens (sign-in, onboarding) disappear once the app saves state. With `--clear-data` the
+  crawler may `pm clear` once to get back (`data_reset` event, max 5 per crawl).
 - Pinning shows an "App pinned" toast; `restart()` waits it out so screenshots (and visual diffs) stay clean.
 - Stdout must be line-buffered, or background logs stay empty.
 

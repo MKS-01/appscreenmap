@@ -246,7 +246,7 @@ long-press.
 | 4. Intelligence | Optional LLM step: semantic screen names, smarter form inputs, goal-directed exploration ("reach checkout") | |
 | 5. Team | Docker image + GitHub Action, `appscreenmap publish` to a static site, Appium/Espresso page-object export | |
 | 6. Localisation | Crawl in several locales (incl. pseudo-locales), match screens across locales, l10n review in the viewer (untranslated text, truncation, overflow, RTL mirroring), side-by-side locale gallery, context screenshots for translators. Depends only on phase 1, so it can ship before 3–5. See §8.1 | |
-| 7. Agents & CI | MCP server (the map as agent memory), `appscreenmap verify` (replay every reach path on a new build, CI exit codes, baselines), secrets as `${ENV}` placeholders, text-aware visual diff. See §8.2 | ✅ crawler (verified on fake devices; first emulator run of `verify` pending) |
+| 7. Agents & CI | MCP server (the map as agent memory), `appscreenmap verify` (replay every reach path on a new build, CI exit codes, baselines), secrets as `${ENV}` placeholders, text-aware visual diff. See §8.2 | ✅ crawler (`verify` on sample-app, same build: 8 passed, 3 skipped as state-dependent, exit 0) |
 | 8. Performance & conditions | Perfetto traces for slow transitions, crawl screen recordings, emulator network profiles, condition matrix (landscape, dark mode, denied permissions, display size), keyboard/D-pad reachability crawl. See §8.2 | |
 
 ### 8.1 Localisation support (planned)

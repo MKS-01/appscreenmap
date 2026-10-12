@@ -61,7 +61,7 @@ def by_title(rep, run_dir):
 def test_plan_replays_longest_paths_first(base):
     targets, skipped = plan(load_map(base))
     i = ids(base)
-    assert targets[0] == i["Advanced"] and skipped == []
+    assert targets[0] == i["Advanced"] and skipped == {}
     assert set(targets) == set(i.values())
 
 
@@ -137,3 +137,113 @@ def test_update_baselines_accepts_the_new_look(base):
     assert "Build 1.0" in (base / after["hierarchy"]).read_text()
     rep2 = verify_run(base, FakeDriver(FakeApp(changed, APP_NAV)), log=lambda *a: None)
     assert rep2["summary"]["changed"] == 0
+
+
+def _edit_map(run_dir, fn):
+    data = load_map(run_dir)
+    fn({s["title"]: s for s in data["screens"] if s["kind"] == "app"})
+    (run_dir / "map.json").write_text(json.dumps(data))
+
+
+def test_screens_sharing_a_path_are_skipped_not_failed(base):
+    # Two screens behind the same steps: which one opens depends on app state (seen on sample-app: two
+    # 'FOLLOWING' states behind Following → Done). Replaying the path can't pick between them.
+    _edit_map(base, lambda s: s["About"].update(reach_path=s["Settings"]["reach_path"]))
+    rep = verify_run(base, FakeDriver(FakeApp(APP, APP_NAV)), log=lambda *a: None)
+    about = by_title(rep, base)["About"]
+    assert about["status"] == "skipped" and ids(base)["Settings"] in about["note"]
+    assert rep["ok"] and rep["summary"]["failed"] == 0
+
+
+def test_step_on_an_element_the_crawl_saw_only_later_is_state_dependent(base):
+    # sample-app: '14:59 / OPEN' only exists while a focus timer runs (started by an earlier tap that
+    # stayed on the same screen). The base capture of the screen doesn't have it, so a fresh launch
+    # can't replay the path: skip with evidence instead of failing an unchanged build.
+    def timer_step(s):
+        step = s["About"]["reach_path"][0]
+        step.update(key="click|View||##:## / open", label="14:59 / OPEN", selector={"point": [540, 1800]})
+
+    _edit_map(base, timer_step)
+    rep = verify_run(base, FakeDriver(FakeApp(APP, APP_NAV)), log=lambda *a: None)
+    about = by_title(rep, base)["About"]
+    assert about["status"] == "skipped" and "app state" in about["note"]
+    assert about["failure"]["reason"] == "wrong_screen" and about["failure"]["screenshot"]
+    assert rep["ok"]
+
+
+def test_a_removed_element_the_base_capture_had_still_fails(base):
+    renamed = {**APP, "home": APP["home"].replace('text="About"', 'text="Info"')}
+    rep = verify_run(
+        base, FakeDriver(FakeApp(renamed, {**APP_NAV, ("home", "Info"): "about"})), log=lambda *a: None
+    )
+    assert by_title(rep, base)["About"]["status"] == "failed" and not rep["ok"]
+
+
+# An element that only appears after a same-screen step: 'OPEN' shows once '15 MIN' starts a timer.
+HOME_T = APP["home"].replace(
+    "</node></hierarchy>", btn((600, 300, 1000, 420), text="15 MIN") + "</node></hierarchy>"
+)
+TIMER_APP = {
+    **APP,
+    "home": HOME_T,
+    "home_timer": HOME_T.replace(
+        "</node></hierarchy>", btn((100, 700, 1000, 820), text="OPEN") + "</node></hierarchy>"
+    ),
+}
+TIMER_NAV = {**APP_NAV, ("home", "15 MIN"): "home_timer", ("home_timer", "OPEN"): "about"}
+
+
+def _revealed_path(base):
+    """Rewrite the base map as a crawl with `revealed_by` records it: About is reached by
+    15 MIN (same screen) → OPEN, and Home has a field the crawl typed into."""
+
+    def edit(s):
+        home = s["Home"]
+        mk = lambda label, x: {
+            "screen": home["id"],
+            "key": f"click|Button||{label.lower()}",
+            "action": "click",
+            "label": label,
+            "selector": {"text": label, "point": [x, 360]},
+            "scroll_depth": 0,
+        }
+        start, open_ = (
+            mk("15 MIN", 800),
+            {**mk("OPEN", 550), "selector": {"text": "OPEN", "point": [550, 760]}},
+        )
+        s["About"]["reach_path"] = [start, open_]
+        home["elements"].append(
+            {
+                **open_,
+                "kind": "button",
+                "rid": "",
+                "text": "OPEN",
+                "desc": "",
+                "bounds": [100, 700, 1000, 820],
+                "status": "done",
+                "revealed_by": [start],
+            }
+        )
+        home["autofill"] = [
+            {"key": "k", "label": "Name", "rid": "", "value": "typed-once", "selector": {"point": [10, 10]}}
+        ]
+
+    _edit_map(base, edit)
+
+
+def test_revealed_by_steps_replay_and_autofill_once_per_screen(base):
+    _revealed_path(base)
+    d = FakeDriver(FakeApp(TIMER_APP, TIMER_NAV))
+    about = ids(base)["About"]
+    replay_mod.Replayer(d, load_map(base), log=lambda *a: None).replay(about)
+    assert d.app.taps == ["15 MIN", "OPEN"] and d.app.screen == "about"
+    assert d.app.typed == ["typed-once"]  # not typed again before the second step on Home
+
+
+def test_missing_element_with_revealed_by_is_a_real_failure(base):
+    # The crawl knew how to reveal OPEN; if the steps run and it still isn't there, the build changed.
+    _revealed_path(base)
+    nav = {k: v for k, v in TIMER_NAV.items() if k != ("home", "15 MIN")}
+    rep = verify_run(base, FakeDriver(FakeApp(TIMER_APP, nav)), log=lambda *a: None)
+    about = by_title(rep, base)["About"]
+    assert about["status"] == "failed" and about["failure"]["label"] == "OPEN"
