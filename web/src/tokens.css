@@ -1,0 +1,84 @@
+/*
+ * AppScreenMap design tokens. The only place raw colours, radii and curves are defined.
+ * Components use var(--…); see web/DESIGN.md for roles and rules. Light is the base, dark overrides below.
+ */
+
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --panel-2: #f0f2f5;
+  --border: #e2e5ea;
+  --text: #1a1d23;
+  --muted: #646b78;
+  --faint: #9aa1ad;
+  --accent: #4f6bed;
+  --accent-soft: #e8ecfd;
+  --accent-text: #3a52c9;
+  --shadow: 0 1px 2px rgba(20, 24, 33, 0.06), 0 2px 8px rgba(20, 24, 33, 0.05);
+  --shadow-lg: 0 8px 28px rgba(20, 24, 33, 0.14);
+
+  /* element status */
+  --st-done: #1f9d63;
+  --st-pending: #d48a00;
+  --st-blocked: #d63b4f;
+  --st-skipped: #8a92a0;
+  --st-failed: #c2410c;
+  --st-unreachable: #7c5cd6;
+
+  --radius: 10px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --panel: #171a20;
+    --panel-2: #1e222a;
+    --border: #2a2f39;
+    --text: #e6e8ec;
+    --muted: #9aa1ad;
+    --faint: #656c79;
+    --accent: #7187f5;
+    --accent-soft: #232a4a;
+    --accent-text: #a5b3ff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --st-done: #3ccf8e;
+    --st-pending: #f0b429;
+    --st-blocked: #f2667a;
+    --st-skipped: #8a92a0;
+    --st-failed: #f08a4b;
+    --st-unreachable: #a48cf0;
+    color-scheme: dark;
+  }
+}
+
+/* Scale tokens: use these for new or touched code (older rules still use raw px). */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 52px;
+
+  --text-xs: 11.5px;
+  --text-sm: 12.5px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: clamp(26px, 4vw, 36px);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  --dur-press: 160ms;
+  --dur-fast: 150ms;
+  --dur-ui: 220ms;
+}
