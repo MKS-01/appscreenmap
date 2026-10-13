@@ -30,7 +30,12 @@ export default function Screens({ run, map }: { run: string; map: AppMapData }) 
 
   return (
     <div className="page">
-      <div className="row wrap" style={{ marginBottom: 18, gap: 10 }}>
+      <header className="page-head">
+        <span className="kicker">Screens · {map.stats.screens} mapped</span>
+        <h1>Every screen the crawler found</h1>
+        <p className="lede">At the device's real size, in the order they were discovered. Search finds element text and resource ids too.</p>
+      </header>
+      <div className="row wrap screens-toolbar">
         <input type="search" placeholder="Search title, id, element text, resource-id…" value={q} onChange={(e) => setQ(e.target.value)} style={{ width: 320, maxWidth: "100%" }} />
         <button
           className={`chip ${starredOnly ? "on" : ""}`}
@@ -51,7 +56,7 @@ export default function Screens({ run, map }: { run: string; map: AppMapData }) 
         <span className="muted small">{list.length} shown</span>
       </div>
       {list.length === 0 ? (
-        <div className="panel empty">No screens match.</div>
+        <div className="empty">No screens match.</div>
       ) : (
         <div className="gallery">
           {list.map((s) => {
@@ -59,32 +64,40 @@ export default function Screens({ run, map }: { run: string; map: AppMapData }) 
             const actionable = s.elements.filter((e) => e.kind !== "back");
             const done = actionable.filter((e) => e.status === "done").length;
             return (
-              <a key={s.id} className="panel shot-card" href={screenHref(run, s.id)}>
-                <div className="img" style={{ aspectRatio: `${s.width || 1080} / ${s.height || 2400}` }}>{s.thumb && <img src={runFile(run, s.thumb)} alt="" loading="lazy" />}</div>
+              <a key={s.id} className="shot-card" href={screenHref(run, s.id)}>
+                <div className="img" style={{ aspectRatio: `${s.width || 1080} / ${s.height || 2400}` }}>
+                  {s.thumb && <img src={runFile(run, s.thumb)} alt="" loading="lazy" />}
+                </div>
                 <div className="meta">
-                  <div className="row">
+                  <span className="shot-id">
                     <span className="sid">{s.kind === "app" ? s.id : "external"}</span>
-                    <div className="grow" />
-                    {s.kind === "app" && <span className="faint small">depth {s.depth}</span>}
-                  </div>
+                    {s.kind === "app" && <span className="sid">depth {s.depth}</span>}
+                  </span>
                   <b className="ellipsis" title={s.title}>
                     {notes[s.id]?.star && <span className="star-mark">★ </span>}
                     {s.title}
                   </b>
                   {notes[s.id]?.note && <span className="note-snip">{notes[s.id].note}</span>}
                   <span className="small muted ellipsis">{shortActivity(s.activity)}</span>
-                  {s.kind === "app" && (
-                    <span className="small faint">
-                      {done}/{actionable.length} actions tried
+                  {s.kind === "app" && actionable.length > 0 && (
+                    <span className="shot-tried" title={`${done} of ${actionable.length} actions tried`}>
+                      <span className="sid">
+                        {done}/{actionable.length} tried
+                      </span>
+                      <span className="shot-meter">
+                        <span style={{ width: `${(100 * done) / actionable.length}%` }} />
+                      </span>
                     </span>
                   )}
-                  <div className="row wrap" style={{ gap: 4 }}>
-                    {s.patterns.map((p) => (
-                      <span key={p} className="chip">
-                        {p}
-                      </span>
-                    ))}
-                  </div>
+                  {s.patterns.length > 0 && (
+                    <div className="row wrap" style={{ gap: 4 }}>
+                      {s.patterns.map((p) => (
+                        <span key={p} className="chip">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </a>
             );

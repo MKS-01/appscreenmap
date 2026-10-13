@@ -16,18 +16,22 @@ export default function Compare({ run, map, base }: { run: string; map: AppMapDa
     const siblings = index.runs.filter((r) => runKey(r) !== run && r.app.package === map.run.app.package);
     return (
       <div className="page narrow">
-        <h1>Compare builds</h1>
-        <p className="muted">
-          Crawl two builds of the same app, then diff them. Screens are matched across runs by signature and token similarity, and
-          their screenshots compared pixel by pixel (status bar masked).
-        </p>
+        <header className="page-head">
+          <span className="kicker">Compare · {map.run.app.label ?? map.run.app.package}</span>
+          <h1>What changed between two builds?</h1>
+          <p className="lede">
+            Crawl two builds of the same app, then diff them. Screens are matched across runs by signature and token similarity, their
+            screenshots compared pixel by pixel (status bar masked) and their text read from the hierarchy.
+          </p>
+        </header>
         {siblings.length === 0 ? (
-          <div className="panel panel-pad">
+          <div className="compare-empty">
             <p style={{ marginTop: 0 }}>There's no other run of <code>{map.run.app.package}</code> to compare with yet. Crawl another build, then run:</p>
             <Cmd text={`appscreenmap diff runs/<baseline-run> runs/${run}`} />
           </div>
         ) : (
-          <div className="panel">
+          <div className="compare-runs">
+            <h3 style={{ marginBottom: 10 }}>Pick a baseline: run this, then reload</h3>
             <table className="tbl">
               <thead>
                 <tr>

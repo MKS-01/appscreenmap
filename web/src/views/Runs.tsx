@@ -152,7 +152,7 @@ function AppCard({ group }: { group: AppGroup }) {
             <span title={fmtDate(r.started_at)}>{timeAgo(r.started_at)}</span>
           </div>
         </div>
-        <a className="btn primary" href={href("r", key, "map")}>
+        <a className="btn" href={href("r", key, "map")}>
           Open map →
         </a>
       </div>

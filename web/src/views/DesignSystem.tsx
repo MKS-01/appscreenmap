@@ -8,16 +8,20 @@ import { STATUS_HELP, STATUSES, statusColor } from "../util";
 // so it can't drift from the CSS. Not linked in the nav; open #/design.
 
 const COLOR_TOKENS: [string, string][] = [
-  ["--bg", "Page background"],
-  ["--panel", "Cards, bars"],
-  ["--panel-2", "Insets, code, hover"],
-  ["--border", "Hairlines"],
-  ["--text", "Primary text"],
-  ["--muted", "Secondary text"],
-  ["--faint", "Tertiary, ids"],
-  ["--accent", "Primary action, focus"],
-  ["--accent-soft", "Selected background"],
-  ["--accent-text", "Links, selected text"],
+  ["--bg", "Page"],
+  ["--panel", "Cards, bars, sheets"],
+  ["--panel-2", "Insets, code, hover, icon tiles"],
+  ["--line", "Hairline separators"],
+  ["--line-hi", "Control borders, device frames"],
+  ["--text", "Primary text · 17.4:1"],
+  ["--dim", "Secondary text · 7.8:1"],
+  ["--faint", "Ids, meta, axis labels · 5.7:1"],
+  ["--accent", "Xcode blue: links, focus, the primary action · 7.5:1"],
+  ["--accent-14", "Selected background"],
+  ["--good", "Status: good, met, passing"],
+  ["--warn", "Status: warning, due"],
+  ["--bad", "Status: error, crash, blocked"],
+  ["--info", "Status: info, unreachable"],
 ];
 const ICONS: IconName[] = [
   "map", "grid", "replay", "chart", "a11y", "compare", "rocket", "eye", "scan", "pointer", "database", "file", "folder",
@@ -27,11 +31,7 @@ const ICONS: IconName[] = [
 function useToken(name: string) {
   const [v, setV] = useState("");
   useEffect(() => {
-    const read = () => setV(getComputedStyle(document.documentElement).getPropertyValue(name).trim());
-    read();
-    const m = matchMedia("(prefers-color-scheme: dark)");
-    m.addEventListener("change", read);
-    return () => m.removeEventListener("change", read);
+    setV(getComputedStyle(document.documentElement).getPropertyValue(name).trim());
   }, [name]);
   return v;
 }
@@ -71,12 +71,12 @@ export default function DesignSystem() {
         </span>
         <h1 className="how-title">Viewer design system</h1>
         <p className="how-lede">
-          Tokens and components exactly as the CSS renders them, in the current theme. The rules live in <code>web/DESIGN.md</code>;
-          tokens in <code>web/src/tokens.css</code>.
+          Ghost dark × Xcode blue, rendered from the real CSS. Values live in <code>design/tokens.css</code> (shared with the HTML
+          reports); rules and decisions in the <code>design-system</code> skill; components in <code>web/DESIGN.md</code>.
         </p>
       </header>
 
-      <Block title="Colour roles" note="Switch the OS theme to check dark mode">
+      <Block title="Colour roles" note="Dark only. Contrast is on --bg; run the design-system contrast check after any change">
         <div className="ds-swatches">
           {COLOR_TOKENS.map(([t, r]) => (
             <Swatch key={t} token={t} role={r} />
@@ -96,12 +96,12 @@ export default function DesignSystem() {
         </div>
       </Block>
 
-      <Block title="Type" note="System UI font; mono for ids, code, numbers that align">
+      <Block title="Type" note="Geist for UI text, Geist Mono for ids, numbers, code and kickers">
         <div className="col" style={{ gap: 10 }}>
           <div className="how-title">Display: hero and page titles</div>
-          <h1>h1: view title (22px / 650)</h1>
-          <h2>h2: card and section title (16px / 620)</h2>
-          <h3>h3: eyebrow label (13px, uppercase)</h3>
+          <h1>h1: view title</h1>
+          <h2>h2: card and section title</h2>
+          <h3>h3: eyebrow label (uppercase)</h3>
           <p style={{ margin: 0 }}>Body: 14px / 1.5. Sentences, not fragments.</p>
           <span className="muted">Muted: secondary information.</span>
           <span className="small faint">Small faint: hints and metadata.</span>

@@ -30,7 +30,11 @@ export interface AuditFinding {
   due?: string; // ISO date: a store or platform deadline this finding is tied to
   refs?: AuditRef[];
   sample?: boolean; // placeholder finding inside a report that is otherwise real
+  /** A store or platform requirement's state, shown as a met / due / blocked / upcoming / not-checked glyph. */
+  requirement?: Requirement;
 }
+
+export type Requirement = "met" | "due" | "blocked" | "upcoming" | "not_checked";
 
 export interface AuditMetric {
   label: string;
@@ -72,6 +76,7 @@ export interface AuditReport {
   status: AuditStatus;
   score: number | null; // 0–100, higher is better; null when the audit doesn't score
   score_note?: string; // how the score is computed, in one sentence
+  status_label?: string; // a plainer word than the status when one fits: "Partial", "Blocked for Play updates"
   summary: string;
   metrics: AuditMetric[];
   charts: AuditChart[];
@@ -83,6 +88,8 @@ export interface AuditReport {
 export interface AuditDef {
   id: string;
   title: string;
+  group: "crawl" | "release"; // "From this crawl" vs "Release readiness"
+  qualifier?: string; // small mono tag after the title, e.g. "WCAG 2.2"
   icon: import("../components/Icon").IconName;
   blurb: string; // what it checks, one line
   produces: string; // what will produce real data, for "not run" states

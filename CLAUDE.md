@@ -8,6 +8,8 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 - `src/appscreenmap/`: Python crawler (driver → analyzer → explorer → model → export/visual/report → cli)
 - `tests/`: unit tests on synthetic hierarchies (`tests/helpers.py`); no device needed
 - `web/`: React viewer, **owned by a separate session**. Don't edit it from crawler work.
+- `design/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode blue, Geist), for
+  the viewer and the HTML reports. Change it only through the `design-system` skill.
 - `samples/`: the end-to-end playground. `playground-app/` (purpose-built Compose app, v1/v2 APKs + source,
   every screen = a scenario) and `sample-app/` (real app APK). `samples/demo.sh` runs every scenario.
 - `runs/<project>/<run-id>/`: crawl output, **committed** as sample maps (one folder per app). Run ids
@@ -38,6 +40,7 @@ uv run appscreenmap perf runs/sample-app/<run-id>     # load time per screen, ja
 
 ## Skills (`.claude/skills/`)
 
+- `design-system`: the token system (`design/tokens.css`), its rules and decisions, and the contrast check
 - `crawl-app`: run a crawl and review the result
 - `tune-crawler`: turn a bad crawl into a test and a fix (screen identity, wasted taps, routing)
 - `extend-crawler`: add features (drivers, exports, patterns, config, schema fields, CLI)

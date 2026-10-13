@@ -17,6 +17,7 @@ export const AUDITS: Entry[] = [
     id: "coverage",
     title: "Crawl coverage",
     icon: "map",
+    group: "crawl",
     blurb: "How much of the app the crawl reached: screens, actions, activities.",
     produces: "Every crawl (map.json).",
     build: coverageReport,
@@ -24,7 +25,8 @@ export const AUDITS: Entry[] = [
   {
     id: "stability",
     title: "Stability",
-    icon: "alert",
+    icon: "crash",
+    group: "crawl",
     blurb: "Crashes and failed navigations seen while crawling.",
     produces: "Every crawl (map.json events).",
     build: stabilityReport,
@@ -33,6 +35,8 @@ export const AUDITS: Entry[] = [
     id: "a11y",
     title: "Accessibility",
     icon: "a11y",
+    group: "crawl",
+    qualifier: "WCAG 2.2",
     blurb: "WCAG 2.2 checks across every mapped screen.",
     produces: "`appscreenmap a11y <run>` (a11y.json), also written at the end of every crawl.",
     build: a11yReport,
@@ -40,7 +44,8 @@ export const AUDITS: Entry[] = [
   {
     id: "perf",
     title: "Performance",
-    icon: "rocket",
+    icon: "gauge",
+    group: "crawl",
     blurb: "Cold start, load time per screen and jank against a budget.",
     produces: "Crawls with load measurement (perf.json).",
     build: perfReport,
@@ -48,7 +53,8 @@ export const AUDITS: Entry[] = [
   {
     id: "adaptive",
     title: "Adaptive UI",
-    icon: "smartphone",
+    icon: "adaptive",
+    group: "release",
     blurb: "Orientation, window size classes, large screens and foldables.",
     produces: "Manifest orientation locks today; multi-size crawls (600 / 840 dp) are planned.",
     build: adaptiveReport,
@@ -56,7 +62,9 @@ export const AUDITS: Entry[] = [
   {
     id: "platform",
     title: "Platform changes",
-    icon: "cpu",
+    icon: "layers",
+    group: "release",
+    qualifier: "Android 17 · iOS 27",
     blurb: "This year's Android and iOS behavior changes, checked against the app.",
     produces: "Planned: manifest + jadx signals matched to the yearly behavior-change list.",
     build: () => platformReport(),
@@ -64,7 +72,9 @@ export const AUDITS: Entry[] = [
   {
     id: "store",
     title: "Store readiness",
-    icon: "check",
+    icon: "store",
+    group: "release",
+    qualifier: "Play · App Store",
     blurb: "Google Play and App Store requirements, with deadlines.",
     produces: "Planned: target/min SDK from the APK, store listing assets from the crawl.",
     build: storeReport,
@@ -72,7 +82,9 @@ export const AUDITS: Entry[] = [
   {
     id: "security",
     title: "Security",
-    icon: "shield",
+    icon: "security",
+    group: "release",
+    qualifier: "jadx · frida",
     blurb: "Static (jadx), manifest and dynamic (frida) checks.",
     produces: "Planned: `appscreenmap security <run>` with jadx and frida.",
     build: securityReport,
@@ -139,7 +151,7 @@ export function useAudits(run: string, map: AppMapData, showSamples: boolean): L
       const known = new Set(AUDITS.map((a) => a.id));
       const extra: AuditDef[] = (index?.audits ?? [])
         .filter((a) => a?.id && !known.has(a.id))
-        .map((a) => ({ id: a.id, title: a.title ?? a.id, icon: "file", blurb: "", produces: `audits/${a.id}.json` }));
+        .map((a) => ({ id: a.id, title: a.title ?? a.id, icon: "file", group: "release", blurb: "", produces: `audits/${a.id}.json` }));
       const ids = [...AUDITS.map((a) => a.id), ...extra.map((a) => a.id)];
       const [a11y, perf, ...written] = await Promise.all([
         getJson<A11yFile>(runFile(run, "a11y.json")),

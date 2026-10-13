@@ -297,6 +297,7 @@ the rest.
   "status": "pass | warn | fail | info | not_run",
   "score": 61,                                  // 0–100, higher is better; null if the audit doesn't score
   "score_note": "100 minus 20 per error, 8 per warning",
+  "status_label": "Blocked for Play updates",   // optional: a plainer word than the status ("Partial", …)
   "summary": "One sentence for the overview card.",
   "metrics": [ { "label": "exported components", "value": 2, "unit": "", "tone": "good | warn | bad | info",
                  "hint": "…", "sample": false } ],
@@ -317,7 +318,8 @@ the rest.
     "due": "2026-11-01",                        // optional deadline (store or platform), shown on a timeline
     "refs": [ { "title": "…", "url": "https://developer.android.com/…", "publisher": "Android Developers",
                 "date": "2026-10-13" } ],
-    "sample": false                             // placeholder finding inside a real report
+    "sample": false,                            // placeholder finding inside a real report
+    "requirement": "met | due | blocked | upcoming | not_checked"   // optional: a store/platform requirement's state
   } ],
   "refs": [ { "title": "…", "url": "…", "publisher": "…", "date": "…" } ]   // official docs the checks follow
 }

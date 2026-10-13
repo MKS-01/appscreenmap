@@ -59,10 +59,13 @@ export const Loading = () => <div className="empty">Loading…</div>;
 export const ErrorBox = ({ error }: { error: string }) => <div className="error">Couldn't load: {error}</div>;
 
 export function Logo() {
+  // Project mark D, "stacked screens": one screen leading to the next. Colours are tokens; the favicon in
+  // index.html repeats the same shape in hex.
   return (
     <svg className="brand-mark" viewBox="0 0 32 32" aria-hidden>
-      <rect width="32" height="32" rx="8" fill="var(--accent)" />
-      <path d="M8 10h7v12H8zM17 10h7v5h-7zM17 17h7v5h-7z" fill="#fff" />
+      <rect width="32" height="32" rx="8" style={{ fill: "var(--accent)" }} />
+      <rect x="6" y="9" width="11" height="17" rx="2.4" style={{ fill: "var(--bg)", opacity: 0.45 }} />
+      <rect x="15" y="6" width="11" height="17" rx="2.4" style={{ fill: "var(--bg)" }} />
     </svg>
   );
 }
