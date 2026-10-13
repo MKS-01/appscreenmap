@@ -10,6 +10,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from .device import PROBE, build_info, parse_getprop, parse_probe
 from .perf import _TOTAL_RE, parse_am_start, parse_framestats, parse_gfx_summary
 
 _DUMP_PATH = "/sdcard/appscreenmap_dump.xml"
@@ -89,18 +90,17 @@ class AdbDriver:
         return self._size
 
     def info(self) -> dict:
-        w, h = self.screen_size()
-        return {
-            "serial": self.serial,
-            "model": self.prop("ro.product.model"),
-            "manufacturer": self.prop("ro.product.manufacturer"),
-            "android": self.prop("ro.build.version.release"),
-            "sdk": self.prop("ro.build.version.sdk"),
-            "width": w,
-            "height": h,
-            "density": self.density(),
-            "font_scale": self.get_font_scale(),
-        }
+        """Device facts for `run.device` (see `device.build_info`): two shell calls plus the AVD name."""
+        props = parse_getprop(self.shell("getprop"))
+        probe = parse_probe(self.shell(PROBE, timeout=60))
+        avd = None
+        if self.serial.startswith("emulator-") and "ro.boot.qemu.avd_name" not in props:
+            out = self._run(["emu", "avd", "name"], timeout=10, check=False).strip().splitlines()
+            avd = out[0].strip() if out and out[0].strip() != "OK" else None
+        info = build_info(self.serial, props, probe, avd)
+        if info["width"] is None:  # wm failed inside the probe; screen_size raises with the reason
+            info["width"], info["height"] = self.screen_size()
+        return info
 
     def density(self) -> int | None:
         """Screen density in dpi (px per dp = density / 160). Override wins over physical."""

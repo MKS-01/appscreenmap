@@ -10,6 +10,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from .analyzer import jaccard
+from .device import caveats, describe
 from .model import load_map
 
 NEAR_DUPLICATE = 0.6  # screens this similar (same activity) may be one screen split in two
@@ -98,6 +99,8 @@ def build_report(run_dir: str | Path) -> dict:
     return {
         "run": run["id"],
         "status": run.get("status"),
+        "device": describe(run.get("device") or {}),
+        "device_caveats": caveats(run.get("device") or {}),
         "stop_reason": run.get("stop_reason"),
         "steps": steps,
         "elapsed_s": run.get("elapsed_s"),
@@ -125,6 +128,7 @@ def format_report(r: dict) -> str:
             if r["steps_per_screen"]
             else ""
         ),
+        f"  device: {r['device']}",
         f"  effects: {r['effects']}",
         f"  elements: {r['element_status']}",
         f"  events: {r['events']}",
@@ -142,6 +146,9 @@ def format_report(r: dict) -> str:
             "  screens with unexplored elements: "
             + ", ".join(f"{u['id']}({u['pending']})" for u in r["unexplored"])
         )
+    if r["device_caveats"]:
+        lines.append("  device caveats:")
+        lines += [f"    ! {c}" for c in r["device_caveats"]]
     lines.append("  findings:" if r["findings"] else "  findings: none 🎉")
     lines += [f"    • {f}" for f in r["findings"]]
     return "\n".join(lines)

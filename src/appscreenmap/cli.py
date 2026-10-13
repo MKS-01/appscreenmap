@@ -20,6 +20,7 @@ from .a11y import audit_run, format_audit
 from .a11y_report import write_reports
 from .apkinfo import apk_info, find_aapt2
 from .config import CrawlConfig
+from .device import describe
 from .driver import AdbDriver, DriverError
 from .explorer import CrawlAborted, Explorer
 from .export import export_run
@@ -53,12 +54,7 @@ def cmd_doctor(args) -> int:
     for serial in ready:
         d = AdbDriver(serial)
         info = d.info()
-        row(
-            True,
-            f"{serial}",
-            f"{info['manufacturer']} {info['model']}, Android {info['android']} "
-            f"(SDK {info['sdk']}), {info['width']}x{info['height']}",
-        )
+        row(True, f"{serial}", f"{describe(info)}, {info['width']}x{info['height']}")
     aapt2 = find_aapt2()
     row(bool(aapt2), "aapt2 (optional: activity coverage)", aapt2 or "not found in Android SDK build-tools")
     dist = _web_dist()
@@ -143,7 +139,9 @@ def cmd_crawl(args) -> int:
     amap = AppMap(run)
     amap.save(run_dir / "map.json")
     update_index(runs_root)
-    print(f"🗺  mapping {app.get('label')} {app.get('version') or ''} on {run['device']['model']} → {run_dir}")
+    print(
+        f"🗺  mapping {app.get('label')} {app.get('version') or ''} on {run['device']['name']} ({run['device']['type']}) → {run_dir}"
+    )
     print(
         f"   budget: {cfg.max_steps} steps / {cfg.max_minutes:g} min   "
         f"(live view: appscreenmap serve --runs {runs_root})"
