@@ -119,12 +119,12 @@ samples/demo.sh                  # re-run every scenario on your emulator (~25 m
 
 | Command | What it does |
 |---|---|
-| `appscreenmap doctor` | Check adb, connected devices, aapt2, web viewer build |
+| `appscreenmap doctor` | Check adb, connected devices (name, emulator or physical, Android version and skin), aapt2, web viewer build |
 | `appscreenmap crawl --apk app.apk` / `--package id` | Explore the app and write `runs/<project>/<project>-<timestamp>/` |
 | `appscreenmap export runs/<project>/<run-id>` | Regenerate Maestro flows and the Mermaid graph |
 | `appscreenmap a11y runs/<project>/<run-id> [--report]` | WCAG 2.2 checks across the crawl (target size 2.5.8, label in name, focusability, consistency, redundant entry, auth, …). `--report` writes `a11y-report.html` + `.md`: a status for every A/AA criterion, findings with screenshot evidence, and coverage. Both are also written after every crawl. |
 | `appscreenmap perf runs/<project>/<run-id> [--budget 1000]` | Navigation performance: load time per screen (median/p90/max), slowest transitions, janky/frozen frames, cold start |
-| `appscreenmap report runs/<project>/<run-id>` | Health check: wasted taps, near-duplicate screens, navigation failures |
+| `appscreenmap report runs/<project>/<run-id>` | Health check: wasted taps, near-duplicate screens, navigation failures, plus the device the run used and conditions that skew results (emulator, power saver, TalkBack, …) |
 | `appscreenmap diff runs/<base> runs/<candidate>` | Match screens across two runs and diff them: changed pixel regions (brighter/darker) and text added, removed, moved or changed, read from the hierarchy (no OCR) |
 | `appscreenmap verify runs/<project>/<run-id> [--apk new.apk]` | Replay every screen's path on a new build. Exit 1 when a path breaks; failed steps get a screenshot. See [CI](#ci-verify-a-new-build) |
 | `appscreenmap mcp` | Serve the maps to coding agents over MCP. See [Agents](#agents-mcp) |

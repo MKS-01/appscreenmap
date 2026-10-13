@@ -19,6 +19,8 @@ from PIL import Image, ImageDraw
 
 from . import __version__
 from .a11y import RULES, audit_run
+from .device import describe
+from .device import rows as device_rows
 from .model import load_map
 from .wcag import BY_SC, DEVICE_TESTS, LEVEL_ORDER, VIEWER_RULES, criteria_up_to, sc_key
 
@@ -312,8 +314,11 @@ def render_html(model: dict, run_dir: Path) -> str:
             for k, v in [
                 ("App", f"{app.get('label', '')} {app.get('version') or ''}"),
                 ("Package", app.get("package")),
-                ("Device", f"{dev.get('manufacturer', '')} {dev.get('model', '')}"),
-                ("Android", f"{dev.get('android', '?')} (SDK {dev.get('sdk', '?')})"),
+                *[
+                    (k, v)
+                    for k, v in device_rows(dev)
+                    if k in ("Device", "Type", "Android", "Font scale", "Locale", "Dark mode", "TalkBack")
+                ],
                 (
                     "Screen",
                     (
@@ -321,7 +326,6 @@ def render_html(model: dict, run_dir: Path) -> str:
                         f"{dev.get('density') or '~' + str(round(model['audit']['dp_scale'] * 160))} dpi"
                     ),
                 ),
-                ("Font scale", dev.get("font_scale") or "1.0 (assumed)"),
                 ("Run", run.get("id")),
                 ("Screens audited", len(model["screens"])),
             ]
@@ -477,7 +481,7 @@ def render_md(model: dict, run_dir: Path) -> str:
         "",
         (
             f"WCAG 2.2 Level {model['level']} · {app.get('package')} {app.get('version') or ''} · "
-            f"{dev.get('manufacturer', '')} {dev.get('model', '')}, Android {dev.get('android', '?')} · run `{run.get('id')}` · "
+            f"{describe(dev)} · run `{run.get('id')}` · "
             f"generated {model['generated_at']} by {model['tool']}"
         ),
         "",

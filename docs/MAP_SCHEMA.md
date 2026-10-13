@@ -70,7 +70,7 @@ rather than building them. Paths are relative to the run directory.
     "stop_reason": "saturated: no new screen in the last 30 steps … | step budget reached (200) | complete: nothing left to explore | stopped by user | null",
     "error": "only when status = failed",
     "tool": "appscreenmap 0.1.0", "steps": 120, "elapsed_s": 410.5,
-    "app": { … as in index … }, "device": { … }, "config": { /* CrawlConfig */ }
+    "app": { … as in index … }, "device": { … see below … }, "config": { /* CrawlConfig */ }
   },
 
   "screens": [ {
@@ -156,6 +156,68 @@ rather than building them. Paths are relative to the run directory.
   can be hidden by default.
 - Group screens with `variant_of` under their base screen.
 - `kind: external` nodes ("opens Chrome") and `crash` belong at the graph's edge.
+
+### `run.device`
+
+What the run was captured on, read once at the start of the crawl (`appscreenmap verify` writes the same
+object). The flat keys at the top are the original ones and keep their meaning. The rest was added later
+(absent on old runs) and is grouped. Any value can be `null` when the device doesn't report it. Nothing
+personal is recorded: no user-set device name, accounts, IMEI or network names.
+
+```jsonc
+"device": {
+  "serial": "emulator-5554", "model": "SM-S911B", "manufacturer": "samsung",
+  "android": "14", "sdk": "34",                        // strings, from ro.build.version.*
+  "width": 1080, "height": 2340, "density": 420, "font_scale": 1.0,   // as in index (override wins)
+
+  "type": "emulator | physical",                       // AVD, Genymotion and other virtual devices are "emulator"
+  "name": "Samsung SM-S911B",                          // display name: marketing name (ro.product.marketname …) or
+                                                       // manufacturer + model; "Android Emulator (Pixel_8_API_37)"
+  "brand": "samsung", "codename": "dm1q", "product": "dm1qxxx",
+  "avd": "Pixel_8_API_37",                             // emulator only, else null
+  "form_factor": "phone | tablet | foldable | tv | watch | automotive",
+  "connection": "usb | wifi | emulator",
+  "os": {
+    "release": "14", "sdk": 34,                        // sdk as a number here
+    "codename": "REL",                                 // anything else = preview build
+    "preview_sdk": null,
+    "skin": "One UI 6.1",                              // One UI, HyperOS, MIUI, ColorOS, OxygenOS, EMUI, HarmonyOS,
+                                                       // realme UI, Funtouch/OriginOS; null on stock Android
+    "security_patch": "2024-09-01", "build_id": "UP1A.231005.007", "incremental": "S911BXXS3BXI1",
+    "build_type": "user | userdebug | eng", "build_tags": "release-keys",
+    "fingerprint": "samsung/dm1qxxx/dm1q:14/…", "kernel": "5.15.123-android14"
+  },
+  "hardware": {
+    "abi": "arm64-v8a", "abis": ["arm64-v8a", "armeabi-v7a"],
+    "soc": "QTI SM8550",                               // ro.soc.* (Android 12+), else chip name / board platform
+    "hardware": "qcom", "ram_mb": 7841, "storage_free_mb": 92617
+  },
+  "display": {
+    "width": 1080, "height": 2340, "physical_width": 1080, "physical_height": 2340,
+    "density": 420, "physical_density": 420,
+    "width_dp": 411, "height_dp": 891, "smallest_width_dp": 411,
+    "window_class": "compact | medium | expanded"      // width < 600 dp ≤ medium < 840 dp ≤ expanded
+  },
+  "settings": {                                        // device settings during the crawl
+    "locale": "en-GB", "timezone": "Europe/London",
+    "dark_mode": false,                                // null = auto / custom schedule
+    "font_scale": 1.0, "bold_text": false, "high_contrast_text": false, "color_inversion": null,
+    "animator_scale": 1.0,                             // before the crawl turned animations off
+    "navigation": "gesture | 2-button | 3-button",
+    "talkback": false, "accessibility_services": ["com.google.android.marvin.talkback/.TalkBackService"],
+    "power_saver": false, "airplane_mode": false,
+    "battery": 87, "charging": true
+  },
+  "software": {
+    "webview": "com.google.android.webview 141.0.7390.43",
+    "play_services": "25.38.32"                       // null when Google Play services is absent
+  }
+}
+```
+
+`runs/index.json` rows carry the same object. `appscreenmap report` prints a one-line summary and
+**device caveats**: conditions that change what the numbers mean (emulator, power saver, low battery,
+TalkBack on, font scale, dark mode, airplane mode, preview build, low storage).
 
 ## `perf.json`
 
