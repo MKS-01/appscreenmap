@@ -11,7 +11,8 @@ cd web && bun install && cd ..            # web viewer (Bun, not npm)
 ```
 
 You don't need a device to develop: the crawler's tests run on synthetic hierarchies and a fake device.
-To try a real crawl you need `adb` and an emulator (`uv run appscreenmap doctor` checks).
+To try a real crawl you need `adb` and an Android emulator, or on macOS a booted iOS Simulator with `idb`
+(`uv run appscreenmap doctor` checks both). The [sample apps](samples/README.md) are the easiest targets.
 
 ## Before you open a PR
 
@@ -27,10 +28,13 @@ CI runs the same checks.
 
 | Area | Path | Notes |
 |---|---|---|
-| Crawler (Python) | `src/appscreenmap/` | Driver → analyzer → explorer → model → export/report → CLI |
+| Crawler (Python) | `src/appscreenmap/` | Drivers (Android, iOS Simulator) → analyzer → explorer → model → export/report → CLI |
 | Web viewer | `web/` | React + TypeScript + Vite. UI rules: [`web/DESIGN.md`](web/DESIGN.md) |
+| Design tokens | `design/tokens.css` | Colour, type, space and motion shared by the viewer and the HTML reports |
 | Data contract | `docs/MAP_SCHEMA.md` | `map.json` is the interface between crawler and viewer |
+| Setup and architecture | `docs/SETUP.md`, `docs/ARCHITECTURE.md` | Commands, platforms, how the crawl works |
 | Design and roadmap | `docs/PLAN.md` | |
+| Sample apps | `samples/` | Playground and DuskRead, with `demo.sh` to crawl them |
 
 ## Ground rules
 
@@ -40,12 +44,12 @@ CI runs the same checks.
   re-crawl a real app.
 - **The crawl must stay inside the target app.** Don't add recovery that presses BACK out of the app or opens
   other apps.
-- **UI changes follow the design system:** tokens in `web/src/tokens.css`, components and motion rules in
-  `web/DESIGN.md`, live reference at `#/design`. Check light and dark, 1400 px and 390 px wide.
+- **UI changes follow the design system:** tokens in `design/tokens.css` (never a hard-coded colour), components
+  and motion rules in `web/DESIGN.md`, live reference at `#/design`. The viewer is dark only; check 1400 px and
+  390 px wide.
 - **Don't commit secrets or private app data.** Crawls record text typed into forms and screenshots of whatever
-  the app shows. Review `runs/` before committing a new sample, and use throwaway test accounts.
-- Sample runs in `runs/` are for the app this repo ships maps of. Don't add runs of apps you don't have the
-  right to publish screenshots of.
+  the app shows. Use throwaway test accounts. `runs/` is git-ignored; keep it that way, and don't
+  share a run of an app you don't have the right to publish screenshots of.
 
 ## Commits and PRs
 
@@ -54,8 +58,8 @@ user-visible change first. For larger features, open an issue to discuss the app
 
 ## Reporting bugs and ideas
 
-Use the issue templates. For crawl problems, include the Android version, the emulator or device, the
-`appscreenmap --version`, and the output of `appscreenmap report <run>` if you have a run.
+Use the issue templates. For crawl problems, include the platform (Android or iOS Simulator) and its OS version,
+the emulator or device, the `appscreenmap --version`, and the output of `appscreenmap report <run>` if you have a run.
 
 ## Security
 

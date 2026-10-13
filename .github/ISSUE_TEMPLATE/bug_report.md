@@ -14,7 +14,7 @@ labels: bug
 **Environment**
 - `appscreenmap --version`:
 - OS:
-- Android version / emulator or device:
+- Platform and version (Android or iOS Simulator), emulator or device:
 - App (package, version), if it's public:
 
 **Evidence**
