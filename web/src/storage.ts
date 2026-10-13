@@ -13,6 +13,7 @@ export const keys = {
   screensPrefs: "prefs:screens",
   detailPrefs: "prefs:detail",
   a11yPrefs: "prefs:a11y",
+  insightsPrefs: "prefs:insights",
   positions: (run: string, dir: string) => `run:${run}:positions:${dir}`,
   notesFallback: (run: string) => `run:${run}:notes`,
 };

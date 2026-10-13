@@ -334,7 +334,46 @@ on all of them. They complement each other. What to adopt:
 Not adopting: Lens design variants (a different product), TV/Electron targets (out of scope for now), and
 telemetry (AppScreenMap sends nothing; keep it that way).
 
-## 9. Known limits (v1)
+## 9. Todo
+
+Next features, first batch. Unchecked means not started; the open questions need a decision before design.
+
+- [ ] **Run history and versions.** Several runs of one app should read as a history, with the latest shown
+  first. Open: how runs group (by package, by version, by device), and whether the viewer defaults to the
+  newest run per project with older ones behind a history list. Touches `runs/index.json` and the Runs view
+  (`web/`).
+- [ ] **Adaptive UI review and guidelines.** Check how screens adapt across window sizes and
+  orientations (phone, tablet, foldable; compact / medium / expanded width classes) against Android's
+  adaptive-layout guidance. Likely builds on the condition matrix in §8.2 (landscape, display size).
+  Open: which guidelines to encode as checks, and whether findings sit with the Accessibility tab or get
+  their own.
+- [x] **Better Insights.** ✅ viewer: Insights is now an audit framework (`web/src/insights/`). Every audit uses
+  one report shape: score, metrics, declarative charts, findings with severity, platform, deadline and official
+  refs. Any tool can add or replace an audit by writing `audits/<id>.json` into the run folder (`docs/MAP_SCHEMA.md`).
+  Built from real run data: crawl coverage, stability, accessibility (a11y.json), performance (perf.json).
+  Overview: an audit card per audit, findings by audit, a store/platform deadline timeline, run history (small
+  multiples) and the device/OS strip. Official sources live in one catalogue (`web/src/insights/sources.ts`).
+- [ ] **Audits that still show sample data** (labelled "sample data" in the viewer; "Show sample audits" hides them):
+  - **Adaptive UI.** Real today: manifest orientation locks and the crawl's window class. Next: crawl at 600
+    and 840 dp (resizable emulator or tablet AVD), then check layouts per window size class.
+  - **Platform changes.** Each year's Android behavior changes (now Android 17, API 37) and iOS device changes,
+    matched against what the app uses (manifest permissions, APIs it references).
+  - **Store readiness.** Read target/min SDK from the APK (`aapt2`), check Google Play's target API deadline
+    and App Store build SDK and screenshot requirements. Crawl screenshots can seed store screenshots.
+  - **Security.** `appscreenmap security <run>`: jadx static scan (secrets, WebView, reflection), manifest
+    review (exported components, cleartext, backup), frida dynamic checks (pinning, root detection).
+  - Each one ships by writing `audits/<id>.json` from the crawler; the viewer's sample builder is then deleted.
+  - Yearly upkeep: after each Android / iOS release and store policy update, refresh `sources.ts` and the
+    platform and store checks.
+- [ ] **Device and OS details.** Show where each run and each screenshot was captured: model, manufacturer,
+  Android version and SDK, resolution, density, font scale. ✅ crawler: `run.device` now records device type
+  (emulator / physical), display name, brand, AVD name, form factor, OS build and vendor skin, hardware,
+  display in dp and window class, the settings that change what an app shows, WebView and Play services
+  (`device.py`, documented in `docs/MAP_SCHEMA.md`); `report` prints it with device caveats. Open: a Device
+  section in the viewer (`web/`), and per-screenshot capture once locale or condition runs exist (one run,
+  several captures).
+
+## 10. Known limits (v1)
 
 - About 3 s per step with plain `uiautomator dump`; a 300-step crawl takes ~15 min.
 - Canvas/game UIs and custom-drawn views expose no hierarchy, so they can't be explored
