@@ -114,6 +114,10 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
 
   const [patternFilter, setPatternFilter] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  // Narrow toolbar: everything but layout and search folds behind an Options button.
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const changedOptions =
+    (variant !== "story" ? +(direction !== "auto") + +(links !== "paths") + +showLabels : 0) + +!showExternal + +!!patternFilter;
   const [selected, setSelected] = useState<string | null>(focus ?? null);
   const { notes } = useNotes(run);
 
@@ -139,6 +143,15 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
   const filtering = !!patternFilter || !!q;
 
   const sel = selected ? byId.get(selected) : undefined;
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof Element && e.target.closest("input, select, textarea");
+      if (e.key === "Escape" && !typing) setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
   const extraLinks = map.transitions.filter((t) => t.from !== t.to && tree.parent.get(t.to) !== t.from).length;
 
   return (
@@ -154,11 +167,13 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
                 className={variant === v.id ? "on" : ""}
                 onClick={() => set("variant", v.id)}
                 title={v.hint}
+                aria-label={v.label}
               >
-                <Icon name={v.icon} size={14} /> {v.label}
+                <Icon name={v.icon} size={14} /> <span className="seg-label">{v.label}</span>
               </button>
             ))}
           </div>
+          <div id="map-options" className={`map-options ${optionsOpen ? "open" : ""}`}>
           {variant !== "story" && (
             <>
               <div className="seg" role="radiogroup" aria-label="Direction">
@@ -201,8 +216,7 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
             <input type="checkbox" checked={showExternal} onChange={(e) => set("showExternal", e.target.checked)} /> External apps
           </label>
           <div className="grow" />
-          <input type="search" placeholder="Find screen…" aria-label="Find screen" value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 150, padding: "3px 8px" }} />
-          <select aria-label="Highlight a UI pattern" value={patternFilter ?? ""} onChange={(e) => setPatternFilter(e.target.value || null)} style={{ padding: "3px 8px" }}>
+          <select aria-label="Highlight a UI pattern" value={patternFilter ?? ""} onChange={(e) => setPatternFilter(e.target.value || null)}>
             <option value="">All patterns</option>
             {patterns.map((p) => (
               <option key={p} value={p}>
@@ -210,6 +224,21 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
               </option>
             ))}
           </select>
+          </div>
+          <input type="search" placeholder="Find screen…" aria-label="Find screen" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <button
+            className={`btn map-options-toggle ${optionsOpen ? "on" : ""}`}
+            aria-expanded={optionsOpen}
+            aria-controls="map-options"
+            onClick={() => setOptionsOpen((o) => !o)}
+          >
+            <Icon name="sliders" size={14} /> Options
+            {changedOptions > 0 && (
+              <span className="count-badge" aria-label={`${changedOptions} changed`}>
+                {changedOptions}
+              </span>
+            )}
+          </button>
         </div>
 
         {variant === "story" ? (
@@ -233,9 +262,9 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
           />
         )}
       </div>
-      <aside className="map-side">
+      <aside className={`map-side ${sel ? "open" : ""}`} aria-label={sel ? `Screen ${sel.title}` : "Map overview"}>
         {sel ? (
-          <SidePanel run={run} map={map} screen={sel} byId={byId} note={notes[sel.id]} />
+          <SidePanel run={run} map={map} screen={sel} byId={byId} note={notes[sel.id]} onClose={() => setSelected(null)} />
         ) : (
           <div className="col" style={{ gap: 14 }}>
             <h2>{map.run.app.label ?? map.run.app.package}</h2>
@@ -547,18 +576,23 @@ function SidePanel({
   screen,
   byId,
   note,
+  onClose,
 }: {
   run: string;
   map: AppMapData;
   screen: Screen;
   byId: Map<string, Screen>;
   note?: ScreenNote;
+  onClose: () => void;
 }) {
   const out = map.transitions.filter((t) => t.from === screen.id);
   const into = map.transitions.filter((t) => t.to === screen.id);
   return (
     <div className="col" style={{ gap: 14 }}>
-      <div className="row" style={{ alignItems: "flex-start", gap: 12 }}>
+      <div className="row side-head" style={{ alignItems: "flex-start", gap: 12 }}>
+        <button className="btn icon-only side-close" onClick={onClose} aria-label="Close screen details" title="Close (Esc)">
+          <Icon name="x" size={16} />
+        </button>
         <Thumb run={run} screen={screen} className="side-thumb" />
         <div className="col grow" style={{ gap: 4 }}>
           <h2>{screen.title}</h2>
@@ -625,20 +659,16 @@ function SidePanel({
 function EdgeList({ run, items }: { run: string; items: (readonly [string, Screen | undefined, number])[] }) {
   if (!items.length) return <div className="small muted">none</div>;
   return (
-    <table className="tbl">
-      <tbody>
-        {items.map(([label, s, n], i) => (
-          <tr key={i}>
-            <td className="ellipsis" style={{ maxWidth: 120 }} title={label}>
-              {label}
-            </td>
-            <td className="ellipsis" style={{ maxWidth: 140 }}>
-              <ScreenLink run={run} screen={s} />
-            </td>
-            <td className="faint small">{n > 1 ? `×${n}` : ""}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <ul className="edge-list">
+      {items.map(([label, s, n], i) => (
+        <li key={i}>
+          <span className="edge-label">{label}</span>
+          <span className="edge-to">
+            → <ScreenLink run={run} screen={s} />
+          </span>
+          {n > 1 && <span className="edge-n faint small" title={`Taken ${n} times`}>×{n}</span>}
+        </li>
+      ))}
+    </ul>
   );
 }

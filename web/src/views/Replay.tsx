@@ -178,7 +178,7 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
           </div>
         </div>
 
-        <div className="panel">
+        <div className="panel steps-panel">
           <div className="row" style={{ padding: "12px 12px 8px" }}>
             <h3 className="grow">All steps</h3>
             <span className="small muted">{rows.length}</span>

@@ -53,6 +53,8 @@ button {
 
 /* ── shell ─────────────────────────────────────────────────────────────── */
 .app {
+  /* topbar (52) + tabs (44): what sits above .main. Panels that fit the viewport subtract it. */
+  --chrome-h: 96px;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -298,6 +300,10 @@ button.chip:active,
   opacity: 0.45;
   cursor: default;
 }
+.btn.icon-only {
+  padding: 5px;
+  color: var(--muted);
+}
 .seg {
   display: inline-flex;
   border: 1px solid var(--border);
@@ -330,9 +336,33 @@ select {
   padding: 6px 10px;
   outline: none;
 }
+select {
+  appearance: none;
+  padding-right: 28px;
+  cursor: pointer;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  /* chevron from two gradients, so it follows --muted in light and dark */
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    right 14px center,
+    right 9px center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+select:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
 input[type="search"]:focus,
 select:focus {
   border-color: var(--accent);
+}
+select:focus-visible,
+input[type="search"]:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 label.check {
   display: inline-flex;
@@ -520,6 +550,8 @@ pre.code {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  /* the toolbar adapts to its own width (window minus side panel), not the window's */
+  container: map-main / inline-size;
 }
 .map-toolbar {
   display: flex;
@@ -541,12 +573,128 @@ pre.code {
   flex-wrap: wrap;
 }
 .map-side {
-  width: 320px;
+  width: clamp(320px, 24vw, 400px);
   flex-shrink: 0;
   border-left: 1px solid var(--border);
   background: var(--panel);
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 16px;
+}
+.side-head {
+  position: relative;
+}
+.side-head h2 {
+  padding-right: 28px;
+  overflow-wrap: anywhere;
+}
+.side-close {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+}
+.edge-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+.edge-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+.edge-list li:last-child {
+  border-bottom: 0;
+}
+.edge-list .edge-label {
+  overflow-wrap: anywhere;
+}
+.edge-list .edge-to {
+  grid-column: 1;
+  color: var(--muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.edge-list .edge-n {
+  grid-column: 2;
+  grid-row: 1;
+}
+.map-toolbar select,
+.map-toolbar input[type="search"] {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.map-toolbar input[type="search"] {
+  flex: 0 1 160px;
+  min-width: 96px;
+  order: 1;
+}
+/* Wide: the options sit inline in the toolbar, pattern filter last. */
+.map-options {
+  display: contents;
+}
+.map-options select {
+  order: 2;
+}
+.map-options-toggle {
+  display: none;
+  order: 2;
+}
+.map-options-toggle.on {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-color: transparent;
+}
+.count-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+/* Short of room for every label: the layout buttons go icon-only. */
+@container map-main (max-width: 1040px) {
+  .variant-seg .seg-label {
+    display: none;
+  }
+}
+/* Short of room for one row: layout, search and Options; the rest opens in a row below. */
+@container map-main (max-width: 900px) {
+  .map-toolbar {
+    gap: 8px;
+  }
+  .map-toolbar input[type="search"] {
+    flex: 1 1 120px;
+  }
+  .map-options-toggle {
+    display: inline-flex;
+  }
+  .map-options {
+    display: none;
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .map-options.open {
+    display: flex;
+  }
+  .map-options .grow {
+    display: none;
+  }
 }
 .snode {
   width: var(--w);
@@ -646,10 +794,13 @@ pre.code {
 }
 .shot-wrap {
   position: sticky;
-  top: 0;
+  top: 16px;
 }
 .shot {
   position: relative;
+  /* as wide as the column, but never taller than the viewport (--ar = width / height of the screenshot) */
+  width: min(100%, max(220px, (100dvh - var(--chrome-h) - 170px) * var(--ar, 0.45)));
+  margin: 0 auto;
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -758,7 +909,8 @@ pre.code {
   padding: 24px;
 }
 .stage .phone {
-  width: 220px;
+  /* fit before → after in a short window: frame height ≈ viewport minus controls and captions (9:20 phone) */
+  width: clamp(130px, (100dvh - var(--chrome-h) - 330px) * 0.45, 220px);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -817,9 +969,21 @@ pre.code {
   width: 100%;
   accent-color: var(--accent);
 }
+.steps-panel {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  /* fits below the page title before scrolling (title block ≈ 90px, 20px bottom gap), then sticks */
+  max-height: calc(100dvh - var(--chrome-h) - 110px);
+  min-height: 320px;
+}
 .steps {
-  max-height: calc(100vh - 220px);
+  flex: 1;
+  min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--border);
 }
 .steprow {
   display: grid;
@@ -1009,8 +1173,28 @@ pre.code {
     position: static;
     max-width: 360px;
   }
+  /* No room for a column: the selected screen opens as a bottom sheet over the canvas. */
   .map-side {
     display: none;
+  }
+  .map-side.open {
+    display: block;
+    position: absolute;
+    z-index: 20;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 60%;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -8px 24px rgb(0 0 0 / 0.18);
+    animation: sheet-in var(--dur-ui) var(--ease-out);
+  }
+  .steps-panel {
+    position: static;
+    max-height: 60dvh;
   }
   .pipeline {
     grid-template-columns: 1fr 1fr;
@@ -2087,6 +2271,13 @@ a.use-card:active {
   font-weight: 500;
   font-size: 13px;
 }
+.cmd-text {
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--panel-2);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
 .cmd-row code {
   padding: 3px 8px;
   border-radius: 6px;
@@ -2147,9 +2338,16 @@ a.use-card:active {
 }
 
 /* Motion is decoration here: keep fades for comprehension, drop movement. */
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .stage-swap,
-  .stagger {
+  .stagger,
+  .map-side.open {
     animation: fade 200ms ease both;
   }
   .mini-tap,

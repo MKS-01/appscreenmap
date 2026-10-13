@@ -67,7 +67,7 @@ export default function Compare({ run, map, base }: { run: string; map: AppMapDa
 function Cmd({ text }: { text: string }) {
   return (
     <div className="row">
-      <code className="grow ellipsis" style={{ padding: "6px 10px", background: "var(--panel-2)", borderRadius: 6 }}>
+      <code className="grow cmd-text">
         {text}
       </code>
       <CopyButton text={text} />
