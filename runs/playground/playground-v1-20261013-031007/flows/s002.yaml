@@ -1,0 +1,16 @@
+# AppScreenMap: reach s002 — Discover
+# Generated from run playground-v1-20261013-031007
+# Needs: maestro test -e APP_PASSWORD=…
+appId: dev.appscreenmap.playground
+---
+- launchApp:
+    stopApp: true
+- tapOn: { id: "email" }
+- inputText: "demo@playground.dev"
+- tapOn: { id: "password" }
+- inputText: "${APP_PASSWORD}"
+- hideKeyboard
+# on s001: click 'Sign in'
+- tapOn: { id: "sign_in" }
+- assertVisible: { id: "tab_search" }
+- takeScreenshot: s002

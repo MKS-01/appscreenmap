@@ -1,0 +1,1814 @@
+{
+ "schema": 1,
+ "run": "playground-v1-20261013-031007",
+ "standard": "WCAG 2.2",
+ "dp_scale": 2.625,
+ "density_exact": true,
+ "font_scale": 1.0,
+ "rules": {
+  "target-size-min": {
+   "sc": "2.5.8",
+   "name": "Target Size (Minimum)",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "error",
+   "why": "A tappable target is smaller than 24×24 dp and too close to another target (the 24 dp spacing circles overlap).",
+   "fix": "Make the target at least 24×24 dp (48×48 dp is Android's guideline), or space targets so 24 dp circles around each don't overlap. Compose: Modifier.minimumInteractiveComponentSize().",
+   "native_note": ""
+  },
+  "label-in-name": {
+   "sc": "2.5.3",
+   "name": "Label in Name",
+   "level": "A",
+   "kind": "automated",
+   "severity": "warning",
+   "why": "The control shows text, but its accessible name (content description) doesn't contain it. Voice-control users say what they see, and it won't match.",
+   "fix": "Start the content description with the visible text, or remove it so the visible text is used.",
+   "native_note": ""
+  },
+  "not-focusable": {
+   "sc": "2.1.1",
+   "name": "Keyboard",
+   "level": "A",
+   "kind": "automated",
+   "severity": "warning",
+   "why": "The control is clickable but not focusable, so keyboard and switch-access users can't reach it.",
+   "fix": "Make it focusable (android:focusable / Compose clickable or focusable modifiers).",
+   "native_note": ""
+  },
+  "no-role": {
+   "sc": "4.1.2",
+   "name": "Name, Role, Value",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "why": "A clickable generic View exposes no role, so TalkBack doesn't say it's a button, tab, or switch.",
+   "fix": "Use a real widget, or set the role: Modifier.semantics { role = Role.Button } / AccessibilityNodeInfo.setClassName.",
+   "native_note": ""
+  },
+  "screen-title": {
+   "sc": "2.4.2",
+   "name": "Page Titled",
+   "level": "A",
+   "kind": "review",
+   "severity": "info",
+   "why": "No title could be found for this screen, so a screen-reader user may not know where they are.",
+   "fix": "Give each screen a title: activity title, toolbar title, or accessibilityPaneTitle / Modifier.semantics { paneTitle = … } for fragments and Compose destinations.",
+   "native_note": ""
+  },
+  "nav-inconsistent": {
+   "sc": "3.2.3",
+   "name": "Consistent Navigation",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "why": "The bottom navigation differs in order or content between screens.",
+   "fix": "Keep repeated navigation in the same relative order on every screen.",
+   "native_note": "Written for sets of web pages; WCAG2ICT and EN 301 549 don't require it for a single native app, so treat it as strong best practice there."
+  },
+  "identification-inconsistent": {
+   "sc": "3.2.4",
+   "name": "Consistent Identification",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "why": "The same control (same resource id) is labelled differently on different screens.",
+   "fix": "Use the same label for the same function everywhere.",
+   "native_note": "Written for sets of web pages; WCAG2ICT and EN 301 549 don't require it for a single native app, so treat it as strong best practice there."
+  },
+  "help-inconsistent": {
+   "sc": "3.2.6",
+   "name": "Consistent Help",
+   "level": "A",
+   "kind": "automated",
+   "severity": "warning",
+   "why": "A help/support/contact entry appears on several screens, but not in the same relative place.",
+   "fix": "Put repeated help mechanisms in the same relative order on every screen.",
+   "native_note": "Written for sets of web pages; WCAG2ICT and EN 301 549 don't require it for a single native app, so treat it as strong best practice there."
+  },
+  "redundant-entry": {
+   "sc": "3.3.7",
+   "name": "Redundant Entry",
+   "level": "A",
+   "kind": "review",
+   "severity": "warning",
+   "why": "The same information was typed on more than one screen of one flow.",
+   "fix": "Auto-fill information the user already gave, or let them select it.",
+   "native_note": ""
+  },
+  "auth-cognitive": {
+   "sc": "3.3.8",
+   "name": "Accessible Authentication (Minimum)",
+   "level": "AA",
+   "kind": "review",
+   "severity": "warning",
+   "why": "This screen asks for a password, code, or puzzle. Authentication must not depend on a cognitive test unless paste, password managers, or another method are supported.",
+   "fix": "Allow paste and autofill (autofillHints password/username/oneTimeCode), offer passkeys or email links, and avoid text CAPTCHAs.",
+   "native_note": ""
+  },
+  "dragging": {
+   "sc": "2.5.7",
+   "name": "Dragging Movements",
+   "level": "AA",
+   "kind": "review",
+   "severity": "warning",
+   "why": "A slider, drag handle, or swipe-only control needs a single-tap alternative.",
+   "fix": "Add buttons (e.g. +/−, move up/down) or accessibility custom actions for anything done by dragging.",
+   "native_note": ""
+  },
+  "focus-obscured": {
+   "sc": "2.4.11",
+   "name": "Focus Not Obscured (Minimum)",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "why": "A focusable control sits completely under a sticky bar or floating button, so it is hidden when it gets focus.",
+   "fix": "Add bottom padding/insets to scrolling content equal to the sticky bar's height, or scroll focused items into the visible area.",
+   "native_note": ""
+  },
+  "orientation-locked": {
+   "sc": "1.3.4",
+   "name": "Orientation",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "why": "The activity is locked to one orientation in the manifest.",
+   "fix": "Remove android:screenOrientation unless an orientation is essential (e.g. a piano app).",
+   "native_note": ""
+  },
+  "text-truncated": {
+   "sc": "1.4.4",
+   "name": "Resize Text",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "why": "Text is cut off with an ellipsis. At larger font sizes this usually means lost content.",
+   "fix": "Let text wrap (no maxLines/ellipsize on important text), use sp, and test at 200% font scale.",
+   "native_note": ""
+  },
+  "change-on-input": {
+   "sc": "3.2.2",
+   "name": "On Input",
+   "level": "A",
+   "kind": "automated",
+   "severity": "error",
+   "why": "Typing into a field changed the screen without the user asking for it.",
+   "fix": "Only navigate on an explicit action (a submit button), or warn users before it happens.",
+   "native_note": ""
+  },
+  "image-alt": {
+   "sc": "1.1.1",
+   "name": "Non-text Content",
+   "level": "A",
+   "kind": "review",
+   "severity": "info",
+   "why": "A sizeable image has no text alternative. Fine if decorative; otherwise it needs one.",
+   "fix": "Set contentDescription for meaningful images, and null / importantForAccessibility=no for decorative ones.",
+   "native_note": ""
+  }
+ },
+ "summary": {
+  "issues": 81,
+  "by_level": {
+   "A": 72,
+   "AA": 9
+  },
+  "by_kind": {
+   "automated": 77,
+   "review": 4
+  },
+  "by_criterion": {
+   "1.3.4 Orientation": 1,
+   "2.5.7 Dragging Movements": 1,
+   "2.5.8 Target Size (Minimum)": 1,
+   "3.2.3 Consistent Navigation": 3,
+   "3.2.4 Consistent Identification": 2,
+   "3.3.7 Redundant Entry": 2,
+   "3.3.8 Accessible Authentication (Minimum)": 1,
+   "4.1.2 Name, Role, Value": 70
+  },
+  "open": 81
+ },
+ "issues": [
+  {
+   "key": "app::orientation-locked::screen::ScannerActivity::0,0",
+   "screen": "app",
+   "rule": "orientation-locked",
+   "sc": "1.3.4",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "label": "ScannerActivity",
+   "detail": "dev.appscreenmap.playground.ScannerActivity is locked to portrait",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s011::dragging::text_size_slider::text_size_slider::27,531",
+   "screen": "s011",
+   "rule": "dragging",
+   "sc": "2.5.7",
+   "level": "AA",
+   "kind": "review",
+   "severity": "warning",
+   "label": "text_size_slider",
+   "detail": "slider: check there is a non-drag way to set the value",
+   "bounds": [
+    27,
+    531,
+    1053,
+    647
+   ],
+   "rid": "text_size_slider",
+   "class": "android.widget.SeekBar",
+   "triage": "open"
+  },
+  {
+   "key": "s002::target-size-min::article_card::article_card::42,2098",
+   "screen": "s002",
+   "rule": "target-size-min",
+   "sc": "2.5.8",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "error",
+   "label": "article_card",
+   "detail": "379×11 dp, within 24 dp spacing of 2 other target(s)",
+   "bounds": [
+    42,
+    2098,
+    1038,
+    2127
+   ],
+   "rid": "article_card",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s003::nav-inconsistent::screen::bottom navigation::0,0",
+   "screen": "s003",
+   "rule": "nav-inconsistent",
+   "sc": "3.2.3",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "label": "bottom navigation",
+   "detail": "missing ['search'] vs. most screens: ['search', 'library', 'profile']",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s007::nav-inconsistent::screen::bottom navigation::0,0",
+   "screen": "s007",
+   "rule": "nav-inconsistent",
+   "sc": "3.2.3",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "label": "bottom navigation",
+   "detail": "missing ['library'] vs. most screens: ['search', 'library', 'profile']",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s008::nav-inconsistent::screen::bottom navigation::0,0",
+   "screen": "s008",
+   "rule": "nav-inconsistent",
+   "sc": "3.2.3",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "label": "bottom navigation",
+   "detail": "missing ['profile'] vs. most screens: ['search', 'library', 'profile']",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s002::identification-inconsistent::article_card::article_card::0,0",
+   "screen": "s002",
+   "rule": "identification-inconsistent",
+   "sc": "3.2.4",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "label": "article_card",
+   "detail": "labelled “# min read / share” on s002; “article_card” on s002; “a slow screen is a bug, even when it wor” on s002; “a##y.example” on s002; “the long title that does not fit on a si” on s002",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "article_card",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s009::identification-inconsistent::primary_action::primary_action::0,0",
+   "screen": "s009",
+   "rule": "identification-inconsistent",
+   "sc": "3.2.4",
+   "level": "AA",
+   "kind": "automated",
+   "severity": "warning",
+   "label": "primary_action",
+   "detail": "labelled “save” on s009; “submit” on s016",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "primary_action",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s006::redundant-entry::screen::Email::0,0",
+   "screen": "s006",
+   "rule": "redundant-entry",
+   "sc": "3.3.7",
+   "level": "A",
+   "kind": "review",
+   "severity": "warning",
+   "label": "Email",
+   "detail": "also typed on s001 earlier in the path to s006",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s009::redundant-entry::screen::Email::0,0",
+   "screen": "s009",
+   "rule": "redundant-entry",
+   "sc": "3.3.7",
+   "level": "A",
+   "kind": "review",
+   "severity": "warning",
+   "label": "Email",
+   "detail": "also typed on s001 earlier in the path to s009",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s001::auth-cognitive::screen::Welcome back::0,0",
+   "screen": "s001",
+   "rule": "auth-cognitive",
+   "sc": "3.3.8",
+   "level": "AA",
+   "kind": "review",
+   "severity": "warning",
+   "label": "Welcome back",
+   "detail": "password field: check paste/autofill and alternatives",
+   "bounds": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "rid": "",
+   "class": "",
+   "triage": "open"
+  },
+  {
+   "key": "s001::no-role::forgot_password::Forgot password?::53,1148",
+   "screen": "s001",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Forgot password?",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    1148,
+    410,
+    1274
+   ],
+   "rid": "forgot_password",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s001::no-role::guest::Continue as guest::53,1306",
+   "screen": "s001",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Continue as guest",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    1306,
+    413,
+    1432
+   ],
+   "rid": "guest",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s001::no-role::sign_in::Sign in::53,990",
+   "screen": "s001",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Sign in",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    990,
+    1027,
+    1116
+   ],
+   "rid": "sign_in",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::article_card::a11y.example Label in name: say what you see 2 min read::42,1792",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "a11y.example Label in name: say what you see 2 min read",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    42,
+    1792,
+    1038,
+    2066
+   ],
+   "rid": "article_card",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::article_card::article_card::42,2098",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "article_card",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    42,
+    2098,
+    1038,
+    2127
+   ],
+   "rid": "article_card",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::article_card::design.example Touch targets: 24 dp is the floor, 48 dp is t::42,1180",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "design.example Touch targets: 24 dp is the floor, 48 dp is t",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    42,
+    1180,
+    1038,
+    1454
+   ],
+   "rid": "article_card",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::article_card::notes.example Why every screen should have a title 4 min rea::42,874",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "notes.example Why every screen should have a title 4 min rea",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    42,
+    874,
+    1038,
+    1148
+   ],
+   "rid": "article_card",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::article_card::perf.example A slow screen is a bug, even when it works 6 mi::42,1486",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "perf.example A slow screen is a bug, even when it works 6 mi",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    42,
+    1486,
+    1038,
+    1760
+   ],
+   "rid": "article_card",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::article_card::playground.dev Getting started with the Playground 3 min rea::42,568",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "playground.dev Getting started with the Playground 3 min rea",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    42,
+    568,
+    1038,
+    842
+   ],
+   "rid": "article_card",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::bookmark::bookmark::838,1017",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "bookmark",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    838,
+    1017,
+    907,
+    1143
+   ],
+   "rid": "bookmark",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::bookmark::bookmark::838,1323",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "bookmark",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    838,
+    1323,
+    907,
+    1449
+   ],
+   "rid": "bookmark",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::bookmark::bookmark::838,1629",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "bookmark",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    838,
+    1629,
+    907,
+    1755
+   ],
+   "rid": "bookmark",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::bookmark::bookmark::838,1935",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "bookmark",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    838,
+    1935,
+    907,
+    2061
+   ],
+   "rid": "bookmark",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::bookmark::bookmark::838,711",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "bookmark",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    838,
+    711,
+    907,
+    837
+   ],
+   "rid": "bookmark",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::help::Help::944,264",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Help",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    944,
+    264,
+    1070,
+    390
+   ],
+   "rid": "help",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::open_gallery::Gallery::319,411",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Gallery",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    319,
+    411,
+    560,
+    537
+   ],
+   "rid": "open_gallery",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::open_reports::Reports::42,411",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Reports",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    42,
+    411,
+    298,
+    537
+   ],
+   "rid": "open_reports",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::tab_library::Library::551,2127",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Library",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    551,
+    2127,
+    805,
+    2337
+   ],
+   "rid": "tab_library",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::tab_profile::Profile::826,2127",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Profile",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    826,
+    2127,
+    1080,
+    2337
+   ],
+   "rid": "tab_profile",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s002::no-role::tab_search::Search::276,2127",
+   "screen": "s002",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Search",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    276,
+    2127,
+    530,
+    2337
+   ],
+   "rid": "tab_search",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s003::no-role::popular_search::contrast::53,895",
+   "screen": "s003",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "contrast",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    895,
+    1027,
+    1042
+   ],
+   "rid": "popular_search",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s003::no-role::popular_search::performance::53,1074",
+   "screen": "s003",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "performance",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    1074,
+    1027,
+    1221
+   ],
+   "rid": "popular_search",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s003::no-role::popular_search::touch targets::53,716",
+   "screen": "s003",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "touch targets",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    716,
+    1027,
+    863
+   ],
+   "rid": "popular_search",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s003::no-role::tab_home::Home::276,2127",
+   "screen": "s003",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Home",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    276,
+    2127,
+    530,
+    2337
+   ],
+   "rid": "tab_home",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s003::no-role::tab_library::Library::551,2127",
+   "screen": "s003",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Library",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    551,
+    2127,
+    805,
+    2337
+   ],
+   "rid": "tab_library",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s003::no-role::tab_profile::Profile::826,2127",
+   "screen": "s003",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Profile",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    826,
+    2127,
+    1080,
+    2337
+   ],
+   "rid": "tab_profile",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s004::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s004",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s004::no-role::result::Getting started with the Playground playground.dev::0,557",
+   "screen": "s004",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Getting started with the Playground playground.dev",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    557,
+    1080,
+    746
+   ],
+   "rid": "result",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s004::no-role::result::Touch targets: 24 dp is the floor, 48 dp is the goal design.::0,941",
+   "screen": "s004",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Touch targets: 24 dp is the floor, 48 dp is the goal design.",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    941,
+    1080,
+    1130
+   ],
+   "rid": "result",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s004::no-role::result::Why every screen should have a title notes.example::0,749",
+   "screen": "s004",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Why every screen should have a title notes.example",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    749,
+    1080,
+    938
+   ],
+   "rid": "result",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s005::no-role::listen::Listen::53,2084",
+   "screen": "s005",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Listen",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    2084,
+    280,
+    2210
+   ],
+   "rid": "listen",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s005::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s005",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s006::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s006",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s006::no-role::send_reset::Send reset link::53,727",
+   "screen": "s006",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Send reset link",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    727,
+    422,
+    853
+   ],
+   "rid": "send_reset",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s007::no-role::browse::Browse articles::350,789",
+   "screen": "s007",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Browse articles",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    350,
+    789,
+    731,
+    915
+   ],
+   "rid": "browse",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s007::no-role::tab_history::History::540,410",
+   "screen": "s007",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "History",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    540,
+    410,
+    1080,
+    536
+   ],
+   "rid": "tab_history",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s007::no-role::tab_home::Home::0,2127",
+   "screen": "s007",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Home",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    2127,
+    255,
+    2337
+   ],
+   "rid": "tab_home",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s007::no-role::tab_profile::Profile::826,2127",
+   "screen": "s007",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Profile",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    826,
+    2127,
+    1080,
+    2337
+   ],
+   "rid": "tab_profile",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s007::no-role::tab_search::Search::276,2127",
+   "screen": "s007",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Search",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    276,
+    2127,
+    530,
+    2337
+   ],
+   "rid": "tab_search",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Account settings::0,643",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Account settings",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    643,
+    1080,
+    790
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Developer options::0,1693",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Developer options",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    1693,
+    1080,
+    1840
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Help::0,1093",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Help",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    1093,
+    1080,
+    1240
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Log out::0,1843",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Log out",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    1843,
+    1080,
+    1990
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Notifications::0,793",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Notifications",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    793,
+    1080,
+    940
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Privacy policy::0,1393",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Privacy policy",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    1393,
+    1080,
+    1540
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Rate us::0,1543",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Rate us",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    1543,
+    1080,
+    1690
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Terms of use::0,1243",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Terms of use",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    1243,
+    1080,
+    1390
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::profile_row::Text size::0,943",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Text size",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    943,
+    1080,
+    1090
+   ],
+   "rid": "profile_row",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::tab_home::Home::0,2127",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Home",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    0,
+    2127,
+    255,
+    2337
+   ],
+   "rid": "tab_home",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::tab_library::Library::551,2127",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Library",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    551,
+    2127,
+    805,
+    2337
+   ],
+   "rid": "tab_library",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s008::no-role::tab_search::Search::276,2127",
+   "screen": "s008",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Search",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    276,
+    2127,
+    530,
+    2337
+   ],
+   "rid": "tab_search",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s009::no-role::delete_account::Delete account::53,1085",
+   "screen": "s009",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Delete account",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    1085,
+    424,
+    1211
+   ],
+   "rid": "delete_account",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s009::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s009",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s009::no-role::primary_action::Save::53,832",
+   "screen": "s009",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Save",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    832,
+    259,
+    958
+   ],
+   "rid": "primary_action",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s010::no-role::allow_notifications::Allow notifications::53,748",
+   "screen": "s010",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Allow notifications",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    748,
+    483,
+    874
+   ],
+   "rid": "allow_notifications",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s010::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s010",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s011::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s011",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s012::no-role::contact_support::Contact support::53,972",
+   "screen": "s012",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Contact support",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    972,
+    444,
+    1098
+   ],
+   "rid": "contact_support",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s012::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s012",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s013::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s013",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s014::no-role::View::Not now::414,1314",
+   "screen": "s014",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Not now",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    414,
+    1314,
+    615,
+    1440
+   ],
+   "rid": "",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s014::no-role::View::Rate 5 stars::636,1314",
+   "screen": "s014",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Rate 5 stars",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    636,
+    1314,
+    897,
+    1440
+   ],
+   "rid": "",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s015::no-role::crash::Crash the app::53,685",
+   "screen": "s015",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Crash the app",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    685,
+    406,
+    811
+   ],
+   "rid": "crash",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s015::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s015",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s015::no-role::open_scanner::Open scanner::53,527",
+   "screen": "s015",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Open scanner",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    527,
+    405,
+    653
+   ],
+   "rid": "open_scanner",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s016::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s016",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s016::no-role::primary_action::Submit::53,1074",
+   "screen": "s016",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Submit",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    53,
+    1074,
+    296,
+    1200
+   ],
+   "rid": "primary_action",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s017::no-role::View::Close scanner::360,1291",
+   "screen": "s017",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Close scanner",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    360,
+    1291,
+    720,
+    1417
+   ],
+   "rid": "",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s018::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s018",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  },
+  {
+   "key": "s019::no-role::navigate_up::Navigate up::12,264",
+   "screen": "s019",
+   "rule": "no-role",
+   "sc": "4.1.2",
+   "level": "A",
+   "kind": "automated",
+   "severity": "info",
+   "label": "Navigate up",
+   "detail": "clickable android.view.View with no role",
+   "bounds": [
+    12,
+    264,
+    138,
+    390
+   ],
+   "rid": "navigate_up",
+   "class": "android.view.View",
+   "triage": "open"
+  }
+ ]
+}
