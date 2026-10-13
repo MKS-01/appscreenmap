@@ -76,6 +76,7 @@ All run as `uv run appscreenmap <command>`; `<run>` is a run folder such as `run
 | `report <run>` | Health check: wasted taps, near-duplicate screens, navigation failures, and device conditions that skew results |
 | `a11y <run> [--report]` | WCAG 2.2 checks; `--report` rebuilds `a11y-report.html` and `.md` |
 | `perf <run> [--budget 1000]` | Load time per screen, slowest transitions, jank, cold start |
+| `security <run> [--apk FILE \| --pull] [--device] [--frida-log FILE]` | Android security audit: manifest rules, hard-coded secrets, plain-text data on the device, Frida observations. Writes `audits/security.json` |
 | `diff <base> <candidate>` | Match screens across two runs and diff pixels and text |
 | `verify <run> [--apk new.apk]` | Replay every screen's path on a new build; exit 1 when one breaks ([CI](#ci-verify-a-new-build)). Android for now |
 | `export <run>` | Regenerate Maestro flows and the Mermaid graph |
