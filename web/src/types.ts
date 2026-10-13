@@ -107,10 +107,11 @@ export interface DeviceInfo {
   density?: number; // dpi
   font_scale?: number;
   // Richer device record (crawler device.py); absent on older runs. See docs/MAP_SCHEMA.md "device".
+  platform?: "android" | "ios";
   type?: "emulator" | "physical";
   name?: string;
   form_factor?: string;
-  os?: { release?: string; sdk?: number; skin?: string | null; security_patch?: string };
+  os?: { name?: string; release?: string; sdk?: number; skin?: string | null; security_patch?: string };
   display?: { width_dp?: number; height_dp?: number; smallest_width_dp?: number; window_class?: "compact" | "medium" | "expanded" };
   settings?: { locale?: string; dark_mode?: boolean | null; navigation?: string; talkback?: boolean };
 }
