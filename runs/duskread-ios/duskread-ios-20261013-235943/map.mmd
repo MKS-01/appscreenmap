@@ -1,0 +1,24 @@
+flowchart LR
+  s001["s001 · Hello, MKS"]
+  s002["s002 · Settings"]
+  s003["s003 · Connect Notion"]
+  x_com_apple_mobilesafari(["com.apple.mobilesafari"])
+  s004["s004 · 15:00"]
+  s005["s005 · 14:59"]
+  s006["s006 · FOCUS"]
+  s007["s007 · FOCUS"]
+  s001 -->|"Settings"| s002
+  s002 -->|"Connect Notion"| s003
+  s003 -->|"Open Notion integrations"| x_com_apple_mobilesafari
+  s001 -->|"15 MIN"| s004
+  s004 -->|"PAUSE"| s005
+  s005 -->|"RESUME"| s004
+  s004 -->|"RESET"| s006
+  s006 -->|"15 MIN"| s004
+  s005 -->|"RESET"| s006
+  s006 -->|"25 MIN"| s004
+  s006 -->|"30 MIN"| s004
+  s006 -->|"CUSTOM"| s007
+  s007 -->|"CANCEL"| s006
+  s001 -->|"25 MIN"| s004
+  s001 -->|"30 MIN"| s004

@@ -1,0 +1,38 @@
+{"step": 2, "t": 7.94, "screen": "s001", "key": "click|Button||settings", "action": "click", "label": "Settings", "to": "s002", "effect": "new_screen", "explore": true}
+{"step": 3, "t": 9.3, "screen": "s002", "key": "click|Button||system voice", "action": "click", "label": "SYSTEM VOICE", "to": "s002", "effect": "same_screen", "explore": true}
+{"step": 4, "t": 11.1, "screen": "s002", "key": "click|Button||connect notion", "action": "click", "label": "Connect Notion", "to": "s003", "effect": "new_screen", "explore": true}
+{"step": 5, "t": 12.92, "screen": "s003", "key": "click|Button||open notion integrations", "action": "click", "label": "Open Notion integrations", "to": "x:com.apple.mobilesafari", "effect": "left_app", "explore": true}
+{"step": 7, "t": 20.36, "screen": "s001", "key": "click|Button||## min", "action": "click", "label": "15 MIN", "to": "s004", "effect": "new_screen", "explore": true}
+{"step": 8, "t": 22.1, "screen": "s004", "key": "click|Button||pause", "action": "click", "label": "PAUSE", "to": "s005", "effect": "new_screen", "explore": true}
+{"step": 9, "t": 23.45, "screen": "s005", "key": "click|Button||resume", "action": "click", "label": "RESUME", "to": "s004", "effect": "known_screen", "explore": true}
+{"step": 10, "t": 25.23, "screen": "s004", "key": "click|Button||reset", "action": "click", "label": "RESET", "to": "s006", "effect": "new_screen", "explore": true}
+{"step": 11, "t": 26.57, "screen": "s006", "key": "click|Button||## min", "action": "click", "label": "15 MIN", "to": "s004", "effect": "known_screen", "explore": true}
+{"step": 12, "t": 28.23, "screen": "s004", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s004", "effect": "same_screen", "explore": true}
+{"step": 13, "t": 29.56, "screen": "s004", "key": "click|Button||pause", "action": "click", "label": "PAUSE", "to": "s005", "effect": "known_screen", "explore": false}
+{"step": 14, "t": 30.91, "screen": "s005", "key": "click|Button||reset", "action": "click", "label": "RESET", "to": "s006", "effect": "known_screen", "explore": true}
+{"step": 15, "t": 32.25, "screen": "s006", "key": "click|Button||## min#2", "action": "click", "label": "25 MIN", "to": "s004", "effect": "known_screen", "explore": true}
+{"step": 16, "t": 33.6, "screen": "s004", "key": "click|Button||pause", "action": "click", "label": "PAUSE", "to": "s005", "effect": "known_screen", "explore": false}
+{"step": 17, "t": 35.27, "screen": "s005", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s005", "effect": "same_screen", "explore": true}
+{"step": 18, "t": 36.62, "screen": "s005", "key": "click|Button||reset", "action": "click", "label": "RESET", "to": "s006", "effect": "known_screen", "explore": false}
+{"step": 19, "t": 37.96, "screen": "s006", "key": "click|Button||## min#3", "action": "click", "label": "30 MIN", "to": "s004", "effect": "known_screen", "explore": true}
+{"step": 20, "t": 39.3, "screen": "s004", "key": "click|Button||reset", "action": "click", "label": "RESET", "to": "s006", "effect": "known_screen", "explore": false}
+{"step": 21, "t": 41.03, "screen": "s006", "key": "click|Button||custom", "action": "click", "label": "CUSTOM", "to": "s007", "effect": "new_screen", "explore": true}
+{"step": 22, "t": 42.37, "screen": "s007", "key": "click|Button||start", "action": "click", "label": "START", "to": "s007", "effect": "same_screen", "explore": true}
+{"step": 23, "t": 43.73, "screen": "s007", "key": "click|Button||cancel", "action": "click", "label": "CANCEL", "to": "s006", "effect": "known_screen", "explore": true}
+{"step": 24, "t": 45.39, "screen": "s006", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s006", "effect": "same_screen", "explore": true}
+{"step": 25, "t": 46.74, "screen": "s006", "key": "click|Button||custom", "action": "click", "label": "CUSTOM", "to": "s007", "effect": "known_screen", "explore": false}
+{"step": 26, "t": 48.37, "screen": "s007", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s007", "effect": "same_screen", "explore": true}
+{"step": 28, "t": 55.38, "screen": "s001", "key": "click|Button||## min#2", "action": "click", "label": "25 MIN", "to": "s004", "effect": "known_screen", "explore": true}
+{"step": 30, "t": 62.36, "screen": "s001", "key": "click|Button||## min#3", "action": "click", "label": "30 MIN", "to": "s004", "effect": "known_screen", "explore": true}
+{"step": 32, "t": 69.48, "screen": "s001", "key": "click|Button||listen to the week", "action": "click", "label": "Listen to the week", "to": "s001", "effect": "same_screen", "explore": true}
+{"step": 33, "t": 70.89, "screen": "s001", "key": "click|Button||stop listening", "action": "click", "label": "Stop listening", "to": "s001", "effect": "same_screen", "explore": true}
+{"step": 34, "t": 72.31, "screen": "s001", "key": "click|Button||more", "action": "click", "label": "MORE", "to": "s001", "effect": "same_screen", "explore": true}
+{"step": 35, "t": 73.71, "screen": "s001", "key": "click|Button||less", "action": "click", "label": "LESS", "to": "s001", "effect": "same_screen", "explore": true}
+{"step": 36, "t": 75.12, "screen": "s001", "key": "click|Button||more#2", "action": "click", "label": "MORE", "to": "s001", "effect": "same_screen", "explore": true}
+{"step": 37, "t": 76.87, "screen": "s001", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s001", "effect": "same_screen", "explore": true}
+{"step": 38, "t": 78.25, "screen": "s001", "key": "click|Button||settings", "action": "click", "label": "Settings", "to": "s002", "effect": "known_screen", "explore": false}
+{"step": 39, "t": 79.62, "screen": "s002", "key": "click|Button||ink", "action": "click", "label": "INK", "to": "s002", "effect": "same_screen", "explore": true}
+{"step": 40, "t": 80.97, "screen": "s002", "key": "click|Button||paper black", "action": "click", "label": "PAPER BLACK", "to": "s002", "effect": "same_screen", "explore": true}
+{"step": 41, "t": 82.66, "screen": "s002", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s002", "effect": "same_screen", "explore": true}
+{"step": 42, "t": 84.04, "screen": "s002", "key": "click|Button||connect notion", "action": "click", "label": "Connect Notion", "to": "s003", "effect": "known_screen", "explore": false}
+{"step": 43, "t": 85.73, "screen": "s003", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s003", "effect": "same_screen", "explore": true}

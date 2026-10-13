@@ -1,0 +1,13 @@
+{
+ "run": "duskread-ios-20261013-235943",
+ "budget_ms": 1000,
+ "animations": "off",
+ "startup": {
+  "samples": 0,
+  "median_ms": null,
+  "max_ms": null
+ },
+ "screens": [],
+ "transitions": [],
+ "findings": []
+}

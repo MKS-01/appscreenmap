@@ -1,0 +1,1755 @@
+{
+ "schema": 1,
+ "run": {
+  "id": "duskread-ios-20261013-235943",
+  "status": "done",
+  "started_at": "2026-10-13T18:29:43+00:00",
+  "finished_at": "2026-10-13T18:31:09+00:00",
+  "tool": "appscreenmap 0.1.0",
+  "app": {
+   "package": "dev.mks.duskread",
+   "version": "1.3.0",
+   "build": "4",
+   "label": "DuskRead",
+   "min_os": "18.0",
+   "platform": "ios",
+   "activities": [],
+   "launch_activity": null
+  },
+  "device": {
+   "serial": "553CB5BE-C667-4041-AF92-5E792EC35C8B",
+   "platform": "ios",
+   "type": "emulator",
+   "name": "iPhone 17 (Simulator)",
+   "model": "iPhone 17",
+   "manufacturer": "Apple",
+   "form_factor": "phone",
+   "os": {
+    "name": "iOS",
+    "release": "27.0"
+   },
+   "width": 402,
+   "height": 874,
+   "density": 160,
+   "font_scale": 1.0,
+   "display": {
+    "width_dp": 402,
+    "height_dp": 874,
+    "window_class": "compact"
+   }
+  },
+  "config": {
+   "max_steps": 150,
+   "max_minutes": 30.0,
+   "max_depth": 15,
+   "stop_after_no_new": 30,
+   "settle_seconds": 0.8,
+   "launch_wait_seconds": 2.5,
+   "similarity": 0.8,
+   "max_list_items": 2,
+   "max_scrolls": 3,
+   "explore_toggles": true,
+   "long_click": false,
+   "fill_forms": true,
+   "stay_in_app": true,
+   "clear_data": true,
+   "grant_permissions": true,
+   "disable_animations": true,
+   "measure_load": false,
+   "load_quiet_ms": 400,
+   "load_timeout_s": 10.0,
+   "perf_budget_ms": 1000,
+   "font_scale": 0.0,
+   "allow_permission_dialogs": true,
+   "blocked_text": [
+    "\\blog ?out\\b",
+    "\\bsign ?out\\b",
+    "\\bdelete\\b",
+    "\\bremove account\\b",
+    "\\bdeactivate\\b",
+    "\\buninstall\\b",
+    "\\bfactory reset\\b",
+    "\\berase\\b",
+    "\\bwipe\\b",
+    "\\breset (all|app|everything|data|device)\\b",
+    "\\bclear (all )?(app )?data\\b",
+    "\\bpay\\b",
+    "\\bpay now\\b",
+    "\\bpurchase\\b",
+    "\\bbuy\\b",
+    "\\bsubscribe\\b",
+    "\\bplace order\\b",
+    "\\bcall\\b",
+    "\\bdial\\b",
+    "\\breport\\b"
+   ],
+   "inputs": {
+    "pass(word|code)?|\\bpin\\b": "Passw0rd!",
+    "e-?mail|username|user_?name|login": "qa.tester@example.com",
+    "phone|mobile|\\btel\\b": "5551234567",
+    "zip|postal|pin.?code": "94105",
+    "otp|code|verification": "123456",
+    "first.?name": "Qa",
+    "last.?name|surname": "Tester",
+    "name": "QA Tester",
+    "search|query|find": "test",
+    "url|website|link": "https://example.com",
+    "city": "San Francisco",
+    "address|street": "1 Market St",
+    "age|amount|qty|quantity|number|count": "1",
+    "date": "2026-01-15"
+   },
+   "default_input": "test",
+   "diff_mask_top": 0.045,
+   "diff_mask_bottom": 0.0
+  },
+  "steps": 43,
+  "updated_at": "2026-10-13T18:31:09+00:00",
+  "stop_reason": "complete: nothing left to explore",
+  "elapsed_s": 85.7
+ },
+ "screens": [
+  {
+   "id": "s001",
+   "kind": "app",
+   "title": "Hello, MKS",
+   "activity": null,
+   "package": "dev.mks.duskread",
+   "signature": "231a08d3d86d",
+   "patterns": [],
+   "depth": 0,
+   "visits": 11,
+   "first_step": 1,
+   "width": 402,
+   "height": 874,
+   "screenshot": "screens/s001.png",
+   "thumb": "screens/s001.jpg",
+   "hierarchy": "screens/s001.xml",
+   "variant_of": null,
+   "origin": "launch",
+   "reach_path": [],
+   "autofill": [],
+   "tokens": [
+    "S:Button|",
+    "S:FrameLayout|",
+    "S:TextView|",
+    "T:# min",
+    "T:# this week",
+    "T:## min",
+    "T:##:##",
+    "T:#d ago",
+    "T:#h ago",
+    "T:android",
+    "T:android-developers.googleblog.com",
+    "T:bringing our latest frontier model to an",
+    "T:focus",
+    "T:hello, mks",
+    "T:introducing the googlebook linux termina",
+    "T:latest",
+    "T:listen to the week",
+    "T:more",
+    "T:new ways to drive smarter discovery, dee",
+    "T:posted by jason buchel, creative technol",
+    "T:posted by paul feng, vp of product manag",
+    "T:settings"
+   ],
+   "elements": [
+    {
+     "id": "e1",
+     "key": "click|Button||settings",
+     "kind": "button",
+     "action": "click",
+     "label": "Settings",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "Settings",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      354,
+      73,
+      388,
+      107
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "new_screen",
+     "target": "s002",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e2",
+     "key": "click|Button||## min",
+     "kind": "button",
+     "action": "click",
+     "label": "15 MIN",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "15 MIN",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      175,
+      163,
+      242,
+      195
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "new_screen",
+     "target": "s004",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e3",
+     "key": "click|Button||## min#2",
+     "kind": "button",
+     "action": "click",
+     "label": "25 MIN",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "25 MIN",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      248,
+      163,
+      315,
+      195
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "known_screen",
+     "target": "s004",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e4",
+     "key": "click|Button||## min#3",
+     "kind": "button",
+     "action": "click",
+     "label": "30 MIN",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "30 MIN",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      321,
+      163,
+      388,
+      195
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "known_screen",
+     "target": "s004",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e5",
+     "key": "click|Button||listen to the week",
+     "kind": "button",
+     "action": "click",
+     "label": "Listen to the week",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "Listen to the week",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      358,
+      221,
+      388,
+      251
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    },
+    {
+     "id": "e31",
+     "key": "click|Button||stop listening",
+     "kind": "button",
+     "action": "click",
+     "label": "Stop listening",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "Stop listening",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      358,
+      221,
+      388,
+      251
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0,
+     "revealed_by": [
+      {
+       "screen": "s001",
+       "key": "click|Button||listen to the week",
+       "action": "click",
+       "label": "Listen to the week",
+       "selector": {
+        "text": "Listen to the week",
+        "point": [
+         373,
+         236
+        ]
+       },
+       "scroll_depth": 0
+      }
+     ]
+    },
+    {
+     "id": "e6",
+     "key": "click|Button||more",
+     "kind": "button",
+     "action": "click",
+     "label": "MORE",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "MORE",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      330,
+      472,
+      372,
+      494
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    },
+    {
+     "id": "e32",
+     "key": "click|Button||less",
+     "kind": "button",
+     "action": "click",
+     "label": "LESS",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "LESS",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      330,
+      608,
+      372,
+      630
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0,
+     "revealed_by": [
+      {
+       "screen": "s001",
+       "key": "click|Button||more",
+       "action": "click",
+       "label": "MORE",
+       "selector": {
+        "text": "MORE",
+        "point": [
+         351,
+         483
+        ]
+       },
+       "scroll_depth": 0
+      }
+     ]
+    },
+    {
+     "id": "e7",
+     "key": "click|Button||more#2",
+     "kind": "button",
+     "action": "click",
+     "label": "MORE",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "MORE",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      330,
+      734,
+      372,
+      755
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    },
+    {
+     "id": "e8",
+     "key": "SYS|back",
+     "kind": "back",
+     "action": "back",
+     "label": "Back (system)",
+     "class": "",
+     "rid": "",
+     "text": "",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    }
+   ]
+  },
+  {
+   "id": "s002",
+   "kind": "app",
+   "title": "Settings",
+   "activity": null,
+   "package": "dev.mks.duskread",
+   "signature": "9625451245ea",
+   "patterns": [
+    "form"
+   ],
+   "depth": 1,
+   "visits": 6,
+   "first_step": 2,
+   "width": 402,
+   "height": 874,
+   "screenshot": "screens/s002.png",
+   "thumb": "screens/s002.jpg",
+   "hierarchy": "screens/s002.xml",
+   "variant_of": null,
+   "origin": "action",
+   "reach_path": [
+    {
+     "screen": "s001",
+     "key": "click|Button||settings",
+     "action": "click",
+     "label": "Settings",
+     "selector": {
+      "text": "Settings",
+      "point": [
+       371,
+       90
+      ]
+     },
+     "scroll_depth": 0
+    }
+   ],
+   "autofill": [],
+   "tokens": [
+    "S:Button|",
+    "S:EditText|",
+    "S:FrameLayout|",
+    "S:TextView|",
+    "T:appearance",
+    "T:articles are read aloud on this phone. n",
+    "T:connect notion",
+    "T:duskread · swiftui",
+    "T:erase everything on this device",
+    "T:ink",
+    "T:notion",
+    "T:one terracotta accent, reserved for what",
+    "T:only used to say hello.",
+    "T:optional. connect notion and the blogs y",
+    "T:paper black",
+    "T:profile",
+    "T:ready",
+    "T:reset",
+    "T:settings",
+    "T:system voice",
+    "T:voice"
+   ],
+   "elements": [
+    {
+     "id": "e9",
+     "key": "click|Button||system voice",
+     "kind": "button",
+     "action": "click",
+     "label": "SYSTEM VOICE",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "SYSTEM VOICE",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      218,
+      124,
+      249
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    },
+    {
+     "id": "e10",
+     "key": "click|Button||connect notion",
+     "kind": "button",
+     "action": "click",
+     "label": "Connect Notion",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "Connect Notion",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      437,
+      163,
+      483
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "new_screen",
+     "target": "s003",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e11",
+     "key": "click|Button||ink",
+     "kind": "button",
+     "action": "click",
+     "label": "INK",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "INK",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      539,
+      66,
+      571
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    },
+    {
+     "id": "e12",
+     "key": "click|Button||paper black",
+     "kind": "button",
+     "action": "click",
+     "label": "PAPER BLACK",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "PAPER BLACK",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      72,
+      539,
+      171,
+      571
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    },
+    {
+     "id": "e13",
+     "key": "click|Button||erase everything on this device",
+     "kind": "button",
+     "action": "click",
+     "label": "Erase everything on this device",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "Erase everything on this device",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      790,
+      209,
+      806
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "blocked",
+     "effect": null,
+     "target": null,
+     "scroll_depth": 0,
+     "note": "matches blocked_text"
+    },
+    {
+     "id": "e14",
+     "key": "SYS|back",
+     "kind": "back",
+     "action": "back",
+     "label": "Back (system)",
+     "class": "",
+     "rid": "",
+     "text": "",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    }
+   ]
+  },
+  {
+   "id": "s003",
+   "kind": "app",
+   "title": "Connect Notion",
+   "activity": null,
+   "package": "dev.mks.duskread",
+   "signature": "76bba11c9c3d",
+   "patterns": [
+    "form"
+   ],
+   "depth": 2,
+   "visits": 3,
+   "first_step": 4,
+   "width": 402,
+   "height": 874,
+   "screenshot": "screens/s003.png",
+   "thumb": "screens/s003.jpg",
+   "hierarchy": "screens/s003.xml",
+   "variant_of": null,
+   "origin": "action",
+   "reach_path": [
+    {
+     "screen": "s001",
+     "key": "click|Button||settings",
+     "action": "click",
+     "label": "Settings",
+     "selector": {
+      "text": "Settings",
+      "point": [
+       371,
+       90
+      ]
+     },
+     "scroll_depth": 0
+    },
+    {
+     "screen": "s002",
+     "key": "click|Button||connect notion",
+     "action": "click",
+     "label": "Connect Notion",
+     "selector": {
+      "text": "Connect Notion",
+      "point": [
+       90,
+       460
+      ]
+     },
+     "scroll_depth": 0
+    }
+   ],
+   "autofill": [],
+   "tokens": [
+    "S:Button|",
+    "S:EditText|",
+    "S:FrameLayout|",
+    "S:TextView|",
+    "T:#",
+    "T:build the databases",
+    "T:connect notion",
+    "T:create an integration",
+    "T:find or create them",
+    "T:in notion, open settings → connections →",
+    "T:open any notion page, then share → add y",
+    "T:open notion integrations",
+    "T:paste its token",
+    "T:save token",
+    "T:share one page with it"
+   ],
+   "elements": [
+    {
+     "id": "e15",
+     "key": "click|Button||open notion integrations",
+     "kind": "button",
+     "action": "click",
+     "label": "Open Notion integrations",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "Open Notion integrations",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      248,
+      172,
+      264
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "left_app",
+     "target": "x:com.apple.mobilesafari",
+     "scroll_depth": 0,
+     "note": "leaves the app (opened com.apple.mobilesafari)"
+    },
+    {
+     "id": "e16",
+     "key": "SYS|back",
+     "kind": "back",
+     "action": "back",
+     "label": "Back (system)",
+     "class": "",
+     "rid": "",
+     "text": "",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    }
+   ]
+  },
+  {
+   "id": "x:com.apple.mobilesafari",
+   "kind": "external",
+   "title": "com.apple.mobilesafari",
+   "activity": null,
+   "package": "com.apple.mobilesafari",
+   "signature": "6e97a2379f2d",
+   "patterns": [],
+   "depth": 0,
+   "visits": 0,
+   "first_step": 5,
+   "width": 402,
+   "height": 874,
+   "screenshot": "screens/x_com.apple.mobilesafari.png",
+   "thumb": "screens/x_com.apple.mobilesafari.jpg",
+   "hierarchy": "screens/x_com.apple.mobilesafari.xml",
+   "variant_of": null,
+   "origin": "unknown",
+   "reach_path": [],
+   "autofill": [],
+   "tokens": [
+    "S:Button|BackButton",
+    "S:Button|MoreMenuButton",
+    "S:Button|StopButton",
+    "S:Button|TabOverviewButton",
+    "S:EditText|TabBarItemTitle",
+    "S:FrameLayout|",
+    "T:back",
+    "T:close",
+    "T:page menu",
+    "T:tabs"
+   ],
+   "elements": []
+  },
+  {
+   "id": "s004",
+   "kind": "app",
+   "title": "15:00",
+   "activity": null,
+   "package": "dev.mks.duskread",
+   "signature": "a8fc3aaf345e",
+   "patterns": [],
+   "depth": 1,
+   "visits": 8,
+   "first_step": 7,
+   "width": 402,
+   "height": 874,
+   "screenshot": "screens/s004.png",
+   "thumb": "screens/s004.jpg",
+   "hierarchy": "screens/s004.xml",
+   "variant_of": null,
+   "origin": "action",
+   "reach_path": [
+    {
+     "screen": "s001",
+     "key": "click|Button||## min",
+     "action": "click",
+     "label": "15 MIN",
+     "selector": {
+      "text": "15 MIN",
+      "point": [
+       208,
+       179
+      ]
+     },
+     "scroll_depth": 0
+    }
+   ],
+   "autofill": [],
+   "tokens": [
+    "S:Button|",
+    "S:FrameLayout|",
+    "S:TextView|",
+    "T:##:##",
+    "T:pause",
+    "T:reset"
+   ],
+   "elements": [
+    {
+     "id": "e17",
+     "key": "click|Button||pause",
+     "kind": "button",
+     "action": "click",
+     "label": "PAUSE",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "PAUSE",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      768,
+      79,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "new_screen",
+     "target": "s005",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e18",
+     "key": "click|Button||reset",
+     "kind": "button",
+     "action": "click",
+     "label": "RESET",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "RESET",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      85,
+      768,
+      145,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "new_screen",
+     "target": "s006",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e19",
+     "key": "SYS|back",
+     "kind": "back",
+     "action": "back",
+     "label": "Back (system)",
+     "class": "",
+     "rid": "",
+     "text": "",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    }
+   ]
+  },
+  {
+   "id": "s005",
+   "kind": "app",
+   "title": "14:59",
+   "activity": null,
+   "package": "dev.mks.duskread",
+   "signature": "a4decf1d886e",
+   "patterns": [],
+   "depth": 2,
+   "visits": 4,
+   "first_step": 8,
+   "width": 402,
+   "height": 874,
+   "screenshot": "screens/s005.png",
+   "thumb": "screens/s005.jpg",
+   "hierarchy": "screens/s005.xml",
+   "variant_of": null,
+   "origin": "action",
+   "reach_path": [
+    {
+     "screen": "s001",
+     "key": "click|Button||## min",
+     "action": "click",
+     "label": "15 MIN",
+     "selector": {
+      "text": "15 MIN",
+      "point": [
+       208,
+       179
+      ]
+     },
+     "scroll_depth": 0
+    },
+    {
+     "screen": "s004",
+     "key": "click|Button||pause",
+     "action": "click",
+     "label": "PAUSE",
+     "selector": {
+      "text": "PAUSE",
+      "point": [
+       48,
+       784
+      ]
+     },
+     "scroll_depth": 0
+    }
+   ],
+   "autofill": [],
+   "tokens": [
+    "S:Button|",
+    "S:FrameLayout|",
+    "S:TextView|",
+    "T:##:##",
+    "T:reset",
+    "T:resume"
+   ],
+   "elements": [
+    {
+     "id": "e20",
+     "key": "click|Button||resume",
+     "kind": "button",
+     "action": "click",
+     "label": "RESUME",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "RESUME",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      768,
+      85,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "known_screen",
+     "target": "s004",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e21",
+     "key": "click|Button||reset",
+     "kind": "button",
+     "action": "click",
+     "label": "RESET",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "RESET",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      91,
+      768,
+      152,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "known_screen",
+     "target": "s006",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e22",
+     "key": "SYS|back",
+     "kind": "back",
+     "action": "back",
+     "label": "Back (system)",
+     "class": "",
+     "rid": "",
+     "text": "",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    }
+   ]
+  },
+  {
+   "id": "s006",
+   "kind": "app",
+   "title": "FOCUS",
+   "activity": null,
+   "package": "dev.mks.duskread",
+   "signature": "0fea1b7c3a71",
+   "patterns": [
+    "bottom_nav"
+   ],
+   "depth": 2,
+   "visits": 6,
+   "first_step": 10,
+   "width": 402,
+   "height": 874,
+   "screenshot": "screens/s006.png",
+   "thumb": "screens/s006.jpg",
+   "hierarchy": "screens/s006.xml",
+   "variant_of": null,
+   "origin": "action",
+   "reach_path": [
+    {
+     "screen": "s001",
+     "key": "click|Button||## min",
+     "action": "click",
+     "label": "15 MIN",
+     "selector": {
+      "text": "15 MIN",
+      "point": [
+       208,
+       179
+      ]
+     },
+     "scroll_depth": 0
+    },
+    {
+     "screen": "s004",
+     "key": "click|Button||reset",
+     "action": "click",
+     "label": "RESET",
+     "selector": {
+      "text": "RESET",
+      "point": [
+       115,
+       784
+      ]
+     },
+     "scroll_depth": 0
+    }
+   ],
+   "autofill": [],
+   "tokens": [
+    "S:Button|",
+    "S:FrameLayout|",
+    "S:TextView|",
+    "T:## min",
+    "T:custom",
+    "T:focus",
+    "T:pick a length"
+   ],
+   "elements": [
+    {
+     "id": "e23",
+     "key": "click|Button||## min",
+     "kind": "nav",
+     "action": "click",
+     "label": "15 MIN",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "15 MIN",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      768,
+      85,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "known_screen",
+     "target": "s004",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e24",
+     "key": "click|Button||## min#2",
+     "kind": "nav",
+     "action": "click",
+     "label": "25 MIN",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "25 MIN",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      91,
+      768,
+      158,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "known_screen",
+     "target": "s004",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e25",
+     "key": "click|Button||## min#3",
+     "kind": "nav",
+     "action": "click",
+     "label": "30 MIN",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "30 MIN",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      164,
+      768,
+      231,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "known_screen",
+     "target": "s004",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e26",
+     "key": "click|Button||custom",
+     "kind": "nav",
+     "action": "click",
+     "label": "CUSTOM",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "CUSTOM",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      237,
+      768,
+      304,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "new_screen",
+     "target": "s007",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e27",
+     "key": "SYS|back",
+     "kind": "back",
+     "action": "back",
+     "label": "Back (system)",
+     "class": "",
+     "rid": "",
+     "text": "",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    }
+   ]
+  },
+  {
+   "id": "s007",
+   "kind": "app",
+   "title": "FOCUS",
+   "activity": null,
+   "package": "dev.mks.duskread",
+   "signature": "4e913e8effd1",
+   "patterns": [
+    "form"
+   ],
+   "depth": 3,
+   "visits": 4,
+   "first_step": 21,
+   "width": 402,
+   "height": 874,
+   "screenshot": "screens/s007.png",
+   "thumb": "screens/s007.jpg",
+   "hierarchy": "screens/s007.xml",
+   "variant_of": null,
+   "origin": "action",
+   "reach_path": [
+    {
+     "screen": "s001",
+     "key": "click|Button||## min",
+     "action": "click",
+     "label": "15 MIN",
+     "selector": {
+      "text": "15 MIN",
+      "point": [
+       208,
+       179
+      ]
+     },
+     "scroll_depth": 0
+    },
+    {
+     "screen": "s004",
+     "key": "click|Button||reset",
+     "action": "click",
+     "label": "RESET",
+     "selector": {
+      "text": "RESET",
+      "point": [
+       115,
+       784
+      ]
+     },
+     "scroll_depth": 0
+    },
+    {
+     "screen": "s006",
+     "key": "click|Button||custom",
+     "action": "click",
+     "label": "CUSTOM",
+     "selector": {
+      "text": "CUSTOM",
+      "point": [
+       270,
+       784
+      ]
+     },
+     "scroll_depth": 0
+    }
+   ],
+   "autofill": [],
+   "tokens": [
+    "S:Button|",
+    "S:EditText|",
+    "S:FrameLayout|",
+    "S:TextView|",
+    "T:cancel",
+    "T:focus",
+    "T:how long?",
+    "T:start"
+   ],
+   "elements": [
+    {
+     "id": "e28",
+     "key": "click|Button||start",
+     "kind": "button",
+     "action": "click",
+     "label": "START",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "START",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      18,
+      768,
+      79,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    },
+    {
+     "id": "e29",
+     "key": "click|Button||cancel",
+     "kind": "button",
+     "action": "click",
+     "label": "CANCEL",
+     "class": "android.widget.Button",
+     "rid": "",
+     "text": "CANCEL",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      85,
+      768,
+      152,
+      800
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "known_screen",
+     "target": "s006",
+     "scroll_depth": 0
+    },
+    {
+     "id": "e30",
+     "key": "SYS|back",
+     "kind": "back",
+     "action": "back",
+     "label": "Back (system)",
+     "class": "",
+     "rid": "",
+     "text": "",
+     "desc": "",
+     "hint": "",
+     "bounds": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "group": null,
+     "password": false,
+     "checked": null,
+     "selected": false,
+     "direction": null,
+     "status": "done",
+     "effect": "same_screen",
+     "target": null,
+     "scroll_depth": 0
+    }
+   ]
+  }
+ ],
+ "transitions": [
+  {
+   "id": "t1",
+   "from": "s001",
+   "to": "s002",
+   "key": "click|Button||settings",
+   "action": "click",
+   "label": "Settings",
+   "kind": "button",
+   "count": 2,
+   "step": 2,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t2",
+   "from": "s002",
+   "to": "s003",
+   "key": "click|Button||connect notion",
+   "action": "click",
+   "label": "Connect Notion",
+   "kind": "button",
+   "count": 2,
+   "step": 4,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t3",
+   "from": "s003",
+   "to": "x:com.apple.mobilesafari",
+   "key": "click|Button||open notion integrations",
+   "action": "click",
+   "label": "Open Notion integrations",
+   "kind": "button",
+   "count": 1,
+   "step": 5,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t4",
+   "from": "s001",
+   "to": "s004",
+   "key": "click|Button||## min",
+   "action": "click",
+   "label": "15 MIN",
+   "kind": "button",
+   "count": 1,
+   "step": 7,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t5",
+   "from": "s004",
+   "to": "s005",
+   "key": "click|Button||pause",
+   "action": "click",
+   "label": "PAUSE",
+   "kind": "button",
+   "count": 3,
+   "step": 8,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t6",
+   "from": "s005",
+   "to": "s004",
+   "key": "click|Button||resume",
+   "action": "click",
+   "label": "RESUME",
+   "kind": "button",
+   "count": 1,
+   "step": 9,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t7",
+   "from": "s004",
+   "to": "s006",
+   "key": "click|Button||reset",
+   "action": "click",
+   "label": "RESET",
+   "kind": "button",
+   "count": 2,
+   "step": 10,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t8",
+   "from": "s006",
+   "to": "s004",
+   "key": "click|Button||## min",
+   "action": "click",
+   "label": "15 MIN",
+   "kind": "nav",
+   "count": 1,
+   "step": 11,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t9",
+   "from": "s005",
+   "to": "s006",
+   "key": "click|Button||reset",
+   "action": "click",
+   "label": "RESET",
+   "kind": "button",
+   "count": 2,
+   "step": 14,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t10",
+   "from": "s006",
+   "to": "s004",
+   "key": "click|Button||## min#2",
+   "action": "click",
+   "label": "25 MIN",
+   "kind": "nav",
+   "count": 1,
+   "step": 15,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t11",
+   "from": "s006",
+   "to": "s004",
+   "key": "click|Button||## min#3",
+   "action": "click",
+   "label": "30 MIN",
+   "kind": "nav",
+   "count": 1,
+   "step": 19,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t12",
+   "from": "s006",
+   "to": "s007",
+   "key": "click|Button||custom",
+   "action": "click",
+   "label": "CUSTOM",
+   "kind": "nav",
+   "count": 2,
+   "step": 21,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t13",
+   "from": "s007",
+   "to": "s006",
+   "key": "click|Button||cancel",
+   "action": "click",
+   "label": "CANCEL",
+   "kind": "button",
+   "count": 1,
+   "step": 23,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t14",
+   "from": "s001",
+   "to": "s004",
+   "key": "click|Button||## min#2",
+   "action": "click",
+   "label": "25 MIN",
+   "kind": "button",
+   "count": 1,
+   "step": 28,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  },
+  {
+   "id": "t15",
+   "from": "s001",
+   "to": "s004",
+   "key": "click|Button||## min#3",
+   "action": "click",
+   "label": "30 MIN",
+   "kind": "button",
+   "count": 1,
+   "step": 30,
+   "inferred": false,
+   "load_ms": null,
+   "timings": []
+  }
+ ],
+ "events": [
+  {
+   "step": 1,
+   "type": "restart",
+   "detail": "start"
+  },
+  {
+   "step": 6,
+   "type": "restart",
+   "detail": "recover from x:com.apple.mobilesafari"
+  },
+  {
+   "step": 27,
+   "type": "restart",
+   "detail": "route to s001"
+  },
+  {
+   "step": 29,
+   "type": "restart",
+   "detail": "route to s001"
+  },
+  {
+   "step": 31,
+   "type": "restart",
+   "detail": "route to s001"
+  }
+ ],
+ "perf": {
+  "startup": [
+   {
+    "step": 0,
+    "reason": "start",
+    "pid": "18920"
+   },
+   {
+    "step": 5,
+    "reason": "recover from x:com.apple.mobilesafari",
+    "pid": "19063"
+   },
+   {
+    "step": 26,
+    "reason": "route to s001",
+    "pid": "19478"
+   },
+   {
+    "step": 28,
+    "reason": "route to s001",
+    "pid": "19535"
+   },
+   {
+    "step": 30,
+    "reason": "route to s001",
+    "pid": "19589"
+   }
+  ]
+ },
+ "stats": {
+  "screens": 7,
+  "external": 1,
+  "transitions": 15,
+  "max_depth": 3,
+  "activities_visited": [],
+  "activities_declared": 0,
+  "activity_coverage": null,
+  "crashes": 0,
+  "elements": {
+   "done": 31,
+   "blocked": 1
+  }
+ }
+}

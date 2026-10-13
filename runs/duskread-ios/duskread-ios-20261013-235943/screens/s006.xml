@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<hierarchy rotation="0">
+<node index="0" text="" resource-id="" class="android.widget.FrameLayout" package="dev.mks.duskread" content-desc="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" long-clickable="false" password="false" scrollable="false" selected="false" bounds="[0,0][402,874]">
+  <node index="0" text="FOCUS" resource-id="" class="android.widget.TextView" package="dev.mks.duskread" content-desc="" hint="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" long-clickable="false" password="false" scrollable="false" selected="false" bounds="[18,697][61,713]" />
+  <node index="1" text="Pick a length" resource-id="" class="android.widget.TextView" package="dev.mks.duskread" content-desc="" hint="" checkable="false" checked="false" clickable="false" enabled="true" focusable="false" long-clickable="false" password="false" scrollable="false" selected="false" bounds="[18,729][114,752]" />
+  <node index="2" text="15 MIN" resource-id="" class="android.widget.Button" package="dev.mks.duskread" content-desc="" hint="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" long-clickable="false" password="false" scrollable="false" selected="false" bounds="[18,768][85,800]" />
+  <node index="3" text="25 MIN" resource-id="" class="android.widget.Button" package="dev.mks.duskread" content-desc="" hint="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" long-clickable="false" password="false" scrollable="false" selected="false" bounds="[91,768][158,800]" />
+  <node index="4" text="30 MIN" resource-id="" class="android.widget.Button" package="dev.mks.duskread" content-desc="" hint="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" long-clickable="false" password="false" scrollable="false" selected="false" bounds="[164,768][231,800]" />
+  <node index="5" text="CUSTOM" resource-id="" class="android.widget.Button" package="dev.mks.duskread" content-desc="" hint="" checkable="false" checked="false" clickable="true" enabled="true" focusable="true" long-clickable="false" password="false" scrollable="false" selected="false" bounds="[237,768][304,800]" />
+</node>
+</hierarchy>

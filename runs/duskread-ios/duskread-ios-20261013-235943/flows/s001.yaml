@@ -1,0 +1,8 @@
+# AppScreenMap: reach s001 — Hello, MKS
+# Generated from run duskread-ios-20261013-235943
+appId: dev.mks.duskread
+---
+- launchApp:
+    stopApp: true
+- assertVisible: "Hello, MKS"
+- takeScreenshot: s001

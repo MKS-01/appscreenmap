@@ -1,0 +1,12 @@
+# AppScreenMap: reach s005 — 14:59
+# Generated from run duskread-ios-20261013-235943
+appId: dev.mks.duskread
+---
+- launchApp:
+    stopApp: true
+# on s001: click '15 MIN'
+- tapOn: "15 MIN"
+# on s004: click 'PAUSE'
+- tapOn: "PAUSE"
+- assertVisible: "14:59"
+- takeScreenshot: s005

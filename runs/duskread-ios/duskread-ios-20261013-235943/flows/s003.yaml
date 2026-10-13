@@ -1,0 +1,12 @@
+# AppScreenMap: reach s003 — Connect Notion
+# Generated from run duskread-ios-20261013-235943
+appId: dev.mks.duskread
+---
+- launchApp:
+    stopApp: true
+# on s001: click 'Settings'
+- tapOn: "Settings"
+# on s002: click 'Connect Notion'
+- tapOn: "Connect Notion"
+- assertVisible: "Connect Notion"
+- takeScreenshot: s003
