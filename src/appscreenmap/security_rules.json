@@ -1,0 +1,214 @@
+{
+  "schema": 1,
+  "updated": "2026-10-14",
+  "note": "The security audit's rule catalogue. Documented in .claude/skills/security-rules; read by the viewer (placeholders until a rule is implemented) and by the scanner when it exists. Every ref is an official Android, Apple or Google Play page.",
+  "categories": {
+    "manifest": "Manifest and Info.plist",
+    "static": "Static scan of the compiled code",
+    "dynamic": "Dynamic run (instrumented)",
+    "data": "Data left on the device"
+  },
+  "rules": [
+    {
+      "id": "exported-component",
+      "title": "Exported component without a permission",
+      "platform": "android",
+      "category": "manifest",
+      "severity": "warning",
+      "needs": ["aapt2"],
+      "status": "planned",
+      "why": "An activity, service, receiver or provider that is exported can be started by any app. Without a permission, other apps can drive it or read its data.",
+      "fix": "Set android:exported=\"false\" unless another app must reach it; otherwise guard it with a signature-level android:permission.",
+      "refs": [
+        { "title": "android:exported", "url": "https://developer.android.com/privacy-and-security/risks/android-exported", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "cleartext-traffic",
+      "title": "Cleartext traffic allowed",
+      "platform": "android",
+      "category": "manifest",
+      "severity": "warning",
+      "needs": ["aapt2"],
+      "status": "planned",
+      "why": "android:usesCleartextTraffic=\"true\", or a network security config that permits cleartext, lets the app send data over HTTP, where it can be read and changed on the network. Android 17 starts deprecating the attribute.",
+      "fix": "Remove the attribute and use HTTPS. If one domain truly needs HTTP, allow it per domain in network_security_config.xml.",
+      "refs": [
+        { "title": "Cleartext communications", "url": "https://developer.android.com/privacy-and-security/risks/cleartext-communications", "publisher": "Android Developers" },
+        { "title": "Network security configuration", "url": "https://developer.android.com/privacy-and-security/security-config", "publisher": "Android Developers" },
+        { "title": "Android 17 behavior changes: all apps", "url": "https://developer.android.com/about/versions/17/behavior-changes-all", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "debuggable",
+      "title": "Debuggable build",
+      "platform": "android",
+      "category": "manifest",
+      "severity": "error",
+      "needs": ["aapt2"],
+      "status": "planned",
+      "why": "A build with android:debuggable=\"true\" lets anyone attach a debugger, read the app's data and run code inside its process. It must never ship.",
+      "fix": "Build release variants with debuggable false (Gradle's release build type does this by default) and remove the manifest attribute.",
+      "refs": [
+        { "title": "android:debuggable", "url": "https://developer.android.com/privacy-and-security/risks/android-debuggable", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "allow-backup",
+      "title": "App data can be backed up",
+      "platform": "android",
+      "category": "manifest",
+      "severity": "warning",
+      "needs": ["aapt2"],
+      "status": "planned",
+      "why": "With android:allowBackup on (the default), backups can copy the app's data, tokens included, off the device.",
+      "fix": "Set allowBackup=\"false\", or add dataExtractionRules / fullBackupContent that exclude tokens and databases.",
+      "refs": [
+        { "title": "Security recommendations for backups", "url": "https://developer.android.com/privacy-and-security/risks/backup-best-practices", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "hardcoded-secret",
+      "title": "Hard-coded secret",
+      "platform": "both",
+      "category": "static",
+      "severity": "error",
+      "needs": ["jadx", "strings"],
+      "status": "planned",
+      "why": "API keys, tokens, private keys or passwords compiled into the app can be read by anyone who unpacks it.",
+      "fix": "Keep secrets on a server. For client keys use per-user tokens, or restrict the key (package name, signing certificate, quota). Rotate any key that shipped.",
+      "refs": [
+        { "title": "Hardcoded Cryptographic Secrets", "url": "https://developer.android.com/privacy-and-security/risks/hardcoded-cryptographic-secrets", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "webview-js-interface",
+      "title": "WebView native bridge",
+      "platform": "android",
+      "category": "static",
+      "severity": "warning",
+      "needs": ["jadx"],
+      "status": "planned",
+      "why": "addJavascriptInterface exposes app methods to JavaScript in the page. If the WebView loads remote or user-supplied content, that page can call them.",
+      "fix": "Load only trusted origins, expose as little as possible, annotate with @JavascriptInterface, or use WebMessagePort instead of a bridge.",
+      "refs": [
+        { "title": "WebView – Native bridges", "url": "https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "insecure-trust-manager",
+      "title": "TLS validation switched off",
+      "platform": "android",
+      "category": "static",
+      "severity": "error",
+      "needs": ["jadx"],
+      "status": "planned",
+      "why": "A custom X509TrustManager that accepts every certificate, or a HostnameVerifier that always returns true, disables TLS checks: anyone on the network can read and change the traffic.",
+      "fix": "Delete the custom checks and use the platform defaults. To trust a private certificate authority, use a network security config.",
+      "refs": [
+        { "title": "Unsafe X509TrustManager", "url": "https://developer.android.com/privacy-and-security/risks/unsafe-trustmanager", "publisher": "Android Developers" },
+        { "title": "Unsafe HostnameVerifier", "url": "https://developer.android.com/privacy-and-security/risks/unsafe-hostname", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "weak-crypto",
+      "title": "Broken or risky cryptography",
+      "platform": "android",
+      "category": "static",
+      "severity": "warning",
+      "needs": ["jadx"],
+      "status": "planned",
+      "why": "Algorithms such as DES, RC4, ECB mode, and MD5 or SHA-1 used for security, or a fixed IV, don't protect data.",
+      "fix": "Use AES-GCM or ChaCha20-Poly1305 with a fresh random nonce, SHA-256 or stronger, and keep keys in the Android Keystore.",
+      "refs": [
+        { "title": "Broken or risky cryptographic algorithm", "url": "https://developer.android.com/privacy-and-security/risks/broken-cryptographic-algorithm", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "sensitive-logging",
+      "title": "Sensitive data in logs",
+      "platform": "android",
+      "category": "static",
+      "severity": "info",
+      "needs": ["jadx"],
+      "status": "planned",
+      "why": "Tokens, passwords or personal data written to Logcat can be read by other tools and end up in bug reports.",
+      "fix": "Remove the log calls, or strip them from release builds (R8 -assumenosideeffects). Never log credentials.",
+      "refs": [
+        { "title": "Log Info Disclosure", "url": "https://developer.android.com/privacy-and-security/risks/log-info-disclosure", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "no-cert-pinning",
+      "title": "Traffic readable through a user-installed CA",
+      "platform": "both",
+      "category": "dynamic",
+      "severity": "info",
+      "needs": ["frida"],
+      "status": "planned",
+      "why": "While the app runs it accepts a certificate from a user-installed authority, so a proxy can read its traffic. Pinning is optional, but worth a deliberate decision for sensitive APIs.",
+      "fix": "Pin your API hosts' public keys: <pin-set> in the network security config on Android; the URLSession delegate or NSPinnedDomains in Info.plist on iOS.",
+      "refs": [
+        { "title": "Network security configuration", "url": "https://developer.android.com/privacy-and-security/security-config", "publisher": "Android Developers" }
+      ]
+    },
+    {
+      "id": "cleartext-observed",
+      "title": "HTTP request seen at runtime",
+      "platform": "both",
+      "category": "dynamic",
+      "severity": "error",
+      "needs": ["frida"],
+      "status": "planned",
+      "why": "A request to an http:// URL was sent while the app ran, so its data crossed the network unencrypted.",
+      "fix": "Serve the endpoint over HTTPS, update the client, and remove the cleartext exception that allowed it.",
+      "refs": [
+        { "title": "Cleartext communications", "url": "https://developer.android.com/privacy-and-security/risks/cleartext-communications", "publisher": "Android Developers" },
+        { "title": "Preventing insecure network connections", "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections", "publisher": "Apple Developer" }
+      ]
+    },
+    {
+      "id": "secrets-at-rest",
+      "title": "Secrets stored in plain files or preferences",
+      "platform": "both",
+      "category": "data",
+      "severity": "warning",
+      "needs": ["adb or simctl"],
+      "status": "planned",
+      "why": "After a crawl, the app's data folder holds tokens or credentials in plain files, SharedPreferences or UserDefaults. Backups and rooted or jailbroken devices can read them.",
+      "fix": "Keep secrets in the Android Keystore (for example EncryptedSharedPreferences) or the iOS Keychain, not in preferences or files.",
+      "refs": [
+        { "title": "Security checklist", "url": "https://developer.android.com/privacy-and-security/security-tips", "publisher": "Android Developers" },
+        { "title": "Keychain services", "url": "https://developer.apple.com/documentation/security/keychain-services", "publisher": "Apple Developer" }
+      ]
+    },
+    {
+      "id": "ats-exceptions",
+      "title": "App Transport Security exceptions",
+      "platform": "ios",
+      "category": "manifest",
+      "severity": "warning",
+      "needs": ["the .app's Info.plist"],
+      "status": "planned",
+      "why": "NSAppTransportSecurity exceptions (NSAllowsArbitraryLoads, per-domain exceptions) allow insecure HTTP connections.",
+      "fix": "Remove the exceptions and use HTTPS endpoints. Keep a per-domain exception only with a written reason.",
+      "refs": [
+        { "title": "Preventing insecure network connections", "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections", "publisher": "Apple Developer" }
+      ]
+    },
+    {
+      "id": "privacy-manifest-missing",
+      "title": "No privacy manifest",
+      "platform": "ios",
+      "category": "manifest",
+      "severity": "warning",
+      "needs": ["the .app bundle"],
+      "status": "planned",
+      "why": "An app that uses required-reason APIs, or ships SDKs on Apple's list, needs a privacy manifest (PrivacyInfo.xcprivacy) declaring the data it collects and why.",
+      "fix": "Add PrivacyInfo.xcprivacy to the app target and update any SDK that ships its own.",
+      "refs": [
+        { "title": "Privacy manifest files", "url": "https://developer.apple.com/documentation/bundleresources/privacy-manifest-files", "publisher": "Apple Developer" }
+      ]
+    }
+  ]
+}

@@ -80,5 +80,5 @@ function serveRuns(): Plugin {
 
 export default defineConfig({
   plugins: [react(), serveRuns()],
-  server: { port: 5173 },
+  server: { port: 5173, fs: { allow: [".."] } }, // the viewer imports design/tokens.css and the security rule catalogue from the repo root
 });

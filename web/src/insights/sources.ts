@@ -97,6 +97,18 @@ export const SOURCES = {
     publisher: "Android Developers",
     date: CHECKED,
   },
+  applePrivacyManifest: {
+    title: "Privacy manifest files",
+    url: "https://developer.apple.com/documentation/bundleresources/privacy-manifest-files",
+    publisher: "Apple Developer",
+    date: CHECKED,
+  },
+  playDataSafety: {
+    title: "Provide information for Google Play's Data safety section",
+    url: "https://support.google.com/googleplay/android-developer/answer/10787469",
+    publisher: "Google Play",
+    date: CHECKED,
+  },
   androidVitals: {
     title: "Android vitals",
     url: "https://developer.android.com/topic/performance/vitals",

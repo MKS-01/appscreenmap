@@ -3,10 +3,28 @@ import { runFile } from "../api";
 import type { AppMapData } from "../types";
 import { a11yReport, coverageReport, notRun, perfReport, stabilityReport, type A11yFile, type BuildContext, type PerfFile } from "./builtin";
 import { adaptiveReport, platformReport, securityReport, storeReport } from "./samples";
-import type { AuditDef, AuditReport } from "./types";
+import securityRules from "../../../src/appscreenmap/security_rules.json";
+import { SOURCES } from "./sources";
+import type { AuditDef, AuditReport, PlannedCheck, Platform, Severity } from "./types";
 
 // The audits Insights knows about, in display order. Adding one = a def here plus a builder (or nothing at all,
 // if the crawler writes audits/<id>.json: unknown ids listed in audits/index.json show up automatically).
+
+/** Security rules from the shared catalogue (src/appscreenmap/security_rules.json, documented in the security-rules skill).
+ *  Each is a placeholder until a scanner implements it. */
+const SECURITY_CHECKS: PlannedCheck[] = securityRules.rules
+  .filter((r) => r.status === "planned")
+  .map((r) => ({
+    id: r.id,
+    title: r.title,
+    detail: r.why,
+    fix: r.fix,
+    severity: r.severity as Severity,
+    category: (securityRules.categories as Record<string, string>)[r.category],
+    platform: r.platform as Platform,
+    needs: r.needs.join(", "),
+    refs: r.refs,
+  }));
 
 interface Entry extends AuditDef {
   build: (ctx: BuildContext) => AuditReport;
@@ -57,6 +75,14 @@ export const AUDITS: Entry[] = [
     group: "release",
     blurb: "Orientation, window size classes, large screens and foldables.",
     produces: "Manifest orientation locks today; multi-size crawls (600 / 840 dp) are planned.",
+    setup: "planned",
+    planned: [
+      { title: "Layouts at 600 dp and 840 dp", detail: "Crawl again at the medium and expanded window size classes and compare each screen with the compact one: stretched lists, a bottom bar where a navigation rail belongs, clipped content.", needs: "a tablet or resizable emulator", refs: [SOURCES.windowSizeClasses] },
+      { title: "Orientation and resizability locks", detail: "Activities locked to one orientation are ignored on large screens at API 37, and fail WCAG 1.3.4. Read from the manifest today.", refs: [SOURCES.android17LargeScreens] },
+      { title: "Foldable postures", detail: "Check the app across folded, half-open and flat postures, and that content avoids the hinge.", needs: "a foldable emulator (iOS: idb hinge)" },
+      { title: "iPhone Duo poses", detail: "Every pose and orientation in Device Hub after recompiling with Xcode 27.1.", platform: "ios", needs: "an iOS crawl", refs: [SOURCES.appleIphoneDuoPrepare] },
+    ],
+    enable: ["Crawl on a tablet or resizable emulator, then run the audit on both runs (planned: appscreenmap adaptive <compact-run> <expanded-run>)"],
     build: adaptiveReport,
   },
   {
@@ -67,6 +93,15 @@ export const AUDITS: Entry[] = [
     qualifier: "Android 17 · iOS 27",
     blurb: "This year's Android and iOS behavior changes, checked against the app.",
     produces: "Planned: manifest + jadx signals matched to the yearly behavior-change list.",
+    setup: "planned",
+    planned: [
+      { title: "Orientation and resizability at API 37", detail: "The Android 16 opt-out for ignoring orientation and aspect-ratio limits on large screens is removed for apps targeting 37.", platform: "android", needs: "the manifest and target SDK", refs: [SOURCES.android17] },
+      { title: "Local network permission", detail: "Apps targeting 37 need ACCESS_LOCAL_NETWORK for LAN access. Flags code that opens local sockets or discovers devices.", platform: "android", needs: "jadx (static scan)", refs: [SOURCES.localNetwork] },
+      { title: "Static final fields and reflection", detail: "Reflective writes to static final fields throw at API 37, and JNI writes crash. Flags reflection on final fields.", platform: "android", needs: "jadx (static scan)", refs: [SOURCES.android17] },
+      { title: "Cleartext traffic deprecation", detail: "usesCleartextTraffic is on a deprecation path; the replacement is a network security config.", platform: "android", needs: "the manifest", refs: [SOURCES.android17All] },
+      { title: "New devices and SDK deadlines", detail: "iPhone Duo (available Oct 23, 2026) and the Xcode and SDK versions App Store Connect accepts.", platform: "ios", needs: "the .app's Info.plist", refs: [SOURCES.appleUpcoming] },
+    ],
+    enable: ["Matched against the yearly behavior-change lists in web/src/insights/sources.ts; needs the manifest and a jadx scan of the build (planned: appscreenmap platform <run>)"],
     build: () => platformReport(),
   },
   {
@@ -77,6 +112,15 @@ export const AUDITS: Entry[] = [
     qualifier: "Play · App Store",
     blurb: "Google Play and App Store requirements, with deadlines.",
     produces: "Planned: target/min SDK from the APK, store listing assets from the crawl.",
+    setup: "planned",
+    planned: [
+      { title: "Target and minimum SDK", detail: "Compares the build's targetSdk with Google Play's requirement for new apps and updates, and the deadline for each.", platform: "android", needs: "aapt2 on the APK", refs: [SOURCES.playTargetSdk] },
+      { title: "Data safety form", detail: "Lists the SDKs and permissions the build uses so the Data safety answers can be checked against them.", platform: "android", needs: "the manifest and a jadx scan", refs: [SOURCES.playDataSafety] },
+      { title: "Built with a required SDK", detail: "App Store Connect only accepts builds made with the Xcode and SDK versions Apple lists.", platform: "ios", needs: "the .app's Info.plist", refs: [SOURCES.appleUpcoming] },
+      { title: "Privacy manifest", detail: "Checks that the app ships a privacy manifest declaring the data and required-reason APIs it uses.", platform: "ios", needs: "the .app bundle", refs: [SOURCES.applePrivacyManifest] },
+      { title: "Listing screenshots", detail: "Crawl screenshots checked against each store's size and aspect-ratio rules (Play phone is 2:1 at most).", refs: [SOURCES.appleScreenshotSpecs] },
+    ],
+    enable: ["Needs the build's APK or .app: crawl with --apk or --app (planned: appscreenmap store <run>)"],
     build: storeReport,
   },
   {
@@ -87,6 +131,9 @@ export const AUDITS: Entry[] = [
     qualifier: "jadx · frida",
     blurb: "Static (jadx), manifest and dynamic (frida) checks.",
     produces: "Planned: `appscreenmap security <run>` with jadx and frida.",
+    setup: "planned",
+    planned: SECURITY_CHECKS,
+    enable: ["Install the tools: brew install jadx; uv tool install frida-tools", "Then, once it ships: appscreenmap security runs/<project>/<run-id>"],
     build: securityReport,
   },
 ];
