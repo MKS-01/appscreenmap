@@ -24,11 +24,11 @@
   <a href="#how-it-works-for-you">How it works</a> &nbsp;·&nbsp;
   <a href="#the-dashboard">Dashboard</a> &nbsp;·&nbsp;
   <a href="#export-and-share">Export</a> &nbsp;·&nbsp;
-  <a href="#quick-start">Run it</a> &nbsp;·&nbsp;
-  <a href="#docs">Docs</a>
+  <a href="#prerequisites">Prerequisites</a> &nbsp;·&nbsp;
+  <a href="#quick-start">Run it</a>
 </p>
 
-<p align="center"><sub>Deterministic crawler, no model calls. Plain files out. Early draft.</sub></p>
+<p align="center"><sub>Deterministic crawler, no model calls. Plain files out.</sub></p>
 
 ---
 
@@ -51,10 +51,8 @@ answers for the agent itself ("how do I reach Settings?"). The map is the produc
 
 ## Why AppScreenMap
 
-- **One crawl, many uses.** The map of every screen is the foundation. Test flows, regression checks, audits, exports
-  and the agent's own answers all read it, so there is no separate tool for each job.
-- **Your agent runs it, you review it.** Ask in plain language; the agent crawls, reviews, tunes and audits, and
-  everything lands in one dashboard instead of a trail of run folders and reports.
+- **Your agent runs it, you review it.** Ask in plain language and read the result in one dashboard, not a trail of
+  run folders and reports.
 - **Nothing to add to your app.** No SDK, no test IDs, no source access: it drives the build you ship through `adb`
   (or `simctl` and `idb` on iOS), and copes with apps that expose almost no resource ids, such as Compose.
 - **Deterministic and local.** The crawler makes no model calls, so the same build and settings give the same map and
@@ -62,7 +60,7 @@ answers for the agent itself ("how do I reach Settings?"). The map is the produc
 - **Safe by default.** It stays inside the app, never taps log out, delete or pay, keeps passwords out of the output
   (`${ENV}` placeholders), and never writes a secret it finds into a finding.
 - **Standards, with sources.** Accessibility is checked per WCAG 2.2 criterion, and every finding cites official
-  Android, Apple or W3C documentation. Anything that needs a person or a device is "Not tested", never a pass.
+  Android, Apple or W3C documentation.
 - **Open files, two platforms.** MIT-licensed plain files, with `map.json` a documented, versioned contract any tool
   can read, for Android and the iOS Simulator alike.
 
@@ -88,9 +86,7 @@ answers for the agent itself ("how do I reach Settings?"). The map is the produc
    reports one by one. Triage findings, then export a report to share.
 
 The agent is Claude Code or any MCP client. The repo ships [skills](.claude/skills/) that teach it each job, and
-an [MCP server](docs/SETUP.md#agents-mcp) so it can ask the map ("how do I reach Settings?") instead of exploring the app
-again. The crawler itself makes no model calls: same build and settings give the same map, so a regression is a
-diff, not noise, and nothing leaves your machine.
+an [MCP server](docs/SETUP.md#agents-mcp) so it can query the map instead of exploring the app again.
 
 ### What the agent handles
 
@@ -122,7 +118,7 @@ diff, not noise, and nothing leaves your machine.
 - **Crawl replay**: step through the crawl to see what was tapped and why.
 - **How it works**: the crawl loop, walked through on your own latest run.
 
-Stars, notes and triage travel with the run folder. To work on the viewer, see [`web/README.md`](web/README.md).
+To work on the viewer, see [`web/README.md`](web/README.md).
 
 ## Export and share
 
@@ -138,31 +134,36 @@ Stars, notes and triage travel with the run folder. To work on the viewer, see [
 The WCAG report is written after every crawl, is one file you can attach to a ticket, and treats anything that
 needs a person or a device as *Not tested*, never as a pass. It is evidence, not a conformance claim.
 
+## Prerequisites
+
+| You need | For | Notes |
+|---|---|---|
+| Python 3.11+ and [uv](https://docs.astral.sh/uv/) | everything | `uv sync` installs the crawler |
+| [Bun](https://bun.sh) | the dashboard | builds the viewer once from a source checkout; `serve` won't start without it |
+| Android: `adb` (platform-tools) and an emulator or USB device | Android crawls | Android Studio's SDK has both |
+| Android build-tools (`aapt2`) | app details, activity coverage, the security manifest checks | recommended; `doctor` finds it in your SDK |
+| iOS: macOS, Xcode, a booted Simulator, and [idb](https://fbidb.io) | iOS crawls (beta) | `brew install facebook/fb/idb-companion` and `uv tool install fb-idb`; the app must be a simulator `.app`, not an `.ipa` |
+| An AI agent: Claude Code or any MCP client | the hands-off flow | optional: every command also runs by hand |
+| [Maestro](https://maestro.mobile.dev), [Frida](https://frida.re) | running the generated flows; the dynamic security check | optional |
+
 ## Quick start
 
-Ask your agent: *"Map my app on the emulator and review the map."* Or run it yourself:
+Ask your agent, or run it yourself:
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
 uv sync
-uv run appscreenmap doctor                       # checks adb, devices, simulators, idb, viewer build
+(cd web && bun install && bun run build)         # the dashboard, one time
+uv run appscreenmap doctor                       # checks the prerequisites above, says what is missing
 uv run appscreenmap crawl --apk path/to/app.apk  # Android: install + map
 uv run appscreenmap serve                        # open the dashboard
 ```
 
-On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. Python 3.11+ with
-[uv](https://docs.astral.sh/uv/) and an Android emulator or a booted simulator are all you need. Two sample apps
-ship in [`samples/`](samples/); `samples/demo.sh` crawls them so the dashboard has something to show.
+On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. Two sample apps ship in
+[`samples/`](samples/); `samples/demo.sh` crawls them so the dashboard has something to show.
 
-## Docs
-
-| | |
-|---|---|
-| [Setup and usage](docs/SETUP.md) | Requirements, Android and iOS, platform support, every command and flag, config and secrets, Maestro tests, CI `verify`, MCP |
-| [Architecture](docs/ARCHITECTURE.md) | The crawl loop, the audits, the run folder, project layout |
-| [Map format](docs/MAP_SCHEMA.md) | The `map.json` contract the viewer and tools read |
-| [Plan and roadmap](docs/PLAN.md) | Design rationale, prior art, what's next |
-| [Samples](samples/README.md) | The Playground and DuskRead apps and the demo scenarios |
+More: [setup and every command](docs/SETUP.md), [how the crawl and audits work](docs/ARCHITECTURE.md), the
+[`map.json` format](docs/MAP_SCHEMA.md) and the [roadmap](docs/PLAN.md); the sample apps are in [`samples/`](samples/README.md).
 
 ## License
 
