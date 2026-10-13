@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { RULES, SEVERITY_COLOR, TRIAGE_LABEL, densityFor, useA11y, type A11yIssue, type RuleId, type Severity, type TriageStatus } from "../a11y";
+import { RULES as BASE_RULES, SEVERITY_COLOR, TRIAGE_LABEL, densityFor, platformOf, useA11y, useRules, type A11yIssue, type RuleId, type Severity, type TriageStatus } from "../a11y";
 import A11yIssueTable, { statusOf } from "../components/A11yIssueTable";
 import { Stat, Thumb } from "../components/common";
 import { Icon } from "../components/Icon";
@@ -14,6 +14,7 @@ const SEVERITIES: Severity[] = ["error", "warning", "info"];
 type StatusFilter = "all" | "unreviewed" | TriageStatus;
 
 export default function A11y({ run, map, view }: { run: string; map: AppMapData; view?: string }) {
+  const RULES = useRules(); // worded for the crawled platform (VoiceOver and Apple's 44 pt on iOS)
   const { issues, done, total } = useA11y(run, map);
   const notes = useNotes(run);
   const byId = useMemo(() => screenMap(map), [map]);
@@ -49,7 +50,7 @@ export default function A11y({ run, map, view }: { run: string; map: AppMapData;
           <span className="kicker">Accessibility · {total} screens checked</span>
           <h1>Can everyone use this app?</h1>
           <p className="lede">
-            Automated checks on every mapped screen, modelled on Android Accessibility Scanner. Triage each finding; decisions are
+            Automated checks on every mapped screen, modelled on {platformOf(map) === "ios" ? "Apple\u2019s Accessibility Inspector" : "Android Accessibility Scanner"}. Triage each finding; decisions are
             saved with the run.{report && " Findings you mark Needs fix are included in the WCAG 2.2 report."}
           </p>
         </div>
@@ -172,10 +173,10 @@ export default function A11y({ run, map, view }: { run: string; map: AppMapData;
       </div>
 
       <p className="small faint section">
-        Touch-target sizes use {density.scale.toFixed(2)} px per dp
+        Touch-target sizes use {density.scale.toFixed(2)} px per {platformOf(map) === "ios" ? "point" : "dp"}
         {density.exact ? " (from the device's density)." : " — estimated from screen width; the run doesn't record the device density."}{" "}
         Contrast is estimated from screenshot pixels, and text size isn't known, so 3–4.5:1 is flagged as a warning. Automated checks
-        catch only part of what matters; also try the app with TalkBack. <a href={href("how")}>How AppScreenMap works</a>
+        catch only part of what matters; also try the app with {platformOf(map) === "ios" ? "VoiceOver" : "TalkBack"}. <a href={href("how")}>How AppScreenMap works</a>
       </p>
     </div>
   );
@@ -207,7 +208,7 @@ function toMarkdown(map: AppMapData, issues: A11yIssue[], triage: RunTriage, byI
       const t = triage[i.key];
       const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
       lines.push(
-        `| ${i.severity} | ${RULES[i.rule].title} | ${cell(i.label)}${i.rid ? ` \`${i.rid.replace(/^.*?:id\//, "id/")}\`` : ""} | ${cell(i.detail)} | ${TRIAGE_LABEL[t?.status ?? "open"]} | ${cell(t?.note ?? "")} |`,
+        `| ${i.severity} | ${BASE_RULES[i.rule].title} | ${cell(i.label)}${i.rid ? ` \`${i.rid.replace(/^.*?:id\//, "id/")}\`` : ""} | ${cell(i.detail)} | ${TRIAGE_LABEL[t?.status ?? "open"]} | ${cell(t?.note ?? "")} |`,
       );
     }
     lines.push("");

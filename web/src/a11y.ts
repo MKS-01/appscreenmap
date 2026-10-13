@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { runFile } from "./api";
 import type { AppMapData, Screen } from "./types";
 
@@ -53,6 +53,47 @@ export const RULES: Record<RuleId, { title: string; severity: Severity; why: str
     fix: "Drop the role word from the description.",
   },
 };
+
+// ── platform ────────────────────────────────────────────────────────────────
+
+export type Platform = "android" | "ios";
+export const platformOf = (map: AppMapData): Platform => (map.run.device.platform === "ios" ? "ios" : "android");
+/** The crawled platform of the run being viewed; set once in the run shell. */
+export const PlatformCtx = createContext<Platform>("android");
+
+/** Minimum touch target in dp/pt: Android's Material guideline is 48 dp, Apple's HIG is 44 pt. */
+export const TARGET_MIN: Record<Platform, number> = { android: 48, ios: 44 };
+
+// What reads differently on iOS: the screen reader is VoiceOver, the code is Swift, the guideline is Apple's.
+const IOS: Partial<Record<RuleId, { title?: string; why?: string; fix?: string }>> = {
+  "label-missing": {
+    why: "A tappable item has no accessibility label, so VoiceOver can only announce its role (“Button”).",
+    fix: "SwiftUI: .accessibilityLabel(\"Save\"). UIKit: set accessibilityLabel. Icon-only buttons need one.",
+  },
+  "field-unlabeled": {
+    why: "A text field has no label or placeholder, so VoiceOver users don't know what to type.",
+    fix: "Give the field a label (TextField(\"Email\", text: …)) or .accessibilityLabel.",
+  },
+  "field-desc": {
+    why: "An accessibilityLabel on a text field can replace what VoiceOver reads for the typed text.",
+    fix: "Remove the label override; use the field's own title or placeholder, and accessibilityHint for extra context.",
+  },
+  "touch-target": {
+    why: "Below Apple's 44×44 pt guideline: hard to hit for people with motor impairments. (WCAG 2.2 AA 2.5.8 is 24×24 with a spacing exception; the crawler's WCAG report checks that.)",
+    fix: "Add padding or .frame(minWidth: 44, minHeight: 44) with .contentShape(Rectangle()) so the whole area is tappable.",
+  },
+  "redundant-desc": {
+    why: "VoiceOver already announces the trait (“button”, “image”); repeating it in the label reads it twice.",
+    fix: "Drop the role word from the accessibility label.",
+  },
+};
+
+/** The rule catalogue worded for a platform. */
+export function rulesFor(platform: Platform): typeof RULES {
+  if (platform !== "ios") return RULES;
+  return Object.fromEntries(Object.entries(RULES).map(([id, r]) => [id, { ...r, ...IOS[id as RuleId] }])) as typeof RULES;
+}
+export const useRules = () => rulesFor(useContext(PlatformCtx));
 
 export const SEVERITY_COLOR: Record<Severity, string> = {
   error: "var(--st-blocked)",
@@ -163,7 +204,9 @@ export function densityFor(map: AppMapData): { scale: number; exact: boolean } {
 
 // ── rules ───────────────────────────────────────────────────────────────────
 
-function structuralIssues(screen: Screen, nodes: HNode[], dp: number): A11yIssue[] {
+function structuralIssues(screen: Screen, nodes: HNode[], dp: number, platform: Platform): A11yIssue[] {
+  const min = TARGET_MIN[platform];
+  const unit = platform === "ios" ? "pt" : "dp";
   const W = screen.width || 1080;
   const H = screen.height || 2400;
   const issues: A11yIssue[] = [];
@@ -203,12 +246,12 @@ function structuralIssues(screen: Screen, nodes: HNode[], dp: number): A11yIssue
     // Touch target: skip views clipped by a scroll container edge, and views inside a big enough tappable parent.
     const wdp = w(n) / dp;
     const hdp = h(n) / dp;
-    if (n.enabled && (wdp < 47.5 || hdp < 47.5)) {
+    if (n.enabled && (wdp < min - 0.5 || hdp < min - 0.5)) {
       const clipped = [...ancestors(n)].some(
         (a) => a.scrollable && (n.bounds[0] <= a.bounds[0] || n.bounds[1] <= a.bounds[1] || n.bounds[2] >= a.bounds[2] || n.bounds[3] >= a.bounds[3]),
       );
-      const coveredByParent = [...ancestors(n)].some((a) => a.clickable && !backdrop(a) && w(a) / dp >= 48 && h(a) / dp >= 48);
-      if (!clipped && !coveredByParent) add("touch-target", n, name(n), `${Math.round(wdp)}×${Math.round(hdp)} dp (Android guideline 48×48)`);
+      const coveredByParent = [...ancestors(n)].some((a) => a.clickable && !backdrop(a) && w(a) / dp >= min && h(a) / dp >= min);
+      if (!clipped && !coveredByParent) add("touch-target", n, name(n), `${Math.round(wdp)}×${Math.round(hdp)} ${unit} (${platform === "ios" ? "Apple HIG" : "Android guideline"} ${min}×${min})`);
     }
 
     if (n.desc) {
@@ -321,8 +364,8 @@ async function contrastIssues(run: string, screen: Screen, nodes: HNode[], dp: n
 
 const cache = new Map<string, Promise<A11yIssue[]>>();
 
-export function analyzeScreen(run: string, screen: Screen, dp: number): Promise<A11yIssue[]> {
-  const id = `${run}/${screen.id}/${screen.hierarchy}/${dp}`;
+export function analyzeScreen(run: string, screen: Screen, dp: number, platform: Platform = "android"): Promise<A11yIssue[]> {
+  const id = `${run}/${screen.id}/${screen.hierarchy}/${dp}/${platform}`;
   let p = cache.get(id);
   if (!p) {
     p = (async () => {
@@ -330,7 +373,7 @@ export function analyzeScreen(run: string, screen: Screen, dp: number): Promise<
       const r = await fetch(runFile(run, screen.hierarchy), { cache: "no-store" });
       if (!r.ok) return [];
       const nodes = parseHierarchy(await r.text());
-      const structural = structuralIssues(screen, nodes, dp);
+      const structural = structuralIssues(screen, nodes, dp, platform);
       const contrast = await contrastIssues(run, screen, nodes, dp).catch(() => []);
       return [...structural, ...contrast];
     })();
@@ -343,6 +386,7 @@ export function analyzeScreen(run: string, screen: Screen, dp: number): Promise<
 /** Analyze every app screen in a run (a few at a time); results fill in as they finish. */
 export function useA11y(run: string, map: AppMapData, only?: string) {
   const { scale } = densityFor(map);
+  const platform = platformOf(map);
   const screens = useMemo(() => map.screens.filter((s) => s.kind === "app" && (!only || s.id === only)), [map, only]);
   const [results, setResults] = useState<Record<string, A11yIssue[]>>({});
 
@@ -351,7 +395,7 @@ export function useA11y(run: string, map: AppMapData, only?: string) {
     const queue = [...screens];
     const worker = async () => {
       for (let s = queue.shift(); s && alive; s = queue.shift()) {
-        const issues = await analyzeScreen(run, s, scale).catch(() => [] as A11yIssue[]);
+        const issues = await analyzeScreen(run, s, scale, platform).catch(() => [] as A11yIssue[]);
         if (alive) setResults((r) => ({ ...r, [s!.id]: issues }));
       }
     };
@@ -359,7 +403,7 @@ export function useA11y(run: string, map: AppMapData, only?: string) {
     return () => {
       alive = false;
     };
-  }, [run, screens, scale]);
+  }, [run, screens, scale, platform]);
 
   const issues = useMemo(() => screens.flatMap((s) => results[s.id] ?? []), [screens, results]);
   return { issues, done: screens.filter((s) => results[s.id]).length, total: screens.length };
