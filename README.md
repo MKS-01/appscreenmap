@@ -68,7 +68,7 @@ diff, not noise, and nothing leaves your machine.
 | **Accessibility** | WCAG 2.2 checks on every screen, plus the 200% text crawl, device checks and manual tests | [`a11y-audit`](.claude/skills/a11y-audit/SKILL.md), [`ios-a11y-rules`](.claude/skills/ios-a11y-rules/SKILL.md) |
 | **Performance** | Load time, jank and cold start for every navigation, against a budget | built in |
 | **Release checks** | Replays every path on a new build and diffs pixels and text, with CI exit codes | built in |
-| **Security** | Gathers evidence from the build, judges it against the rule catalogue, writes it to the dashboard | [`security-audit`](.claude/skills/security-audit/SKILL.md) |
+| **Security** | `appscreenmap security` scans an Android build for exported components, cleartext traffic, hard-coded secrets and plain-text data on the device, and writes the findings to the dashboard | [`security-audit`](.claude/skills/security-audit/SKILL.md) |
 | **iOS setup** | Builds the app, boots the simulator, diagnoses a crawl that maps too little | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
 | **Tests** | Generates a [Maestro](https://maestro.mobile.dev) flow per screen; more E2E tools can be added | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
 
@@ -131,21 +131,6 @@ ship in [`samples/`](samples/); `samples/demo.sh` crawls them so the dashboard h
 | [Plan and roadmap](docs/PLAN.md) | Design rationale, prior art, what's next |
 | [Samples](samples/README.md) | The Playground and sample-app apps and the demo scenarios |
 
-## Contributing
-
-Issues and PRs are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md). Please follow the
-[code of conduct](CODE_OF_CONDUCT.md) and report security problems privately ([SECURITY.md](SECURITY.md)).
-
-**A note on privacy:** a crawl records what it types into forms and screenshots whatever the app shows. Use
-throwaway test accounts and review `runs/` before you commit or share it.
-
 ## License
 
-[MIT](LICENSE) © 2026 MKS and AppScreenMap contributors. Third-party notices (including the Lucide-derived icons in
-the viewer) are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-<p align="center">
-  <sub>Early alpha: expect rough edges, and tell us about them</sub><br>
-  <sub>Built agent-first with <a href="https://claude.ai/code">Claude Code</a></sub><br>
-  <sub>sample-app, one of the sample apps, is <a href="https://github.com/MKS-01/sample-app">a separate project</a> by the same author</sub>
-</p>
+[MIT](LICENSE) © 2026 MKS and AppScreenMap contributors.
