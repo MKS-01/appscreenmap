@@ -74,10 +74,10 @@ export default function ScreenDetail({ run, map, sid }: { run: string; map: AppM
     <div className="page">
       <div className="row wrap detail-head" style={{ marginBottom: 20, gap: 12 }}>
         <div className="grow">
+          <span className="kicker">
+            {screen.kind === "app" ? `Screen ${screen.id}` : "External app"} · depth {screen.depth}
+          </span>
           <div className="row" style={{ gap: 10 }}>
-            <span className="sid" style={{ fontSize: 13 }}>
-              {screen.id}
-            </span>
             <h1>{screen.title}</h1>
             {screen.kind === "app" && (
               <button
@@ -93,7 +93,6 @@ export default function ScreenDetail({ run, map, sid }: { run: string; map: AppM
           </div>
           <div className="row wrap small muted" style={{ gap: 12, marginTop: 4 }}>
             <span title={screen.activity ?? ""}>{shortActivity(screen.activity)}</span>
-            <span>depth {screen.depth}</span>
             <span>visited {screen.visits}×</span>
             <span>found at step {screen.first_step}</span>
             {screen.patterns.map((p) => (

@@ -13,7 +13,7 @@ const fmt = (n: number) => (Math.abs(n) >= 10000 ? `${(n / 1000).toFixed(n >= 10
 
 export function Chart({ chart, run }: { chart: AuditChart; run: string }) {
   return (
-    <figure className="panel panel-pad chart">
+    <figure className="chart">
       <figcaption className="chart-head">
         <b>{chart.title}</b>
         {chart.note && <span className="faint small">{chart.note}</span>}
@@ -33,9 +33,9 @@ export function Chart({ chart, run }: { chart: AuditChart; run: string }) {
   );
 }
 
-export const SampleTag = () => (
-  <span className="chip sample-tag" title="Placeholder data so the view can be built before this audit exists">
-    sample data
+export const SampleTag = ({ label = "sample" }: { label?: string }) => (
+  <span className="sample-tag" title="Placeholder data so the view can be built before this audit exists">
+    {label}
   </span>
 );
 

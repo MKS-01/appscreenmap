@@ -29,6 +29,9 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
   const [playing, setPlaying] = useState(false);
   const [follow, setFollow] = useState(running);
   const listRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
+  const [playerH, setPlayerH] = useState<number | null>(null);
+  const [q, setQ] = useState("");
   const jumped = useRef(false);
 
   const rows = trace ?? [];
@@ -85,6 +88,37 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
     listRef.current?.querySelector(".steprow.sel")?.scrollIntoView({ block: "nearest" });
   }, [i]);
 
+  // The step list is as tall as the player beside it, so the two columns end together.
+  useEffect(() => {
+    const el = playerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setPlayerH(e.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [trace]);
+
+  // Search: step number, screen id or title, the tapped label, where it led, and the outcome word.
+  const shown = useMemo(() => {
+    const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const all = rows.map((r, k) => ({ r, k }));
+    if (!words.length) return all;
+    return all.filter(({ r }) => {
+      const hay = [
+        r.step,
+        r.screen,
+        byId.get(r.screen)?.title,
+        r.label,
+        r.to,
+        r.to && byId.get(r.to)?.title,
+        effectWord(r),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return words.every((w) => hay.includes(w));
+    });
+  }, [q, rows, byId]);
+
   if (error) return <div className="page"><ErrorBox error={error} /></div>;
   if (!trace) return <Loading />;
   if (!rows.length) return <div className="page empty">No steps recorded yet.</div>;
@@ -100,24 +134,25 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
     <div className="page" style={{ maxWidth: 1400 }}>
       <div className="row wrap" style={{ marginBottom: 16, gap: 12 }}>
         <div className="grow">
-          <h1>Crawl replay</h1>
-          <div className="muted">
+          <span className="kicker">Crawl replay · {rows.length} steps</span>
+          <h1>Watch the crawler map the app</h1>
+          <p className="lede">
             Step through the crawl to see how this map was built: what the crawler tapped, what it concluded, and when it backtracked.
-          </div>
+          </p>
         </div>
       </div>
 
       <div className="replay">
         <div className="col" style={{ gap: 14 }}>
-          <div className="panel">
+          <div className="panel" ref={playerRef}>
             <div className="row wrap" style={{ padding: "12px 16px", borderBottom: "1px solid var(--border)", gap: 10 }}>
-              <button className="btn" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>
+              <button className="btn" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0} aria-label="Previous step">
                 ←
               </button>
               <button className="btn primary" onClick={() => { setFollow(false); setPlaying(!playing); }} style={{ minWidth: 76 }}>
                 {playing ? "❚❚ Pause" : "▶ Play"}
               </button>
-              <button className="btn" onClick={() => setI(Math.min(rows.length - 1, i + 1))} disabled={i >= rows.length - 1}>
+              <button className="btn" onClick={() => setI(Math.min(rows.length - 1, i + 1))} disabled={i >= rows.length - 1} aria-label="Next step">
                 →
               </button>
               <input
@@ -178,32 +213,40 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
           </div>
         </div>
 
-        <div className="panel steps-panel">
-          <div className="row" style={{ padding: "12px 12px 8px" }}>
-            <h3 className="grow">All steps</h3>
-            <span className="small muted">{rows.length}</span>
+        <div className="panel steps-panel" style={playerH ? ({ "--player-h": `${playerH}px` } as React.CSSProperties) : undefined}>
+          <div className="steps-head">
+            <div className="row">
+              <h3 className="grow">All steps</h3>
+              <span className="small muted">{q ? `${shown.length} of ${rows.length}` : rows.length}</span>
+            </div>
+            <input
+              type="search"
+              placeholder="Find a step: 42, s005, Sign in, crash…"
+              aria-label="Find a step"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => e.key === "Escape" && setQ("")}
+            />
           </div>
           <div className="steps" ref={listRef}>
-            {rows.map((r, k) => (
+            {shown.length === 0 && <div className="steps-empty small muted">No step matches “{q}”.</div>}
+            {shown.map(({ r, k }) => (
               <div key={k}>
-                {(k === 0 || rows[k - 1].step !== r.step) &&
+                {!q &&
+                  (k === 0 || rows[k - 1].step !== r.step) &&
                   (eventsByStep.get(r.step) ?? []).map((e, j) => (
                     <div key={j} className="event-row">
                       ⚑ {e.type} — {e.detail}
                     </div>
                   ))}
-                <div className={`steprow ${k === i ? "sel" : ""}`} onClick={() => { setFollow(false); setI(k); }}>
+                <button type="button" className={`steprow ${k === i ? "sel" : ""}`} aria-current={k === i ? "step" : undefined} onClick={() => { setFollow(false); setI(k); }}>
                   <span className="n">{r.step}</span>
                   <span className="ellipsis">
                     <span className="sid">{r.screen}</span> {r.label}
                     {r.to && r.to !== r.screen && <span className="faint"> → {byId.get(r.to)?.kind === "app" ? r.to : "ext"}</span>}
                   </span>
-                  {r.effect ? (
-                    <span className={`effect ${r.effect}`}>{r.effect === "new_screen" ? "new" : r.effect.replace("_screen", "").replace("_", " ")}</span>
-                  ) : (
-                    <span className="effect not_found">miss</span>
-                  )}
-                </div>
+                  <span className={`effect ${r.effect ?? "not_found"}`}>{effectWord(r)}</span>
+                </button>
               </div>
             ))}
           </div>
@@ -212,6 +255,10 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
     </div>
   );
 }
+
+/** The short outcome word shown on a step row (and matched by search). */
+const effectWord = (r: TraceRow) =>
+  !r.effect ? "miss" : r.effect === "new_screen" ? "new" : r.effect.replace("_screen", "").replace("_", " ");
 
 function Explain({ row, from, to, run }: { row: TraceRow; from?: Screen; to?: Screen; run: string }) {
   if (row.result === "not_found")

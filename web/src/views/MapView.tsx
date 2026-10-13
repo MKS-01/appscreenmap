@@ -353,11 +353,33 @@ function FlowCanvas({
     return pos;
   }, [variant, tree, visible, dir, byId]);
 
+  // Fit the whole map, but never so far out that cards become unreadable (zoom ≥ 0.55) or blown up past 1:1.
+  // When the map is too big for that, centring it would cut off both ends, the launch screen included, so pin it to
+  // where the tree starts instead (top for top-down, left for left-to-right) and let the reader pan for the rest.
+  const canvas = useRef<HTMLDivElement>(null);
+  const fitted = useRef(false);
   useEffect(() => {
-    // Fit the whole map, but never so far out that cards become unreadable (pan for the rest) or blown up past 1:1.
-    const t = setTimeout(() => rf.fitView({ padding: 0.08, duration: 250, minZoom: 0.55, maxZoom: 1 }), 50);
+    const t = setTimeout(() => {
+      const el = canvas.current;
+      const ns = rf.getNodes();
+      if (!el || !ns.length) return;
+      const b = rf.getNodesBounds(ns);
+      const pad = 28;
+      const [W, H] = [el.clientWidth - 2 * pad, el.clientHeight - 2 * pad];
+      const zoom = Math.min(1, Math.max(0.55, Math.min(W / b.width, H / b.height)));
+      const [w, h] = [b.width * zoom, b.height * zoom];
+      // Along the tree's direction pin the start; across it, keep the launch screen in the middle.
+      const root = ns.find((n) => (n.data as { root?: boolean }).root);
+      const rx = root ? root.position.x + (root.measured?.width ?? 0) / 2 : b.x + b.width / 2;
+      const ry = root ? root.position.y + (root.measured?.height ?? 0) / 2 : b.y + b.height / 2;
+      const lr = dir === "LR";
+      const x = w <= W ? pad + (W - w) / 2 - b.x * zoom : lr ? pad - b.x * zoom : pad + W / 2 - rx * zoom;
+      const y = h <= H ? pad + (H - h) / 2 - b.y * zoom : lr ? pad + H / 2 - ry * zoom : pad - b.y * zoom;
+      rf.setViewport({ x, y, zoom }, { duration: fitted.current ? 250 : 0 });
+      fitted.current = true;
+    }, 50);
     return () => clearTimeout(t);
-  }, [layout, rf]);
+  }, [layout, rf, dir]);
 
   const sel = selected ? byId.get(selected) : undefined;
   const pathPairs = useMemo(() => {
@@ -458,7 +480,7 @@ function FlowCanvas({
   );
 
   return (
-    <div className="map-canvas">
+    <div className="map-canvas" ref={canvas}>
       {Object.keys(dragged).length > 0 && (
         <button className="btn map-reset" onClick={() => setDragged({})} title="Forget the positions you dragged screens to">
           Reset layout
@@ -476,8 +498,6 @@ function FlowCanvas({
         maxZoom={2}
         proOptions={{ hideAttribution: true }}
         nodesConnectable={false}
-        fitView
-        fitViewOptions={{ padding: 0.08, minZoom: 0.55, maxZoom: 1 }}
       >
         <Background gap={24} size={1} color="var(--border)" />
         <Controls showInteractive={false} position="bottom-left" />

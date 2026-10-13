@@ -49,9 +49,10 @@ const PATHS = {
   ),
   map: (
     <>
-      <path d="M14.1 5.55a2 2 0 0 0 1.8 0l3.65-1.83A1 1 0 0 1 21 4.62v12.76a1 1 0 0 1-.55.9l-4.56 2.27a2 2 0 0 1-1.78 0l-4.22-2.1a2 2 0 0 0-1.78 0l-3.66 1.83A1 1 0 0 1 3 19.38V6.62a1 1 0 0 1 .55-.9l4.56-2.27a2 2 0 0 1 1.78 0z" />
-      <path d="M15 5.76v15" />
-      <path d="M9 3.24v15" />
+      <circle cx="6" cy="6" r="2" />
+      <circle cx="18" cy="6" r="2" />
+      <circle cx="12" cy="18" r="2" />
+      <path d="M8 6h8M7 7.8l4 8.4M17 7.8l-4 8.4" />
     </>
   ),
   grid: (
@@ -87,10 +88,8 @@ const PATHS = {
   ),
   compare: (
     <>
-      <circle cx="18" cy="18" r="3" />
-      <circle cx="6" cy="6" r="3" />
-      <path d="M13 6h3a2 2 0 0 1 2 2v7" />
-      <path d="M11 18H8a2 2 0 0 1-2-2V9" />
+      <rect x="2.5" y="4" width="8" height="16" rx="2" />
+      <rect x="13.5" y="4" width="8" height="16" rx="2" />
     </>
   ),
   file: (
@@ -168,8 +167,8 @@ const PATHS = {
   ),
   smartphone: (
     <>
-      <rect x="5" y="2" width="14" height="20" rx="2" />
-      <path d="M12 18h.01" />
+      <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+      <path d="M11 18.5h2" />
     </>
   ),
   bot: (
@@ -215,6 +214,108 @@ const PATHS = {
     <>
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
+    </>
+  ),
+  // Mobile set (design-system skill: "built around the phone")
+  android: (
+    <>
+      <path d="M5 17a7 7 0 0 1 14 0Z" />
+      <path d="M8 10.6 6.6 8.2M16 10.6l1.4-2.4" />
+    </>
+  ),
+  apple: (
+    <>
+      <path d="M12 7.6c-1-1.1-2.3-1.5-3.5-1.1-2.1.7-3 3.3-2.3 6.2.6 2.6 2.2 5.3 3.8 5.3.8 0 1.2-.5 2-.5s1.2.5 2 .5c1.6 0 3.2-2.7 3.8-5.3.7-2.9-.2-5.5-2.3-6.2-1.2-.4-2.5 0-3.5 1.1Z" />
+      <path d="M12 7.6c0-1.9 1.1-3.3 2.8-3.8" />
+    </>
+  ),
+  foldable: (
+    <>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
+      <path d="M12 3.5v17" />
+    </>
+  ),
+  adaptive: (
+    <>
+      <rect x="2.5" y="5" width="12" height="14" rx="2" />
+      <rect x="16.5" y="8" width="5" height="11" rx="1.4" />
+    </>
+  ),
+  tap: <path d="M9.5 11V5.5a1.5 1.5 0 0 1 3 0V10l4 .8a2 2 0 0 1 1.6 2.2l-.6 4.5a3 3 0 0 1-3 2.5h-2.6a3 3 0 0 1-2.3-1.1L6.2 15a1.5 1.5 0 0 1 2.1-2.1L9.5 14" />,
+  swipe: (
+    <>
+      <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+      <path d="M9 9.5 12 7l3 2.5M12 7v8" />
+    </>
+  ),
+  crash: (
+    <>
+      <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+      <path d="M12.6 7.5l-2.2 4.2h3.2l-2.2 4.3" />
+    </>
+  ),
+  gauge: (
+    <>
+      <path d="M4.5 17a8 8 0 1 1 15 0" />
+      <path d="M12 13.5l3.6-4.2" />
+    </>
+  ),
+  layers: (
+    <>
+      <path d="M12 3 3 8l9 5 9-5-9-5Z" />
+      <path d="M3 13l9 5 9-5" />
+    </>
+  ),
+  store: (
+    <>
+      <path d="M5 8h14l-1.2 12H6.2L5 8Z" />
+      <path d="M9 8V6.5a3 3 0 0 1 6 0V8" />
+    </>
+  ),
+  security: (
+    <>
+      <path d="M12 3l7 3v5.5c0 4.2-3 7.6-7 9.5-4-1.9-7-5.3-7-9.5V6l7-3Z" />
+      <rect x="9.5" y="11" width="5" height="4.5" rx="1" />
+      <path d="M10.5 11V9.8a1.5 1.5 0 0 1 3 0V11" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3.5" y="5" width="17" height="15" rx="2" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </>
+  ),
+  chevron: <path d="M9 6l6 6-6 6" />,
+  download: <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14" />,
+  external: <path d="M7 17 17 7M9 7h8v8" />,
+  "status-met": (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12.5l2.7 2.7L16 9.8" />
+    </>
+  ),
+  "status-due": (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5v5.5M12 16.4v.1" />
+    </>
+  ),
+  "status-blocked": (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 9l6 6M15 9l-6 6" />
+    </>
+  ),
+  "status-upcoming": (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  ),
+  "status-unknown": (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12h8" />
     </>
   ),
 } as const;

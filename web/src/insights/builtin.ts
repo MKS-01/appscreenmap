@@ -87,7 +87,8 @@ export function coverageReport({ map }: BuildContext): AuditReport {
     status: statusFromScore(score),
     score,
     score_note: "Share of discovered actions the crawl actually tried (blocked and pattern-skipped ones excluded).",
-    summary: `${plural(st.screens, "screen")} and ${plural(st.transitions, "transition")} mapped, ${tried} of ${tried + open} actions tried.`,
+    status_label: budgetHit && score != null && score < 90 ? "Partial" : undefined,
+    summary: `${tried} of ${tried + open} actions tried · ${visited.size} of ${declared.length || visited.size} activities${budgetHit ? " · stopped at the step budget" : ""}`,
     metrics: [
       { label: "screens", value: st.screens },
       { label: "transitions", value: st.transitions },
@@ -135,8 +136,11 @@ export function stabilityReport({ map }: BuildContext): AuditReport {
     score,
     score_note: "100, minus 30 per crash and 2 per failed navigation during the crawl.",
     summary: crashes.length
-      ? `${crashes.length} ${crashes.length === 1 ? "crash" : "crashes"} during the crawl.`
-      : "No crashes during the crawl.",
+      ? crashes
+          .map((e) => `crash at step ${e.step}${e.screen ? ` on ${map.screens.find((x) => x.id === e.screen)?.title ?? e.screen}` : ""}${e.log ? " · logcat attached" : ""}`)
+          .join(" · ")
+          .replace(/^c/, "C")
+      : `No crashes in ${map.run.steps ?? "the"} steps${navFailed.length ? ` · ${plural(navFailed.length, "failed navigation")}` : ""}.`,
     metrics: [
       { label: "crashes", value: crashes.length, tone: crashes.length ? "bad" : "good" },
       { label: "failed navigations", value: navFailed.length, tone: navFailed.length ? "warn" : "good" },
@@ -215,7 +219,9 @@ export function a11yReport({ map, a11y }: BuildContext): AuditReport {
     status: statusFromScore(score),
     score,
     score_note: "Share of app screens with no error or warning, minus 10 per app-wide error or warning (e.g. a locked orientation).",
-    summary: `${plural(issues.length, "issue")} across ${Object.keys(a11y.summary.by_criterion).length} success criteria.`,
+    summary: `${plural(issues.length, "issue")} across ${Object.keys(a11y.summary.by_criterion).length} success criteria${
+      Object.keys(a11y.summary.by_criterion).length ? ` · most: ${Object.entries(a11y.summary.by_criterion).sort((a, b) => b[1] - a[1])[0][0]}` : ""
+    }`,
     metrics: [
       { label: "errors", value: sev("error"), tone: sev("error") ? "bad" : "good" },
       { label: "warnings", value: sev("warning"), tone: sev("warning") ? "warn" : "good" },
@@ -278,7 +284,13 @@ export function perfReport({ perf }: BuildContext): AuditReport {
     status: statusFromScore(score),
     score,
     score_note: "Share of measured screens rated good (load under budget, little jank).",
-    summary: `${plural(over.length, "screen")} over the ${perf.budget_ms} ms budget, ${janky.length} janky.`,
+    summary: [
+      screens[0] && `${screens[0].title} loads in ${screens[0].median_ms.toLocaleString()} ms`,
+      janky[0] && `${janky.sort((a, b) => b.janky_pct - a.janky_pct)[0].title} ${Math.round(janky[0].janky_pct)}% janky frames`,
+      perf.startup && `cold start ${perf.startup.median_ms} ms`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
     metrics: [
       { label: "cold start (median)", value: perf.startup?.median_ms ?? "—", unit: perf.startup ? "ms" : undefined },
       { label: "screens measured", value: screens.length },

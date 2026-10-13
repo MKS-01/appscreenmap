@@ -46,11 +46,12 @@ export default function A11y({ run, map, view }: { run: string; map: AppMapData;
       <div className="row wrap" style={{ marginBottom: 16, gap: 12 }}>
         <div className="grow">
           {report && <A11yNav run={run} view="findings" />}
-          <h1>Accessibility review</h1>
-          <div className="muted">
+          <span className="kicker">Accessibility · {total} screens checked</span>
+          <h1>Can everyone use this app?</h1>
+          <p className="lede">
             Automated checks on every mapped screen, modelled on Android Accessibility Scanner. Triage each finding; decisions are
             saved with the run.{report && " Findings you mark Needs fix are included in the WCAG 2.2 report."}
-          </div>
+          </p>
         </div>
         {report && (
           <a className="btn primary" href={href("r", run, "a11y", "report")}>

@@ -92,7 +92,9 @@ export function adaptiveReport({ map }: BuildContext): AuditReport {
     status: statusFromScore(score),
     score,
     score_note: "100, minus 20 per orientation or resizability lock and 8 per layout warning. Layout checks are sample data until multi-size crawls exist.",
-    summary: `Crawled at ${widthDp} dp wide (${tested}). ${locked.length ? `${locked.length} orientation lock${locked.length === 1 ? "" : "s"} found in the manifest.` : "No orientation locks in the manifest."}`,
+    summary: locked.length
+      ? `${locked.map(([a, o]) => `${shortActivity(a)} locked to ${o}`).join(" · ")} · ignored on large screens at API 37`
+      : `Crawled at ${widthDp} dp (${tested}) · no orientation locks in the manifest`,
     metrics: [
       { label: "crawl width", value: widthDp, unit: "dp", hint: `${tested} window size class` },
       { label: "size classes tested", value: "1 of 3", tone: "warn", hint: `${tested} only` },
@@ -124,6 +126,7 @@ export function storeReport({ map }: BuildContext): AuditReport {
   const findings: AuditFinding[] = [
     {
       id: "play::target-36",
+      requirement: "blocked",
       severity: "error",
       category: "Target API level",
       platform: "android",
@@ -135,6 +138,7 @@ export function storeReport({ map }: BuildContext): AuditReport {
     },
     {
       id: "play::existing-35",
+      requirement: "met",
       severity: "info",
       category: "Target API level",
       platform: "android",
@@ -145,6 +149,7 @@ export function storeReport({ map }: BuildContext): AuditReport {
     },
     {
       id: "play::target-37",
+      requirement: "upcoming",
       severity: "info",
       category: "Target API level",
       platform: "android",
@@ -154,6 +159,7 @@ export function storeReport({ map }: BuildContext): AuditReport {
     },
     {
       id: "appstore::sdk-26",
+      requirement: "not_checked",
       severity: "info",
       category: "Build SDK",
       platform: "ios",
@@ -163,7 +169,19 @@ export function storeReport({ map }: BuildContext): AuditReport {
       refs: refs("appleUpcoming"),
     },
     {
+      id: "appstore::xcode-27-1",
+      requirement: "upcoming",
+      severity: "info",
+      category: "Build SDK",
+      platform: "ios",
+      title: "Recompile with Xcode 27.1 for iPhone Duo",
+      detail: "iPhone Duo ships Oct 23, 2026. Check every pose and orientation in Device Hub.",
+      due: "2026-10-23",
+      refs: refs("appleIphoneDuo", "appleIphoneDuoPrepare"),
+    },
+    {
       id: "appstore::iphone-duo-screens",
+      requirement: "due",
       severity: "warning",
       category: "Product page",
       platform: "ios",
@@ -178,12 +196,12 @@ export function storeReport({ map }: BuildContext): AuditReport {
     schema: 1,
     audit: "store",
     title: "Store readiness",
-    tool: "sample",
     source: "sample",
     status: "fail",
     score: 58,
     score_note: "Sample score until the APK's target SDK and the store listing are read.",
-    summary: "Google Play target API and App Store build and screenshot requirements, with their deadlines.",
+    status_label: "Blocked for Play updates",
+    summary: "Play needs API 36 for updates by Nov 1 · iPhone Duo screenshots from Apr 2027",
     metrics: [
       { label: "target SDK", value: 35, tone: "bad", hint: "sample: Play requires 36 for updates" },
       { label: "min SDK", value: 26, hint: "sample" },
@@ -229,7 +247,6 @@ export function platformReport(): AuditReport {
       platform: "ios",
       title: "iPhone Duo: recompile with Xcode 27.1",
       detail: "Available Oct 23, 2026. Check every pose and orientation in Device Hub.",
-      due: "2026-10-23",
       refs: refs("appleIphoneDuo", "appleIphoneDuoPrepare"),
     },
   ];
@@ -237,12 +254,11 @@ export function platformReport(): AuditReport {
     schema: 1,
     audit: "platform",
     title: "Platform changes",
-    tool: "sample",
     source: "sample",
     status: "warn",
     score: 72,
     score_note: "Sample score: share of this year's behavior changes that don't affect the app or are already handled.",
-    summary: "Android 17 behavior changes and this year's iOS device changes, checked against what the app uses.",
+    summary: "Android 17 · 11 behavior changes tracked, 1 affects the app, 3 to check",
     metrics: [
       { label: "changes tracked", value: findings.length },
       { label: "affect the app", value: findings.filter((x) => x.severity === "error").length, tone: "bad" },
@@ -285,7 +301,7 @@ export function securityReport({ map }: BuildContext): AuditReport {
     status: "fail",
     score: 61,
     score_note: "Sample score: 100 minus 20 per error, 8 per warning, 2 per info.",
-    summary: "Static decompile checks (jadx), manifest review and dynamic instrumentation (frida). Not built yet; the findings below are illustrative.",
+    summary: "Planned · hard-coded key, cleartext traffic, exported activity (illustrative findings)",
     metrics: [
       { label: "critical", value: 1, tone: "bad" },
       { label: "warnings", value: 3, tone: "warn" },
