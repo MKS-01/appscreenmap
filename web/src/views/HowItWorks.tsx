@@ -42,6 +42,9 @@ function usePrefersReducedMotion() {
   return reduce;
 }
 
+/** The latest run's platform; runs from before the iOS work have no `platform` and are Android. */
+const isIosRun = (map: AppMapData | null) => map?.run.device?.platform === "ios";
+
 // ── page ─────────────────────────────────────────────────────────────────────
 
 export default function HowItWorks() {
@@ -55,6 +58,7 @@ export default function HowItWorks() {
     const app = (map?.screens ?? []).filter((s) => s.kind === "app" && s.screenshot);
     return [...app].sort((a, b) => b.elements.length - a.elements.length)[0];
   }, [map]);
+  const ios = isIosRun(map);
   const root = useMemo(() => (map?.screens ?? []).find((s) => s.kind === "app" && s.depth === 0), [map]);
 
   return (
@@ -63,7 +67,7 @@ export default function HowItWorks() {
         <span className="how-badge">
           <Icon name="map" size={14} /> How it works
         </span>
-        <h1 className="how-title">From an APK to a map of every screen</h1>
+        <h1 className="how-title">{ios ? "From an app build to a map of every screen" : "From an APK to a map of every screen"}</h1>
         <p className="how-lede">
           An AI agent runs the crawl for you. You ask in plain language; the agent drives AppScreenMap's crawler, which explores the
           app the way a very patient tester would: look at the screen, tap the most promising thing, note where it led, repeat. No
@@ -78,8 +82,8 @@ export default function HowItWorks() {
       </header>
 
       <WhoDoesWhat />
-      <CrawlLoop run={run} map={map} demo={demo} root={root} />
-      <ScreenIdentity map={map} demo={demo} />
+      <CrawlLoop run={run} map={map} demo={demo} root={root} ios={ios} />
+      <ScreenIdentity map={map} demo={demo} ios={ios} />
       <SavedFiles />
       <AfterMapping run={run} />
       <Tuning />
@@ -87,7 +91,11 @@ export default function HowItWorks() {
       <section className="how-section">
         <SectionTitle icon="alert" kicker="Good to know" title="Limits" />
         <ul className="limits">
-          <li>About 3 s per step over plain ADB; a 300-step crawl takes ~15 minutes.</li>
+          <li>
+            {ios
+              ? "About 3 s per step over simctl and idb; a 300-step crawl takes ~15 minutes. iOS Simulator support is beta."
+              : "About 3 s per step over plain ADB; a 300-step crawl takes ~15 minutes."}
+          </li>
           <li>Canvas, game and custom-drawn UIs expose no hierarchy, so they're captured but not explored.</li>
           <li>WebView content is only as visible as its accessibility tree.</li>
           <li>
@@ -204,7 +212,7 @@ const STEPS: { icon: IconName; title: string; short: string }[] = [
 ];
 const STEP_MS = 5200;
 
-function CrawlLoop({ run, map, demo, root }: { run: string | null; map: AppMapData | null; demo?: Screen; root?: Screen }) {
+function CrawlLoop({ run, map, demo, root, ios }: { run: string | null; map: AppMapData | null; demo?: Screen; root?: Screen; ios: boolean }) {
   const reduce = usePrefersReducedMotion();
   const [active, setActive] = useState(0);
   const [playing, setPlaying] = useState(!reduce);
@@ -263,9 +271,9 @@ function CrawlLoop({ run, map, demo, root }: { run: string | null; map: AppMapDa
 
         <div className="loop-stage" id="loop-stage" role="tabpanel" aria-labelledby={`loop-tab-${active}`}>
           <div key={active} className="stage-swap">
-            {active === 0 && <LaunchStage run={run} map={map} root={root} />}
-            {active === 1 && <ObserveStage run={run} screen={demo} />}
-            {active === 2 && <IdentifyStage run={run} screen={demo} />}
+            {active === 0 && <LaunchStage run={run} map={map} root={root} ios={ios} />}
+            {active === 1 && <ObserveStage run={run} screen={demo} ios={ios} />}
+            {active === 2 && <IdentifyStage run={run} screen={demo} ios={ios} />}
             {active === 3 && <ActStage run={run} screen={demo} map={map} />}
             {active === 4 && <RecordStage run={run} screen={demo} map={map} />}
           </div>
@@ -316,13 +324,13 @@ function StageText({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-function LaunchStage({ run, map, root }: { run: string | null; map: AppMapData | null; root?: Screen }) {
+function LaunchStage({ run, map, root, ios }: { run: string | null; map: AppMapData | null; root?: Screen; ios: boolean }) {
   const app = map?.run.app;
   const lines = [
-    `Installing ${app?.package ?? "app.apk"}`,
+    `Installing ${app?.package ?? (ios ? "App.app" : "app.apk")}`,
     "Granting runtime permissions",
-    "Disabling animations for stable screenshots",
-    `Launching ${shortActivity(app?.launch_activity) || "the launcher activity"}`,
+    ios ? "Setting Dynamic Type and appearance for repeatable screenshots" : "Disabling animations for stable screenshots",
+    ios ? `Launching ${app?.package ?? "the app"}` : `Launching ${shortActivity(app?.launch_activity) || "the launcher activity"}`,
   ];
   return (
     <div className="stage-grid">
@@ -332,7 +340,8 @@ function LaunchStage({ run, map, root }: { run: string | null; map: AppMapData |
             <Icon name="bot" size={13} /> “Map {app?.label ?? "my app"} from a clean install”
           </div>
           <div className="term-cmd">
-            <Icon name="terminal" size={13} /> appscreenmap crawl --apk {app ? `${app.label ?? "app"}.apk` : "app.apk"}
+            <Icon name="terminal" size={13} /> appscreenmap crawl {ios ? "--platform ios --app" : "--apk"}{" "}
+            {app ? `${app.label ?? "app"}.${ios ? "app" : "apk"}` : ios ? "App.app" : "app.apk"}
           </div>
           {lines.map((l, i) => (
             <div key={l} className="term-line stagger" style={{ "--i": i } as React.CSSProperties}>
@@ -349,14 +358,23 @@ function LaunchStage({ run, map, root }: { run: string | null; map: AppMapData |
   );
 }
 
-function ObserveStage({ run, screen }: { run: string | null; screen?: Screen }) {
+function ObserveStage({ run, screen, ios }: { run: string | null; screen?: Screen; ios: boolean }) {
   const els = (screen?.elements ?? []).filter((e) => e.scroll_depth === 0 && e.bounds[2] > e.bounds[0]);
   return (
     <div className="stage-grid">
       <StageText title="Read the screen">
         <p>
-          <code>uiautomator dump</code> gives the full view hierarchy: every node's class, resource-id, text, content description,
-          bounds and flags. A screenshot is taken alongside.
+          {ios ? (
+            <>
+              <code>idb ui describe-all</code> gives the accessibility tree: every element's type, identifier, label, value, frame and
+              traits, converted to the same hierarchy the Android crawl reads. A screenshot is taken alongside.
+            </>
+          ) : (
+            <>
+              <code>uiautomator dump</code> gives the full view hierarchy: every node's class, resource-id, text, content
+              description, bounds and flags. A screenshot is taken alongside.
+            </>
+          )}
         </p>
         <p>
           Anything visible, enabled and clickable / scrollable / checkable becomes an <b>element</b>.
@@ -378,7 +396,7 @@ function ObserveStage({ run, screen }: { run: string | null; screen?: Screen }) 
   );
 }
 
-function IdentifyStage({ run, screen }: { run: string | null; screen?: Screen }) {
+function IdentifyStage({ run, screen, ios }: { run: string | null; screen?: Screen; ios: boolean }) {
   const tokens = screen?.tokens ?? ["S:FrameLayout|", "S:TextView|title", "T:alarm", "T:#:## am", "D:navigate up"];
   const pick = [
     ...tokens.filter((t) => t.startsWith("S:")).slice(0, 5),
@@ -398,9 +416,9 @@ function IdentifyStage({ run, screen }: { run: string | null; screen?: Screen })
           {tokens.length > pick.length && <span className="token more">+{tokens.length - pick.length}</span>}
         </div>
         <div className="sig">
-          <Icon name="hash" size={14} /> sha1(activity + tokens) = <code>{screen?.signature ?? "3f9a0c1e…"}</code>
+          <Icon name="hash" size={14} /> {ios ? "sha1(tokens)" : "sha1(activity + tokens)"} = <code>{screen?.signature ?? "3f9a0c1e…"}</code>
         </div>
-        <p className="small muted">Exact match → same screen. Otherwise ≥ 80% token overlap (same activity) → same screen. Else: new.</p>
+        <p className="small muted">Exact match → same screen. Otherwise ≥ 80% token overlap{ios ? "" : " (same activity)"} → same screen. Else: new.</p>
       </StageText>
       <Phone run={run} screen={screen} small />
     </div>
@@ -508,7 +526,7 @@ function RecordStage({ run, screen, map }: { run: string | null; screen?: Screen
 
 // ── 2. screen identity (playground) ──────────────────────────────────────────
 
-function ScreenIdentity({ map, demo }: { map: AppMapData | null; demo?: Screen }) {
+function ScreenIdentity({ map, demo, ios }: { map: AppMapData | null; demo?: Screen; ios: boolean }) {
   const [a, setA] = useState("Alarm at 7:30 AM · 2 new");
   const [b, setB] = useState("Alarm at 9:45 AM · 5 new");
   const na = normalizeText(a);
@@ -529,7 +547,7 @@ function ScreenIdentity({ map, demo }: { map: AppMapData | null; demo?: Screen }
   return (
     <section className="how-section">
       <SectionTitle icon="scan" kicker="Identity" title="Telling screens apart">
-        Screen identity has to survive clocks, counters and feeds, while still separating screens that share one activity.
+        Screen identity has to survive clocks, counters and feeds, while still separating screens that share {ios ? "one navigation container" : "one activity"}.
       </SectionTitle>
 
       <div className="grid2">
@@ -637,7 +655,7 @@ const FILES: { name: string; icon: IconName; what: string; usedBy: string; sampl
     usedBy: "Screen detail, Accessibility, Compare",
     sample: `s003.png   full-size screenshot
 s003.jpg   thumbnail
-s003.xml   uiautomator hierarchy`,
+s003.xml   view hierarchy (uiautomator on Android, idb accessibility tree on iOS)`,
   },
   {
     name: "flows/",
