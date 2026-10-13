@@ -372,6 +372,36 @@ Next features, first batch. Unchecked means not started; the open questions need
   (`device.py`, documented in `docs/MAP_SCHEMA.md`); `report` prints it with device caveats. Open: a Device
   section in the viewer (`web/`), and per-screenshot capture once locale or condition runs exist (one run,
   several captures).
+- [ ] **Versions and flows per app** (designed: canvas "AppScreenMap redesign", boards *App · versions + compare*
+  and *App · flows + crawl rules*). An app page with a version timeline (newest first, runs under each version,
+  deltas between runs) and a version compare (screens added / removed / changed, metric deltas, per flow).
+  Flows: auto-detected by default (the entry flow before the home screen, then one per top-level destination,
+  each the discovery subtree under it) plus your own (start → end screen, path found from the map). Each flow
+  can carry a crawl rule: `explore` (default) | `first` | `must-reach` | `skip`, saved as `[[flows]]` in
+  `appscreenmap.toml`. A new `app-flows` skill documents detection, definitions and the rule format.
+- [ ] **Run flows as automation with Maestro, and replay them from the dashboard** (next, after flows).
+  Decision: **Maestro runs the flows; AppScreenMap writes and reads them.** Maestro already gives us a runner for
+  Android emulators/devices and iOS simulators, assertions (`assertVisible`, `assertNotVisible`), env inputs
+  (`-e KEY=…`), JUnit output for CI and Maestro Studio, and the flows stay usable without AppScreenMap (no lock-in).
+  Our own `Replayer` stays for crawling and `verify`'s screen-identity checks, which need the map.
+  1. **Fix the export first.** Flows tap by resource id even when the id isn't unique on the screen: on Playground's
+     Profile all 9 rows are `profile_row`, so the flow to Feedback taps the first row (Account settings), not Help.
+     Use id + text when the id repeats (`tapOn: { id: "profile_row", text: "Help" }`), with a regression test.
+  2. **Flow → Maestro YAML.** Each flow (auto or yours) exports to `flows/flow-<slug>.yaml`: launch, reach the start
+     screen, every step to the end, an `assertVisible` + `takeScreenshot` per screen, `${ENV}` inputs. Optional
+     extra assertions per flow (text visible, element enabled) set in the viewer or `[[flows]]`.
+  3. **Run and read back.** `appscreenmap run-flow <run> --flow "Report a problem" [--serial …]` shells out to
+     `maestro test` (JUnit + debug output into `flowruns/<id>/`), then matches each step's screenshot and hierarchy
+     to map screens and writes `flowruns/<id>/flowrun.json` (expected vs. actual screen, pass / fail / changed,
+     timings), documented in `docs/MAP_SCHEMA.md`. `doctor` checks that Maestro is installed.
+  4. **CI.** Teams can run `maestro test flows/` directly; `verify --flows` runs every `must-reach` flow on a new
+     build and exits 1 on a break. Ties into versions: a flows × versions pass/fail matrix on the app page.
+  5. **Dashboard.** *Watch*: play a finished flow run like Crawl replay (expected vs. actual screenshot per step,
+     where it diverged). *Run on device*: a button that asks `appscreenmap serve` to run `maestro test` on the
+     connected device and follows `flowrun.json` live. New local endpoint (`POST /api/flowruns`), off unless
+     `serve --allow-device`, localhost only, one run per device, with a confirm step (it taps a real device).
+  6. **Agents.** MCP tools `list_flows`, `run_flow`, `flow_status`.
+  Open: emulators only for dashboard-triggered runs, or physical devices too.
 
 ## 10. Known limits (v1)
 
