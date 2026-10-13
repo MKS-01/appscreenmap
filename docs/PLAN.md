@@ -242,7 +242,7 @@ long-press.
 | **0. Plan + scaffold** | This doc, repo layout, MIT license, CI-ready tooling | ✅ |
 | **1. Android MVP** | ADB driver, analyzer, explorer, live map.json, Maestro + Mermaid export, visual diff, web viewer (runs, map, gallery, detail, compare), WCAG 2.2 checks + report, navigation load times | ✅ crawler · viewer in progress |
 | 2. Robustness | uiautomator2 backend (5× faster), WebView handling, better dialog/IME handling, model reuse to resume a crawl, `--from-run` to recrawl only changed screens | |
-| 3. iOS | **After Android is solid.** Simulator driver via XCUITest (WebDriverAgent) or `idb`; same map format and viewer | |
+| 3. iOS | **After Android is solid.** Simulator driver (`driver_ios.py`: `simctl` + `idb`, started Oct 2026), same map format and viewer. sample-app is the iOS sample. See §8.3 | 🚧 driver + hierarchy translator done and tested on a live simulator; crawl wiring next |
 | 4. Intelligence | Optional LLM step: semantic screen names, smarter form inputs, goal-directed exploration ("reach checkout") | |
 | 5. Team | Docker image + GitHub Action, `appscreenmap publish` to a static site, Appium/Espresso page-object export | |
 | 6. Localisation | Crawl in several locales (incl. pseudo-locales), match screens across locales, l10n review in the viewer (untranslated text, truncation, overflow, RTL mirroring), side-by-side locale gallery, context screenshots for translators. Depends only on phase 1, so it can ship before 3–5. See §8.1 | |
@@ -305,6 +305,39 @@ preferring resource-id selectors; flows that can only use text selectors are fla
 
 **Open questions:** how to detect strings that are hard-coded rather than coming from resources (only possible with
 the APK's resource table, via `aapt2 dump resources`); and whether to translate the viewer UI itself (low priority).
+
+### 8.3 iOS (started)
+
+**Sample: sample-app.** It has a real SwiftUI iOS target (`/Users/mks/Desktop/C0D3/sample-app/iosApp`, KMP shared core), builds
+for the simulator with `xcodebuild -sdk iphonesimulator`, and is the owner's own code, so every issue the crawl finds can
+be fixed at the source and re-crawled to prove the tool works. No separate "Playground iOS" for now. A simulator needs a
+`.app` from an iphonesimulator build: an `.ipa` is device-signed and won't run there (the driver says so).
+
+**How it drives a simulator.** `simctl` boots, installs, launches, terminates, screenshots and grants permissions; `idb`
+(`idb_companion` + the `fb-idb` client) reads the accessibility tree and sends taps, swipes and text, which `simctl` can't
+do. `ios_hierarchy.py` translates idb's tree into the uiautomator-style XML the analyzer already reads (class names the
+analyzer keys on, `resource-id` from the accessibility identifier, `bounds` in points, off-screen nodes dropped), so the
+explorer, exporters and viewer work unchanged. Measured: tree dump 0.5 s (Android: ~2 s). Coordinates are points; the
+screenshot is native pixels and the viewer scales by ratio, as it does between Android densities.
+
+**Done:** driver, translator, `doctor` checks, 9 tests (a real sample-app tree recorded as `tests/fixtures/`), and a live
+run: read Home, analysed it (title, 7 buttons), tapped Settings, saw the screen identity change.
+**Next:** (1) wire `crawl --platform ios --app sample-app.app --bundle dev.mks.sample-app` (install, launch, app lock, crash
+detection from the simulator's logs); (2) treat an out-of-process screen as leaving the app (`is_out_of_process`), (3) back
+navigation: iOS has no Back key, so use the edge swipe or a visible Back/× button, else restart + replay; (4) iOS
+accessibility rules (VoiceOver names, Dynamic Type at the largest size, 44 pt targets: Apple HIG) beside WCAG; (5) Maestro
+runs iOS simulators too, so flows exported from an iOS map run the same way.
+
+**What the first look at sample-app found** (to fix in the app, then re-crawl to confirm):
+1. *Floating bottom bar has no accessibility.* `Shell/FloatingBar.swift` draws four icon buttons (Home, Following, Saved,
+   player) with no label, trait or identifier: they are absent from the accessibility tree, so VoiceOver can't reach them
+   and the crawler can't tab between sections.
+2. *Settings "×" close button is unlabeled*, so it's missing from the tree too: nothing to tap to leave the screen.
+3. *No accessibility identifiers anywhere* (0 in `iosApp/`; 3 labels): no stable ids for screen identity or Maestro `id:` selectors.
+4. *Cards open an in-app browser* (SFSafariViewController): its content is out of process, so the tree is one node.
+   Expected, but the crawler must record it as leaving the app.
+5. *Crawler side, fixed:* "Erase everything on this device" (Settings → Reset) wasn't in the default `blocked_text`; added
+   `erase`, `wipe`, `reset all/app/data/device`, `clear data`, with a test.
 
 ### 8.2 Ideas from Argent
 

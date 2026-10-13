@@ -37,6 +37,33 @@ def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
+def _doctor_ios(row) -> None:
+    """iOS Simulator tooling. Optional: nothing here fails `doctor` unless an iOS simulator is booted without idb."""
+    if sys.platform != "darwin":
+        return
+    xcrun = shutil.which("xcrun")
+    if not xcrun:
+        print("  · iOS: Xcode not installed (optional: only needed to crawl iOS apps)")
+        return
+    from .driver_ios import IosSimulatorDriver
+
+    sims = IosSimulatorDriver.list_devices()
+    idb = bool(shutil.which("idb") or shutil.which("uvx"))
+    companion = bool(shutil.which("idb_companion"))
+    row(
+        True,
+        "iOS simulators booted",
+        ", ".join(f"{u[:8]} {n}" for u, n in sims) or "none (boot one in Device Hub)",
+    )
+    if sims or idb or companion:
+        row(
+            idb,
+            "idb client (iOS taps and accessibility tree)",
+            "found" if idb else "`uv tool install fb-idb`",
+        )
+        row(companion, "idb_companion", "found" if companion else "`brew install facebook/fb/idb-companion`")
+
+
 def cmd_doctor(args) -> int:
     ok = True
 
@@ -55,6 +82,7 @@ def cmd_doctor(args) -> int:
         d = AdbDriver(serial)
         info = d.info()
         row(True, f"{serial}", f"{describe(info)}, {info['width']}x{info['height']}")
+    _doctor_ios(row)
     aapt2 = find_aapt2()
     row(bool(aapt2), "aapt2 (optional: activity coverage)", aapt2 or "not found in Android SDK build-tools")
     dist = _web_dist()
