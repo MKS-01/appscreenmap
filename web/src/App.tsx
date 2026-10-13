@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { runKey, useIndex, useMap } from "./api";
 import { ErrorBox, Loading, Logo, StatusBadge } from "./components/common";
+import { PlatformCtx, platformOf } from "./a11y";
 import { href, useRoute, type Route } from "./router";
 import A11y from "./views/A11y";
 import Compare from "./views/Compare";
@@ -99,7 +100,7 @@ function RunShell({ route }: { route: Route }) {
         ))}
       </nav>
       <div className="main" style={tab === "map" && route.tab !== "s" ? { overflow: "hidden" } : undefined}>
-        {body}
+        <PlatformCtx.Provider value={data ? platformOf(data) : "android"}>{body}</PlatformCtx.Provider>
       </div>
     </>
   );

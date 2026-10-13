@@ -1,4 +1,4 @@
-import { RULES, SEVERITY_COLOR, TRIAGE_LABEL, type A11yIssue, type TriageStatus } from "../a11y";
+import { SEVERITY_COLOR, TRIAGE_LABEL, useRules, type A11yIssue, type TriageStatus } from "../a11y";
 import type { A11yTriage, RunTriage, TriagePatch } from "../notes";
 
 const ORDER: TriageStatus[] = ["confirmed", "wontfix", "false_positive"];
@@ -20,6 +20,7 @@ export default function A11yIssueTable({
   hover?: string | null;
   setHover?: (key: string | null) => void;
 }) {
+  const RULES = useRules();
   if (!issues.length) return <div className="small muted" style={{ padding: 12 }}>No issues.</div>;
   return (
     <table className="tbl a11y-tbl">
