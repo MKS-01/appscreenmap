@@ -39,6 +39,10 @@ answers for the agent itself ("how do I reach Settings?"). The map is the produc
 
 ## How it works for you
 
+<p align="center">
+  <img src="docs/media/how-it-works.png" alt="You ask your AI agent for a map, an audit or a build comparison. The agent starts the crawl loop, which observes, identifies, acts and records on an Android emulator or iOS Simulator, and writes a run folder of plain files: map.json, screens, Maestro flows, accessibility and performance results. The MCP server, the dashboard, the exports and the verify command for CI all read that same folder. The agent asks the map through MCP, and you review, triage and export in the dashboard.">
+</p>
+
 1. **Ask.** Tell your agent what you want, in plain language:
 
    > *Map my app on the emulator and review the map.*

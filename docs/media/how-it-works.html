@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>AppScreenMap — how it works</title>
+<!--
+  Source for how-it-works.png, the flow chart in README.md. Committed so the picture can be corrected rather
+  than redrawn. Rendered at twice size so the type survives a retina screen:
+
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --disable-gpu --hide-scrollbars \
+      --window-size=1440,800 --force-device-scale-factor=2 \
+      --screenshot=docs/media/how-it-works.png \
+      --virtual-time-budget=4000 docs/media/how-it-works.html
+
+  Colours mirror design/tokens.css (Ghost dark × Xcode blue; a standalone page can't import it). The connectors
+  are drawn by the script at the foot from the boxes' measured positions, so moving a box does not mean
+  rewriting a path by hand.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #121212;
+    --panel-2: #181818;
+    --line: #232323;
+    --line-hi: #333333;
+    --text: #f0f0f0;
+    --dim: #a3a3a3;
+    --faint: #8a8a8a;
+    --accent: #4da3ff;
+    --on-accent: #0a0a0a;
+    --ui: "Geist", ui-sans-serif, system-ui, sans-serif;
+    --data: "Geist Mono", ui-monospace, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    width: 1440px; height: 800px; overflow: hidden;
+    background: var(--bg); color: var(--text);
+    font-family: var(--data);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  #stage { position: relative; width: 1440px; height: 800px; }
+
+  /* The connector layer sits under the boxes: a line that ends a few pixels inside a card is hidden by it
+     rather than drawn across its text. */
+  #wires { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .layer { position: absolute; z-index: 1; }
+
+  h1 {
+    position: absolute; top: 30px; left: 0; right: 0; margin: 0;
+    font-family: var(--ui); font-weight: 700; font-size: 32px;
+    line-height: 1.28; letter-spacing: -0.015em; text-align: center;
+  }
+  h1 .two { color: var(--accent); }
+
+  .grouplabel {
+    font-family: var(--data); font-size: 11px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--faint);
+  }
+
+  .card {
+    position: absolute; z-index: 1;
+    border: 1px solid var(--line-hi); border-radius: 10px;
+    background: var(--bg); padding: 14px 16px;
+  }
+  .card .name {
+    font-family: var(--data); font-size: 15px; font-weight: 600;
+    letter-spacing: 0.01em; color: var(--text);
+  }
+  .card .sub {
+    margin-top: 6px; font-family: var(--data); font-size: 11.5px;
+    color: var(--faint); line-height: 1.5;
+  }
+
+  #crawlframe {
+    position: absolute; z-index: -1;
+    border: 1px solid var(--line); border-radius: 14px; background: #0e0e0e;
+  }
+
+  /* The agent is the one thing that works on your behalf, so it is the one filled box. */
+  #agent { background: var(--accent); border-color: var(--accent); }
+  #agent .name { color: var(--on-accent); }
+  #agent .sub { color: rgba(10, 10, 10, 0.72); }
+
+  .panel {
+    position: absolute; z-index: 1;
+    border: 1px solid var(--line-hi); border-radius: 12px;
+    background: var(--panel); padding: 16px 18px 18px;
+  }
+  .panel h2 {
+    margin: 0 0 12px; padding-bottom: 11px;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--ui); font-weight: 600; font-size: 16px;
+  }
+  .panel p {
+    margin: 0 0 6px; font-family: var(--data); font-size: 12px;
+    line-height: 1.5; color: var(--dim);
+  }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel p b { color: var(--text); font-weight: 600; }
+  .panel p.aside { margin-top: 10px; color: var(--faint); font-size: 11.5px; }
+
+  .wirelabel {
+    position: absolute; z-index: 1;
+    font-family: var(--data); font-size: 11.5px; color: var(--dim);
+    background: var(--bg); padding: 0 6px; white-space: nowrap;
+  }
+  .wirelabel.on { color: var(--accent); }
+
+  .note { position: absolute; font-family: var(--data); font-size: 11.5px; color: var(--faint); }
+
+  footer {
+    position: absolute; left: 40px; right: 40px; bottom: 30px;
+    padding-top: 16px; border-top: 1px solid var(--line);
+    font-family: var(--data); font-size: 13px; line-height: 1.62; color: var(--dim);
+  }
+</style>
+
+<div id="stage">
+  <svg id="wires" width="1440" height="800" aria-hidden="true"></svg>
+
+  <h1>Ask in plain language.<br><span class="two">Get every screen mapped, audited and exportable.</span></h1>
+
+  <!-- Row one: you, your agent, the crawler, the run folder -->
+  <div class="card" id="you" style="left:40px; top:178px; width:214px">
+    <div class="name">You</div>
+    <div class="sub">ask for a map, an audit<br>or a build comparison</div>
+  </div>
+
+  <div class="card" id="agent" style="left:306px; top:178px; width:250px">
+    <div class="name">AI agent</div>
+    <div class="sub">Claude Code or any MCP client.<br>Runs, reviews and tunes.</div>
+  </div>
+
+  <div id="crawlframe" style="left:594px; top:140px; width:326px; height:318px"></div>
+  <div class="layer grouplabel" style="left:614px; top:160px">AppScreenMap crawler</div>
+  <div class="card" id="crawler" style="left:614px; top:192px; width:286px">
+    <div class="name">Crawl loop</div>
+    <div class="sub">observe &rarr; identify &rarr; act &rarr; record<br>stays inside the app, never taps<br>log out, delete or pay</div>
+  </div>
+  <div class="card" id="device" style="left:614px; top:332px; width:286px">
+    <div class="name">Device</div>
+    <div class="sub">Android emulator or device<br>iOS Simulator (beta)</div>
+  </div>
+
+  <div class="panel" id="run" style="left:972px; top:140px; width:428px">
+    <h2>Run folder &middot; plain files</h2>
+    <p><b>map.json</b> &mdash; every screen, transition, pattern</p>
+    <p><b>screens/</b> &mdash; screenshot and hierarchy of each</p>
+    <p><b>flows/</b> &mdash; a Maestro flow to every screen</p>
+    <p><b>a11y.json &middot; perf.json &middot; audits/</b></p>
+    <p class="aside">no backend, no database: commit it or hand it over</p>
+  </div>
+
+  <div class="wirelabel" id="writeLabel">writes</div>
+
+  <!-- Row two: what reads the map -->
+  <div class="layer grouplabel" style="left:356px; top:464px">Everything below reads the same map</div>
+
+  <div class="card" id="mcp" style="left:306px; top:526px; width:230px">
+    <div class="name">MCP server</div>
+    <div class="sub">the agent asks the map<br>&ldquo;how do I reach Settings?&rdquo;</div>
+  </div>
+  <div class="card" id="dash" style="left:562px; top:526px; width:260px">
+    <div class="name">Dashboard</div>
+    <div class="sub">Insights &middot; Map &middot; Screens<br>Accessibility &middot; Compare</div>
+  </div>
+  <div class="card" id="exports" style="left:848px; top:526px; width:260px">
+    <div class="name">Exports</div>
+    <div class="sub">WCAG 2.2 report (HTML)<br>Markdown &middot; CSV &middot; Maestro</div>
+  </div>
+  <div class="card" id="verify" style="left:1134px; top:526px; width:266px">
+    <div class="name">verify &middot; CI (Android)</div>
+    <div class="sub">replays every path on a new<br>build, exits 1 if one breaks</div>
+  </div>
+
+  <div class="wirelabel" id="askLabel">asks the map</div>
+  <div class="note" id="reviewNote" style="left:100px; top:662px">you review, triage and export here: no digging through run folders</div>
+
+  <footer>
+    The crawler makes no model calls: the same build and settings give the same map, so a regression is a diff, not noise.<br>
+    The agent drives it and reads the result; you read it in one dashboard.
+  </footer>
+</div>
+
+<script>
+  // Connectors, measured rather than hand-plotted. Each one leaves a box's edge, turns at a given x or y, and
+  // arrives at the next box's edge: the orthogonal shape the rest of the picture is drawn in.
+  (function () {
+    var svg = document.getElementById('wires');
+    var NS = 'http://www.w3.org/2000/svg';
+    var GREY = '#4d4d4d';
+    var ACCENT = '#4da3ff';
+
+    var defs = document.createElementNS(NS, 'defs');
+    [['head-grey', GREY], ['head-accent', ACCENT]].forEach(function (pair) {
+      var m = document.createElementNS(NS, 'marker');
+      m.setAttribute('id', pair[0]);
+      m.setAttribute('viewBox', '0 0 10 10');
+      m.setAttribute('refX', '9'); m.setAttribute('refY', '5');
+      m.setAttribute('markerWidth', '7'); m.setAttribute('markerHeight', '7');
+      m.setAttribute('orient', 'auto-start-reverse');
+      var p = document.createElementNS(NS, 'path');
+      p.setAttribute('d', 'M 0 1 L 9 5 L 0 9 z');
+      p.setAttribute('fill', pair[1]);
+      m.appendChild(p); defs.appendChild(m);
+    });
+    svg.appendChild(defs);
+
+    function box(id) {
+      var r = document.getElementById(id).getBoundingClientRect();
+      return { l: r.left, r: r.right, t: r.top, b: r.bottom, cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+    }
+
+    function draw(d, colour, both, noHead) {
+      var p = document.createElementNS(NS, 'path');
+      var head = 'url(#' + (colour === ACCENT ? 'head-accent' : 'head-grey') + ')';
+      p.setAttribute('d', d);
+      p.setAttribute('fill', 'none');
+      p.setAttribute('stroke', colour);
+      p.setAttribute('stroke-width', '1.4');
+      if (!noHead) p.setAttribute('marker-end', head);
+      if (both) p.setAttribute('marker-start', head);
+      svg.appendChild(p);
+    }
+
+    // You, the agent and the crawl loop share one centre line, so the accent path runs straight.
+    var mid = box('crawler').cy;
+    ['you', 'agent'].forEach(function (id) {
+      var el = document.getElementById(id);
+      el.style.top = Math.round(mid - el.offsetHeight / 2) + 'px';
+    });
+
+    var you = box('you'), agent = box('agent'), crawler = box('crawler'), device = box('device'), run = box('run');
+    var mcp = box('mcp'), dash = box('dash'), exp = box('exports'), ver = box('verify');
+
+    // You to the agent, and the agent to the crawler: the accent path, the work nobody does by hand.
+    draw('M ' + you.r + ' ' + you.cy + ' H ' + (agent.l - 3), ACCENT);
+    draw('M ' + agent.r + ' ' + agent.cy + ' H ' + (crawler.l - 3), ACCENT);
+
+    // The crawl loop and the device talk both ways.
+    draw('M ' + crawler.cx + ' ' + (crawler.b + 3) + ' V ' + (device.t - 3), GREY, true);
+
+    // The crawl writes the run folder.
+    draw('M ' + crawler.r + ' ' + crawler.cy + ' H ' + (run.l - 3), GREY);
+
+    // The run folder feeds everything below it, off one bus.
+    var bus = 492;
+    draw('M ' + run.cx + ' ' + (run.b + 3) + ' V ' + bus, GREY, false, true);
+    draw('M ' + mcp.cx + ' ' + bus + ' H ' + ver.cx, GREY, false, true);
+    [mcp, dash, exp, ver].forEach(function (c) { draw('M ' + c.cx + ' ' + bus + ' V ' + (c.t - 3), GREY); });
+
+    // The agent and the MCP server talk both ways: the agent reads the map and tunes the crawl.
+    draw('M ' + (agent.l + 26) + ' ' + (agent.b + 3) + ' V ' + (mcp.t - 3), GREY, true);
+
+    // You read the result in the dashboard: out under everything, back up to you.
+    var lane = 648;
+    draw('M ' + dash.cx + ' ' + (dash.b + 3) + ' V ' + lane + ' H ' + you.cx + ' V ' + (you.b + 3), GREY);
+
+    function place(el, x, y) {
+      el.style.left = Math.round(x) + 'px';
+      el.style.top = Math.round(y) + 'px';
+    }
+    place(document.getElementById('writeLabel'), (crawler.r + run.l) / 2 - 24, crawler.cy - 22);
+    place(document.getElementById('askLabel'), agent.l + 36, (agent.b + mcp.t) / 2 - 9);
+  })();
+</script>
