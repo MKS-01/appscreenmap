@@ -16,6 +16,9 @@ interface AppGroup {
   runs: RunIndexRow[];
 }
 
+/** "Android 17" / "iOS 27.0" for a run's device. */
+const osLabel = (d: RunIndexRow["device"]) => (d.platform === "ios" ? `iOS ${d.os?.release ?? ""}`.trim() : `Android ${d.android ?? ""}`.trim());
+
 export default function Runs() {
   const { data, error } = useIndex();
 
@@ -148,7 +151,7 @@ function AppCard({ group }: { group: AppGroup }) {
             <StatusBadge status={r.status} />
           </div>
           <div className="small muted ellipsis">
-            <span className="mono">{r.app.package}</span> · {r.device.model ?? r.device.serial} · Android {r.device.android} ·{" "}
+            <span className="mono">{r.app.package}</span> · {r.device.model ?? r.device.serial} · {osLabel(r.device)} ·{" "}
             <span title={fmtDate(r.started_at)}>{timeAgo(r.started_at)}</span>
           </div>
         </div>

@@ -88,7 +88,7 @@ export function coverageReport({ map }: BuildContext): AuditReport {
     score,
     score_note: "Share of discovered actions the crawl actually tried (blocked and pattern-skipped ones excluded).",
     status_label: budgetHit && score != null && score < 90 ? "Partial" : undefined,
-    summary: `${tried} of ${tried + open} actions tried · ${visited.size} of ${declared.length || visited.size} activities${budgetHit ? " · stopped at the step budget" : ""}`,
+    summary: `${tried} of ${tried + open} actions tried${declared.length ? ` · ${visited.size} of ${declared.length} activities` : ""}${budgetHit ? " · stopped at the step budget" : ""}`,
     metrics: [
       { label: "screens", value: st.screens },
       { label: "transitions", value: st.transitions },
@@ -266,8 +266,10 @@ export interface PerfFile {
 
 const perfTone = (rating: string): Tone => (rating === "slow" ? "bad" : rating === "needs work" ? "warn" : "good");
 
-export function perfReport({ perf }: BuildContext): AuditReport {
+export function perfReport({ perf, map }: BuildContext): AuditReport {
   if (!perf) return notRun("perf", "Performance", "Crawl with load measurement on (the default) to write perf.json.");
+  if (!perf.screens.length)
+    return notRun("perf", "Performance", `Load times weren't measured in this crawl${map.run.device.platform === "ios" ? " (iOS has no frame counters wired yet; planned)" : ""}.`);
   const screens = [...perf.screens].sort((a, b) => b.median_ms - a.median_ms);
   const good = screens.filter((s) => perfTone(s.rating) === "good").length;
   const score = screens.length ? pct(good, screens.length) : null;
@@ -287,7 +289,7 @@ export function perfReport({ perf }: BuildContext): AuditReport {
     summary: [
       screens[0] && `${screens[0].title} loads in ${screens[0].median_ms.toLocaleString()} ms`,
       janky[0] && `${janky.sort((a, b) => b.janky_pct - a.janky_pct)[0].title} ${Math.round(janky[0].janky_pct)}% janky frames`,
-      perf.startup && `cold start ${perf.startup.median_ms} ms`,
+      perf.startup?.median_ms != null && `cold start ${perf.startup.median_ms} ms`,
     ]
       .filter(Boolean)
       .join(" · "),

@@ -30,6 +30,7 @@ export interface AuditFinding {
   due?: string; // ISO date: a store or platform deadline this finding is tied to
   refs?: AuditRef[];
   sample?: boolean; // placeholder finding inside a report that is otherwise real
+  inferred?: boolean; // viewer-only: `platform` was filled in from the crawled platform, not written by the audit
   /** A store or platform requirement's state, shown as a met / due / blocked / upcoming / not-checked glyph. */
   requirement?: Requirement;
 }

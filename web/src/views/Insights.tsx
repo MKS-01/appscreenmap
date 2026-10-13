@@ -32,8 +32,9 @@ const statusWord = (r: AuditReport) => r.status_label ?? STATUS_WORD[r.status];
 /** Findings that apply to one platform view. A finding with no platform comes from the (Android) crawl. */
 const onPlatform = (f: AuditFinding, v: View) => (v === "ios" ? f.platform === "ios" || f.platform === "both" : f.platform !== "ios");
 const count = (r: AuditReport | undefined, s: Severity, v: View) => (r ? r.findings.filter((f) => f.severity === s && onPlatform(f, v)).length : 0);
-/** Crawl audits are Android-only until the iOS driver exists. */
-const crawledOn = (d: AuditDef, v: View) => !(v === "ios" && d.group === "crawl");
+/** Crawl audits describe the platform that was crawled; the other platform has no crawl data yet. */
+const crawledOn = (d: AuditDef, v: View, crawled: View) => !(v !== crawled && d.group === "crawl");
+const crawledPlatform = (map: AppMapData): View => (map.run.device.platform === "ios" ? "ios" : "android");
 
 const DAY = 86_400_000;
 const today = () => new Date(new Date().toDateString()).getTime();
@@ -43,9 +44,18 @@ const fmtDay = (iso: string, year = true) =>
   new Date(iso + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short", ...(year ? { year: "numeric" } : {}) });
 
 export default function Insights({ run, map, audit }: { run: string; map: AppMapData; audit?: string }) {
-  const [prefs, setPrefs] = useStored(keys.insightsPrefs, { samples: true, platform: "android" as View });
-  const view: View = prefs.platform === "ios" ? "ios" : "android";
-  const { defs, reports, loading } = useAudits(run, map, prefs.samples);
+  const [prefs, setPrefs] = useStored(keys.insightsPrefs, { samples: true });
+  const crawled = crawledPlatform(map);
+  const [view, setView] = useState<View>(crawled);
+  useEffect(() => setView(crawled), [run, crawled]);
+  const { defs, reports: raw, loading } = useAudits(run, map, prefs.samples);
+  // A finding with no platform comes from the crawl, so it belongs to the platform that was crawled.
+  const reports = useMemo(() => {
+    const out: Record<string, AuditReport> = {};
+    for (const [id, r] of Object.entries(raw))
+      out[id] = { ...r, findings: r.findings.map((f) => (f.platform ? f : { ...f, platform: crawled, inferred: true })) };
+    return out;
+  }, [raw, crawled]);
   const def = defs.find((d) => d.id === audit);
 
   if (loading) return <div className="empty">Loading audits…</div>;
@@ -60,7 +70,8 @@ export default function Insights({ run, map, audit }: { run: string; map: AppMap
           defs={defs}
           reports={reports}
           view={view}
-          setView={(platform) => setPrefs((p) => ({ ...p, platform }))}
+          crawled={crawled}
+          setView={setView}
           samples={prefs.samples}
           toggleSamples={() => setPrefs((p) => ({ ...p, samples: !p.samples }))}
         />
@@ -77,13 +88,14 @@ interface OverviewProps {
   defs: AuditDef[];
   reports: Record<string, AuditReport>;
   view: View;
+  crawled: View;
   setView: (v: View) => void;
   samples: boolean;
   toggleSamples: () => void;
 }
 
-function Overview({ run, map, defs, reports, view, setView, samples, toggleSamples }: OverviewProps) {
-  const ran = defs.filter((d) => reports[d.id]?.status !== "not_run" && crawledOn(d, view));
+function Overview({ run, map, defs, reports, view, crawled, setView, samples, toggleSamples }: OverviewProps) {
+  const ran = defs.filter((d) => reports[d.id]?.status !== "not_run" && crawledOn(d, view, crawled));
   const errors = ran.reduce((n, d) => n + count(reports[d.id], "error", view), 0);
   const warnings = ran.reduce((n, d) => n + count(reports[d.id], "warning", view), 0);
   const dated = defs
@@ -113,12 +125,12 @@ function Overview({ run, map, defs, reports, view, setView, samples, toggleSampl
           <span className="ins-sub">Sorted by what needs you first</span>
           <span className="grow" />
           <div className="ins-seg" role="group" aria-label="Platform">
-            <button type="button" aria-pressed={view === "android"} onClick={() => setView("android")}>
-              <Icon name="android" size={13} /> Android
-            </button>
-            <button type="button" aria-pressed={view === "ios"} onClick={() => setView("ios")}>
-              <Icon name="apple" size={13} /> iOS · not crawled
-            </button>
+            {(["android", "ios"] as View[]).map((p) => (
+              <button key={p} type="button" aria-pressed={view === p} onClick={() => setView(p)}>
+                <Icon name={p === "ios" ? "apple" : "android"} size={13} /> {p === "ios" ? "iOS" : "Android"}
+                {p !== crawled && " · not crawled"}
+              </button>
+            ))}
           </div>
           <button type="button" className="ins-btn" aria-pressed={samples} onClick={toggleSamples} title="Placeholder data for audits that don't exist yet">
             {samples ? "Hide samples" : "Show samples"}
@@ -127,7 +139,7 @@ function Overview({ run, map, defs, reports, view, setView, samples, toggleSampl
             <Icon name="download" size={14} /> Export report
           </button>
         </div>
-        <Ledger run={run} defs={defs} reports={reports} view={view} />
+        <Ledger run={run} defs={defs} reports={reports} view={view} crawled={crawled} />
       </section>
 
       {dated.length > 0 && (
@@ -176,7 +188,9 @@ function Hero({ run, map, audits }: { run: string; map: AppMapData; audits: numb
   const shots = useMemo(() => heroScreens(map), [map]);
   const facts = [
     [d.name ?? ([d.manufacturer, d.model].filter(Boolean).join(" ") || "device"), d.type].filter(Boolean).join(" · "),
-    d.android && `Android ${d.android}${d.sdk ? ` · API ${d.sdk}` : ""}${d.os?.skin ? ` · ${d.os.skin}` : ""}`,
+    d.platform === "ios"
+      ? d.os?.release && `iOS ${d.os.release}`
+      : d.android && `Android ${d.android}${d.sdk ? ` · API ${d.sdk}` : ""}${d.os?.skin ? ` · ${d.os.skin}` : ""}`,
     `${widthDp} dp · ${windowClass} window`,
     d.width && `${d.width} × ${d.height}${d.density ? ` · ${d.density} dpi` : ""}${d.font_scale ? ` · font ${d.font_scale}×` : ""}`,
     `${fmtDuration(map.run.elapsed_s)}${map.run.steps ? ` · ${map.run.steps} steps` : ""}`,
@@ -223,10 +237,10 @@ function heroScreens(map: AppMapData): Screen[] {
 }
 
 /** One row per audit in two groups, most urgent first. */
-function Ledger({ run, defs, reports, view }: { run: string; defs: AuditDef[]; reports: Record<string, AuditReport>; view: View }) {
+function Ledger({ run, defs, reports, view, crawled }: { run: string; defs: AuditDef[]; reports: Record<string, AuditReport>; view: View; crawled: View }) {
   const urgency = (d: AuditDef) => {
     const r = reports[d.id];
-    if (!r || r.status === "not_run" || !crawledOn(d, view)) return [1, 0, 0, 0];
+    if (!r || r.status === "not_run" || !crawledOn(d, view, crawled)) return [1, 0, 0, 0];
     return [0, -count(r, "error", view), -count(r, "warning", view), r.score ?? 100];
   };
   const order = (a: AuditDef, b: AuditDef) => {
@@ -240,7 +254,7 @@ function Ledger({ run, defs, reports, view }: { run: string; defs: AuditDef[]; r
         <div key={g} role="list" aria-label={g === "crawl" ? "From this crawl" : "Release readiness"}>
           <div className="ledger-cap" aria-hidden>
             <span />
-            <span>{g === "release" ? "Release readiness · Android + iOS" : view === "ios" ? "From this crawl · Android only" : "From this crawl"}</span>
+            <span>{g === "release" ? "Release readiness · Android + iOS" : view !== crawled ? `From this crawl · ${crawled === "ios" ? "iOS" : "Android"} only` : "From this crawl"}</span>
             <span className="ledger-counts-cap">Err · Warn · Info</span>
             <span className="ledger-score-cap">Score</span>
             <span />
@@ -249,7 +263,7 @@ function Ledger({ run, defs, reports, view }: { run: string; defs: AuditDef[]; r
             .filter((d) => d.group === g)
             .sort(order)
             .map((d) => (
-              <LedgerRow key={d.id} run={run} def={d} report={reports[d.id]} view={view} />
+              <LedgerRow key={d.id} run={run} def={d} report={reports[d.id]} view={view} crawled={crawled} />
             ))}
         </div>
       ))}
@@ -257,11 +271,11 @@ function Ledger({ run, defs, reports, view }: { run: string; defs: AuditDef[]; r
   );
 }
 
-function LedgerRow({ run, def, report, view }: { run: string; def: AuditDef; report?: AuditReport; view: View }) {
-  const off = !report || report.status === "not_run" || !crawledOn(def, view);
+function LedgerRow({ run, def, report, view, crawled }: { run: string; def: AuditDef; report?: AuditReport; view: View; crawled: View }) {
+  const off = !report || report.status === "not_run" || !crawledOn(def, view, crawled);
   const soon = !off && report.findings.some((f) => f.due && daysFrom(f.due) >= 0 && daysFrom(f.due) <= 60 && onPlatform(f, view));
   const n = SEVERITIES.map((s) => count(report, s, view));
-  const notCrawled = view === "ios" && def.group === "crawl";
+  const notCrawled = view !== crawled && def.group === "crawl";
   return (
     <a className={`ledger-row ${off ? "off" : ""}`} href={href("r", run, "insights", def.id)} role="listitem">
       <span className={`ins-tile ${soon ? "accent" : ""}`}>
@@ -275,7 +289,7 @@ function LedgerRow({ run, def, report, view }: { run: string; def: AuditDef; rep
           {report?.source === "mixed" && <SampleTag label="part sample" />}
         </span>
         <span className="ledger-summary">
-          {notCrawled ? "iOS isn't crawled yet. This audit runs on the Android crawl." : off ? report?.summary || def.produces : report.summary}
+          {notCrawled ? `${view === "ios" ? "iOS" : "Android"} wasn't crawled in this run. This audit reads the ${crawled === "ios" ? "iOS" : "Android"} crawl.` : off ? report?.summary || def.produces : report.summary}
         </span>
       </span>
       <span className="ledger-counts" aria-label={off ? "no findings" : SEVERITIES.map((s, i) => `${n[i]} ${s}`).join(", ")}>
@@ -850,7 +864,7 @@ function Findings({ run, map, report }: { run: string; map: AppMapData; report: 
         <ul className="findings">
           {shown.map((f) => {
             const screen = f.screen ? byId.get(f.screen) : undefined;
-            const tags = [f.category, f.platform && PLATFORM_WORD[f.platform], f.due && `due ${fmtDay(f.due)}`].filter(Boolean).join(" · ");
+            const tags = [f.category, !f.inferred && f.platform && PLATFORM_WORD[f.platform], f.due && `due ${fmtDay(f.due)}`].filter(Boolean).join(" · ");
             return (
               <li key={f.id} className="finding">
                 <span className="finding-sev" style={{ color: SEV_COLOR[f.severity] }}>
@@ -1019,7 +1033,7 @@ function toMarkdown(map: AppMapData, defs: AuditDef[], reports: Record<string, A
   const out = [
     `# Is ${app.label ?? app.package}${app.version ? ` v${app.version}` : ""} ready to ship?`,
     "",
-    `Run \`${map.run.id}\` on ${device.name ?? [device.manufacturer, device.model].filter(Boolean).join(" ")}, Android ${device.android ?? "?"} (API ${device.sdk ?? "?"}), ${fmtDate(map.run.started_at)}.`,
+    `Run \`${map.run.id}\` on ${device.name ?? [device.manufacturer, device.model].filter(Boolean).join(" ")}, ${device.platform === "ios" ? `iOS ${device.os?.release ?? "?"}` : `Android ${device.android ?? "?"} (API ${device.sdk ?? "?"})`}, ${fmtDate(map.run.started_at)}.`,
     "",
     "| Audit | Score | Status | Errors | Warnings | Info | Data |",
     "|---|---|---|---|---|---|---|",
