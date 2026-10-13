@@ -64,7 +64,7 @@ uv run pytest -q tests/test_a11y.py && uv run ruff check src tests && uv run ruf
 
 ## 5. Check it on a real crawl
 
-Run `uv run appscreenmap a11y runs/sample-app/<run-id> --level AAA` on the committed sample run.
+Run `uv run appscreenmap a11y runs/sample-app/<run-id> --level AAA` on a local run of a sample app (`samples/demo.sh` makes one).
 Check every new hit by looking at the screenshot and bounds. If more than about 1 in 5 hits is
 wrong, tighten the rule or downgrade it to `review`/`info` before shipping.
 

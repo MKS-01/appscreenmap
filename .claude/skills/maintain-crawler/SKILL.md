@@ -68,7 +68,7 @@ the new one. Add a unit test with both formats as literal strings.
 
 ## Open-source hygiene
 
-- `runs/` **is committed** as sample maps, one folder per project (`runs/<project>/<run-id>/`).
+- `runs/` is **git-ignored** (generated locally, one folder per project: `runs/<project>/<run-id>/`); `samples/demo.sh` makes sample ones.
   Keep it curated: one or two good runs per sample app (sample-app), no broken, `running`, or
   throwaway runs, and no third-party apps. Watch repo size (PNG screenshots are ~100–300 KB each);
   if it grows, prune old runs or move samples to Git LFS. Tests still use synthetic XML only.

@@ -45,7 +45,7 @@ To stop early, stop the background task. SIGTERM is handled: the run is saved as
 the app is unpinned, and animations are restored.
 
 Output goes to `runs/<project>/<run-id>/` (project = last part of the package, or `--project`).
-Runs are committed as samples, so delete broken or throwaway runs before committing.
+`runs/` is git-ignored, so nothing here is committed; delete broken or throwaway runs to keep the viewer tidy.
 
 **iOS Simulator.** Build the app for the simulator (`xcodebuild -sdk iphonesimulator`; an `.ipa` can't run there),
 boot a simulator (Xcode 27 replaced Simulator.app with Device Hub), then:

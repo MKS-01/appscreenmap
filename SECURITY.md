@@ -11,7 +11,7 @@ acknowledgement within a few days. This is a volunteer-run alpha project, so fix
 
 ## Scope and things to know
 
-AppScreenMap runs locally and drives a device or emulator through `adb`. Points worth reviewing:
+AppScreenMap runs locally and drives a device or emulator through `adb` (or an iOS Simulator through `simctl` and `idb`). Points worth reviewing:
 
 - **`appscreenmap serve`** serves the `runs/` folder and the viewer on `127.0.0.1` by default. Its only write
   endpoint accepts `PUT /runs/…/notes.json`, limited to the viewer's notes file, a size cap, a same-machine
