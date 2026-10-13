@@ -74,7 +74,7 @@ function RunShell({ route }: { route: Route }) {
     if (route.tab === "s" && route.arg) body = <ScreenDetail run={run} map={data} sid={route.arg} />;
     else if (tab === "screens") body = <Screens run={run} map={data} />;
     else if (tab === "replay") body = <Replay run={run} map={data} />;
-    else if (tab === "insights") body = <Insights run={run} map={data} />;
+    else if (tab === "insights") body = <Insights run={run} map={data} audit={route.arg} />;
     else if (tab === "a11y") body = <A11y run={run} map={data} view={route.arg} />;
     else if (tab === "compare") body = <Compare run={run} map={data} base={route.arg} />;
     else body = <MapView run={run} map={data} focus={route.query.get("focus") ?? undefined} layout={route.query.get("layout") ?? undefined} />;

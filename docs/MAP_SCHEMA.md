@@ -25,6 +25,8 @@ runs/                              # committed to git as sample maps
     a11y-report.html               # shareable WCAG 2.2 report: self-contained (crops embedded), light/dark
     a11y-report.md                 # same report as Markdown; images in a11y/crops/*.jpg
     notes.json                     # viewer stars/notes + a11y triage (owned by the web session, notes.py)
+    audits/index.json              # optional: audits this run has beyond the built-in ones (see "audits" below)
+    audits/<audit-id>.json         # optional: one audit report (security, store, adaptive, …)
 ```
 
 Older runs may sit directly in `runs/<run-id>/`. Use the index's `path` to locate a run's files.
@@ -269,6 +271,60 @@ Rule ids: `target-size-min` (2.5.8), `label-in-name` (2.5.3), `not-focusable` (2
 `help-inconsistent` (3.2.6), `redundant-entry` (3.3.7), `auth-cognitive` (3.3.8), `dragging` (2.5.7),
 `focus-obscured` (2.4.11), `orientation-locked` (1.3.4), `text-truncated` (1.4.4), `change-on-input` (3.2.2),
 `image-alt` (1.1.1). They don't overlap the viewer's rule ids.
+
+## `audits/<audit-id>.json`
+
+Every audit the viewer's Insights tab shows uses this one shape. Today the viewer builds `coverage`, `stability`,
+`a11y` and `perf` itself from `map.json`, `a11y.json` and `perf.json`. It shows `adaptive`, `platform`, `store`
+and `security` from sample data (labelled as such) until a tool writes them. Any tool (the crawler, a jadx or
+frida scanner, a CI step) can add or replace an audit by writing this file into the run folder. A file always
+wins over the viewer's built-in or sample version. Ids the viewer doesn't know go in `audits/index.json` and
+render with the generic layout. Only `schema`, `audit` and `findings` are required; the viewer fills defaults for
+the rest.
+
+```jsonc
+// audits/index.json (optional; needed only for ids the viewer doesn't already know)
+{ "audits": [ { "id": "privacy", "title": "Privacy labels" } ] }
+
+// audits/<audit-id>.json
+{
+  "schema": 1,
+  "audit": "security",                          // id; matches the file name
+  "title": "Security",
+  "tool": "jadx 1.5.1 + frida 17",              // what produced it
+  "generated_at": "2026-10-13T03:20:00+00:00",
+  "source": "run | sample | mixed",             // sample = placeholder data; the viewer labels it
+  "status": "pass | warn | fail | info | not_run",
+  "score": 61,                                  // 0–100, higher is better; null if the audit doesn't score
+  "score_note": "100 minus 20 per error, 8 per warning",
+  "summary": "One sentence for the overview card.",
+  "metrics": [ { "label": "exported components", "value": 2, "unit": "", "tone": "good | warn | bad | info",
+                 "hint": "…", "sample": false } ],
+  "charts": [ {                                 // declarative, so a tool ships its own charts
+    "type": "bars | columns | split",           // ranked rows | ordered categories | parts of a whole
+    "title": "Findings by check", "unit": "ms", "note": "…", "sample": false,
+    "budget": 1000, "budgetLabel": "1000 ms budget",   // bars only: a reference line
+    "data": [ { "label": "Manifest", "value": 3, "tone": "good | warn | bad | info", "screen": "s004", "hint": "…" } ]
+  } ],
+  "findings": [ {
+    "id": "sec::cleartext",                     // stable within the audit
+    "severity": "error | warning | info",
+    "title": "Cleartext traffic allowed app-wide",
+    "detail": "…", "fix": "…",
+    "screen": "s004",                           // optional map.json screen id (linked in the viewer)
+    "platform": "android | ios | both",
+    "category": "Manifest",                     // groups findings within the audit
+    "due": "2026-11-01",                        // optional deadline (store or platform), shown on a timeline
+    "refs": [ { "title": "…", "url": "https://developer.android.com/…", "publisher": "Android Developers",
+                "date": "2026-10-13" } ],
+    "sample": false                             // placeholder finding inside a real report
+  } ],
+  "refs": [ { "title": "…", "url": "…", "publisher": "…", "date": "…" } ]   // official docs the checks follow
+}
+```
+
+Cite official sources only (Android Developers, Google Play, Apple Developer, W3C). The viewer's catalogue of
+sources is `web/src/insights/sources.ts`. Update it when a platform or store publishes its yearly changes.
 
 ## `diff/<base>/diff.json`
 

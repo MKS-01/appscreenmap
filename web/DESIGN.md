@@ -71,6 +71,11 @@ tabular-nums` for stats). Scale: display (`.how-title`, `.hero-title`) → `h1` 
 | Mini phone | `.mini-phone` | Screenshot in a device frame for explanations (not for data views) |
 | Map node | `.snode` (MapView) | One-line 22px header (title + id) over the **whole** screenshot at the device's aspect (`shotBox`). `.root` green, `.orphan` dashed amber (no recorded path), `.ext` dashed |
 | Storyboard | `.story`, `.lane`, `.story-card` | Sections as content-sized panels that wrap; cards show "via <tap>" and a +depth badge |
+| Charts | `insights/charts.tsx`: `Bars`, `Columns`, `Split`, `Chart` | See Charts. No chart library |
+| Meter | `Meter`, `.meter` | 0–100 score; fill = tone, track = same hue at 16% |
+| Audit card | `.audit-card` (Insights) | Whole card is a link; dashed + transparent when the audit hasn't run |
+| Sample tag | `SampleTag`, `.sample-tag` | Dashed amber chip on any placeholder data (report, chart, metric or finding) |
+| Sub-nav | `.audit-nav` | Underlined link row inside a tab (Insights audits); scrolls sideways on phones |
 
 Reuse before inventing. If a new pattern appears twice, add it here and to `#/design`.
 
@@ -95,6 +100,23 @@ The Map's direction defaults to **Auto**: top-down for portrait screens, left-to
 - Status colours mean status. Don't reuse them for categories (use `.token.tk-*` style tints for categories).
 - Text on colour: use `color-mix(in srgb, var(--x) 12–14%, transparent)` backgrounds with the full colour as
   text (see `.effect`, `.verdict`). Check contrast ≥ 4.5:1 in both themes.
+
+## Charts
+
+Insights charts follow the `dataviz` skill: pick the form first, colour last.
+
+- **Forms:** `Bars` for ranked items (one row each, value at the tip, optional budget line), `Columns` for ordered
+  categories (depth, size class, runs over time; `highlight` greys all but one), `Split` for parts of one whole.
+  A single number is a `Stat`, not a chart. Two measures with different scales → small multiples, never two axes.
+- **Colour:** one series = `--accent`. Status tones (`good`/`warn`/`bad`/`info` → `--st-done`/`--st-pending`/
+  `--st-blocked`/`--st-unreachable`) only when the value really is good or bad, and the chart then shows a legend
+  word for each tone. Severities use the same mapping: error = bad, warning = warn, info = info.
+- **Marks:** bars ≤ 10–12 px thick with a 4 px rounded data end and a square baseline; 2 px gaps between stacked
+  parts; hairline solid axes. Text stays in text tokens, never the data colour.
+- **Labels:** every value is printed (tooltips only repeat it), so nothing is hover-only. Long labels ellipsize
+  inside their column; values never wrap.
+- **Data:** audits describe charts declaratively (`AuditChart` in `insights/types.ts`, `audits/<id>.json` in
+  docs/MAP_SCHEMA.md), so a new tool adds charts without viewer code.
 
 ## Icons
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CopyButton, Stat, StatusBadge } from "../components/common";
 import { Icon, type IconName } from "../components/Icon";
+import { Bars, Columns, Meter, SampleTag, Split } from "../insights/charts";
 import { STATUS_HELP, STATUSES, statusColor } from "../util";
 
 // Living reference for the viewer's design system (web/DESIGN.md). Renders the real tokens and classes,
@@ -188,6 +189,36 @@ export default function DesignSystem() {
             </tr>
           </tbody>
         </table>
+      </Block>
+
+      <Block title="Charts and scores" note="insights/charts.tsx: thin marks, direct labels, tone only with a legend word">
+        <div className="chart-grid">
+          <div className="col" style={{ gap: 12 }}>
+            <span className="small muted">Bars (ranked rows, optional budget line)</span>
+            <Bars
+              unit="ms"
+              budget={1000}
+              budgetLabel="1000 ms budget"
+              data={[
+                { label: "Reports", value: 2770, tone: "bad" },
+                { label: "Gallery", value: 1825, tone: "warn" },
+                { label: "Settings", value: 320, tone: "good" },
+              ]}
+            />
+          </div>
+          <div className="col" style={{ gap: 12 }}>
+            <span className="small muted">Columns (ordered categories; highlight one)</span>
+            <Columns data={[{ label: "Oct 1", value: 18 }, { label: "Oct 8", value: 21 }, { label: "Oct 13", value: 19 }]} highlight={2} />
+          </div>
+          <div className="col" style={{ gap: 12 }}>
+            <span className="small muted">Split (parts of a whole) · meter · sample tag</span>
+            <Split data={[{ label: "error", value: 3, tone: "bad" }, { label: "warning", value: 6, tone: "warn" }, { label: "info", value: 4, tone: "info" }]} />
+            <Meter score={72} tone="warn" label="example score" />
+            <span>
+              <SampleTag />
+            </span>
+          </div>
+        </div>
       </Block>
 
       <Block title="Icons" note="components/Icon.tsx: 24-grid strokes, currentColor, aria-hidden unless labelled">

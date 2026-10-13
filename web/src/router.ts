@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 //   #/r/<run>/<tab>            map | screens | replay | insights | compare
 //   #/r/<run>/s/<screen>       screen detail
 //   #/r/<run>/compare/<base>   compare against a baseline run
+//   #/r/<run>/insights/<audit> one audit (coverage, a11y, perf, adaptive, store, platform, security, …)
 
 export interface Route {
   page: "runs" | "how" | "design" | "run";
