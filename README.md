@@ -177,13 +177,15 @@ loading spinner was still showing. Cold start is recorded on every relaunch.
 
 ```
 $ uv run appscreenmap perf runs/playground/<run-id> --budget 1000
-Navigation performance for playground-v1-20261013-024928 (budget 1000 ms, animations off)
-  cold start: 166 ms median, 187 ms max over 17 launch(es)
+Navigation performance for playground-v1-20261013-031007 (budget 1000 ms, animations off)
+  cold start: 151 ms median, 161 ms max over 11 launch(es)
   screens, slowest first (median / p90 / max ms, samples):
-   🔴  s018 'Reports'     2742 / 2752 / 2752  ×2  loading indicator, never settled
-   🟠  s019 'Gallery'     1818 / 1826 / 1826  ×2  97.8% janky
-   🟢  s005 'Article'      210 /  221 /  228  ×16
+   🔴  s018 'Reports'            2770 / 2770 / 2770  ×1  loading indicator, never settled
+   🟠  s019 'Gallery'            1825 / 1825 / 1825  ×1  97.8% janky
+   🟢  s013 'Terms of use'        332 /  360 /  360  ×2  26.8% janky
+   🟢  s005 'Article'             214 /  225 /  228  ×8
   findings:
+    • s018 'Reports' loads in 2770 ms (median, budget 1000 ms)
     • s018 'Reports' never stopped drawing within the timeout (continuous animation or polling UI)
     • s019 'Gallery' renders janky: 97.8% slow frames
 ```
