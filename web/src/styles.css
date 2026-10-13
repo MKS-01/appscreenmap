@@ -163,6 +163,9 @@ button {
   min-height: 0;
   overflow: auto;
   overflow-x: hidden;
+  /* The scroll container is also the containing block for absolutely positioned descendants (.sr-only labels, badges).
+     Without it they escape the clip and stretch the document, which then scrolls into empty space below the app. */
+  position: relative;
 }
 .page {
   max-width: 1280px;
@@ -489,6 +492,20 @@ pre.code {
 .stats > .stat:first-child {
   border-left: 0;
   padding-left: 0;
+}
+@media (max-width: 520px) {
+  /* two columns on a phone: the first cell of every row sits flush left, the second keeps the divider */
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-bottom: 0;
+  }
+  .stats > .stat {
+    border-bottom: 1px solid var(--line);
+  }
+  .stats > .stat:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
 }
 .stat .v {
   font-size: var(--text-2xl);
@@ -1510,9 +1527,18 @@ pre.code {
   position: absolute;
   width: 1px;
   height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
   overflow: hidden;
   clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
+}
+/* a wide table scrolls inside its own box instead of being cut off by the page */
+.tbl-scroll {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 /* ── home ──────────────────────────────────────────────────────────────── */

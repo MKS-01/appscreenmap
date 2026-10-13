@@ -45,7 +45,7 @@ export default function A11y({ run, map, view }: { run: string; map: AppMapData;
   return (
     <div className="page">
       <div className="row wrap" style={{ marginBottom: 16, gap: 12 }}>
-        <div className="grow">
+        <div className="grow" style={{ minWidth: "min(100%, 320px)" }}>
           {report && <A11yNav run={run} view="findings" />}
           <span className="kicker">Accessibility · {total} screens checked</span>
           <h1>Can everyone use this app?</h1>
