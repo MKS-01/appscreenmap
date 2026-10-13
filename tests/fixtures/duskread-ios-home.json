@@ -1,0 +1,781 @@
+[
+ {
+  "title": null,
+  "role": "AXApplication",
+  "help": null,
+  "frame": {
+   "x": 0,
+   "y": 0,
+   "width": 402,
+   "height": 874
+  },
+  "type": "Application",
+  "content_required": false,
+  "enabled": true,
+  "custom_actions": [],
+  "AXValue": null,
+  "subrole": null,
+  "traits": [
+   "None"
+  ],
+  "role_description": "application",
+  "AXLabel": "DuskRead",
+  "AXUniqueId": null,
+  "pid": 14292,
+  "AXFrame": "{{0, 0}, {402, 874}}"
+ },
+ {
+  "role_description": "text",
+  "AXFrame": "{{14, 72}, {119.66666666666666, 35}}",
+  "subrole": null,
+  "content_required": false,
+  "frame": {
+   "height": 35,
+   "x": 14,
+   "width": 119.66666666666666,
+   "y": 72
+  },
+  "type": "StaticText",
+  "custom_actions": [],
+  "enabled": true,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "AXValue": null,
+  "role": "AXStaticText",
+  "title": null,
+  "AXLabel": "Hello, MKS",
+  "help": null,
+  "AXUniqueId": null,
+  "pid": 14292
+ },
+ {
+  "custom_actions": [],
+  "pid": 14292,
+  "content_required": false,
+  "traits": [
+   "Scrollable",
+   "Button"
+  ],
+  "AXValue": null,
+  "title": null,
+  "enabled": true,
+  "type": "Button",
+  "subrole": null,
+  "AXUniqueId": null,
+  "role": "AXButton",
+  "AXLabel": "Settings",
+  "frame": {
+   "height": 33.999999999999986,
+   "y": 72.66666666666667,
+   "width": 34,
+   "x": 354
+  },
+  "role_description": "button",
+  "AXFrame": "{{354, 72.666666666666671}, {34, 33.999999999999986}}",
+  "help": null
+ },
+ {
+  "subrole": null,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "frame": {
+   "width": 42.666666666666664,
+   "height": 16,
+   "x": 14,
+   "y": 133
+  },
+  "AXLabel": "FOCUS",
+  "help": null,
+  "content_required": false,
+  "custom_actions": [],
+  "type": "StaticText",
+  "enabled": true,
+  "AXValue": null,
+  "AXFrame": "{{14, 133}, {42.666666666666664, 16}}",
+  "role_description": "text",
+  "AXUniqueId": null,
+  "title": null,
+  "pid": 14292,
+  "role": "AXStaticText"
+ },
+ {
+  "AXValue": null,
+  "type": "StaticText",
+  "custom_actions": [],
+  "help": null,
+  "content_required": false,
+  "role": "AXStaticText",
+  "pid": 14292,
+  "AXUniqueId": null,
+  "AXLabel": "25:00",
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "subrole": null,
+  "enabled": true,
+  "role_description": "text",
+  "frame": {
+   "width": 65,
+   "height": 27.333333333333314,
+   "y": 165.16666666666669,
+   "x": 14
+  },
+  "AXFrame": "{{14, 165.16666666666669}, {65, 27.333333333333314}}",
+  "title": null
+ },
+ {
+  "AXFrame": "{{175, 163}, {67, 31.666666666666657}}",
+  "AXUniqueId": null,
+  "role": "AXButton",
+  "AXValue": null,
+  "custom_actions": [],
+  "frame": {
+   "width": 67,
+   "x": 175,
+   "height": 31.666666666666657,
+   "y": 163
+  },
+  "pid": 14292,
+  "subrole": null,
+  "content_required": false,
+  "AXLabel": "15 MIN",
+  "traits": [
+   "Scrollable",
+   "Button"
+  ],
+  "help": null,
+  "title": null,
+  "enabled": true,
+  "role_description": "button",
+  "type": "Button"
+ },
+ {
+  "content_required": false,
+  "custom_actions": [],
+  "subrole": null,
+  "AXFrame": "{{248, 163}, {67, 31.666666666666657}}",
+  "title": null,
+  "AXValue": null,
+  "pid": 14292,
+  "AXUniqueId": null,
+  "traits": [
+   "Scrollable",
+   "Button"
+  ],
+  "type": "Button",
+  "AXLabel": "25 MIN",
+  "enabled": true,
+  "help": null,
+  "role_description": "button",
+  "frame": {
+   "width": 67,
+   "x": 248,
+   "height": 31.666666666666657,
+   "y": 163
+  },
+  "role": "AXButton"
+ },
+ {
+  "role_description": "button",
+  "AXFrame": "{{321, 163}, {67, 31.666666666666657}}",
+  "AXUniqueId": null,
+  "AXLabel": "30 MIN",
+  "AXValue": null,
+  "subrole": null,
+  "help": null,
+  "traits": [
+   "Scrollable",
+   "Button"
+  ],
+  "frame": {
+   "y": 163,
+   "height": 31.666666666666657,
+   "x": 321,
+   "width": 67
+  },
+  "enabled": true,
+  "custom_actions": [],
+  "title": null,
+  "content_required": false,
+  "pid": 14292,
+  "type": "Button",
+  "role": "AXButton"
+ },
+ {
+  "AXFrame": "{{14, 227.66666666666663}, {45.333333333333329, 16}}",
+  "AXLabel": "LATEST",
+  "pid": 14292,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "custom_actions": [],
+  "AXValue": null,
+  "AXUniqueId": null,
+  "help": null,
+  "title": null,
+  "content_required": false,
+  "subrole": null,
+  "frame": {
+   "y": 227.66666666666663,
+   "height": 16,
+   "width": 45.33333333333333,
+   "x": 14
+  },
+  "enabled": true,
+  "role": "AXStaticText",
+  "role_description": "text",
+  "type": "StaticText"
+ },
+ {
+  "help": null,
+  "AXValue": null,
+  "AXUniqueId": null,
+  "type": "StaticText",
+  "role": "AXStaticText",
+  "title": null,
+  "frame": {
+   "x": 276.33333333333337,
+   "y": 228.8333333333333,
+   "height": 13.666666666666657,
+   "width": 71.66666666666663
+  },
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "content_required": false,
+  "enabled": true,
+  "AXFrame": "{{276.33333333333337, 228.83333333333329}, {71.666666666666629, 13.666666666666657}}",
+  "role_description": "text",
+  "custom_actions": [],
+  "pid": 14292,
+  "subrole": null,
+  "AXLabel": "6 this week"
+ },
+ {
+  "role_description": "button",
+  "enabled": true,
+  "AXUniqueId": null,
+  "title": null,
+  "AXValue": null,
+  "help": null,
+  "custom_actions": [],
+  "traits": [
+   "Scrollable",
+   "Button"
+  ],
+  "role": "AXButton",
+  "AXLabel": "Listen to the week",
+  "type": "Button",
+  "content_required": false,
+  "frame": {
+   "height": 30,
+   "width": 30,
+   "y": 220.66666666666666,
+   "x": 358
+  },
+  "AXFrame": "{{358, 220.66666666666666}, {30, 30}}",
+  "subrole": null,
+  "pid": 14292
+ },
+ {
+  "role_description": "text",
+  "type": "StaticText",
+  "frame": {
+   "x": 30,
+   "y": 280.66666666666663,
+   "width": 214.66666666666666,
+   "height": 13.666666666666629
+  },
+  "title": null,
+  "help": null,
+  "AXUniqueId": null,
+  "AXFrame": "{{30, 280.66666666666663}, {214.66666666666666, 13.666666666666629}}",
+  "enabled": true,
+  "role": "AXStaticText",
+  "AXLabel": "android-developers.googleblog.com",
+  "custom_actions": [],
+  "content_required": false,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "pid": 14292,
+  "subrole": null,
+  "AXValue": null
+ },
+ {
+  "title": null,
+  "AXFrame": "{{333, 280.66666666666663}, {39, 13.666666666666629}}",
+  "frame": {
+   "height": 13.666666666666629,
+   "x": 333,
+   "y": 280.66666666666663,
+   "width": 39
+  },
+  "role_description": "text",
+  "AXValue": null,
+  "AXUniqueId": null,
+  "content_required": false,
+  "pid": 14292,
+  "AXLabel": "1h ago",
+  "role": "AXStaticText",
+  "help": null,
+  "enabled": true,
+  "subrole": null,
+  "type": "StaticText",
+  "custom_actions": [],
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ]
+ },
+ {
+  "AXUniqueId": null,
+  "frame": {
+   "height": 47.33333333333337,
+   "x": 30,
+   "y": 308.33333333333326,
+   "width": 341
+  },
+  "pid": 14292,
+  "custom_actions": [],
+  "AXLabel": "New ways to drive smarter discovery, deeper engagement, a\u2026",
+  "title": null,
+  "AXValue": null,
+  "role_description": "text",
+  "enabled": true,
+  "AXFrame": "{{30, 308.33333333333326}, {341, 47.333333333333371}}",
+  "role": "AXStaticText",
+  "content_required": false,
+  "subrole": null,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "help": null,
+  "type": "StaticText"
+ },
+ {
+  "custom_actions": [],
+  "AXUniqueId": null,
+  "title": null,
+  "content_required": false,
+  "enabled": true,
+  "pid": 14292,
+  "AXValue": null,
+  "frame": {
+   "height": 90,
+   "x": 30,
+   "width": 340.66666666666663,
+   "y": 364.66666666666663
+  },
+  "help": null,
+  "role": "AXStaticText",
+  "role_description": "text",
+  "AXLabel": "Posted by Paul Feng, VP of Product Management, Google Pla\u2026",
+  "type": "StaticText",
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "subrole": null,
+  "AXFrame": "{{30, 364.66666666666663}, {340.66666666666663, 90}}"
+ },
+ {
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "AXValue": null,
+  "title": null,
+  "custom_actions": [],
+  "role": "AXStaticText",
+  "help": null,
+  "role_description": "text",
+  "frame": {
+   "y": 475.8333333333333,
+   "x": 30,
+   "width": 32.666666666666664,
+   "height": 13.666666666666686
+  },
+  "AXUniqueId": null,
+  "type": "StaticText",
+  "AXLabel": "4 min",
+  "subrole": null,
+  "pid": 14292,
+  "AXFrame": "{{30, 475.83333333333331}, {32.666666666666664, 13.666666666666686}}",
+  "enabled": true,
+  "content_required": false
+ },
+ {
+  "enabled": true,
+  "type": "StaticText",
+  "title": null,
+  "AXUniqueId": null,
+  "custom_actions": [],
+  "AXValue": null,
+  "frame": {
+   "width": 45.66666666666666,
+   "y": 475.8333333333333,
+   "height": 13.666666666666686,
+   "x": 72.66666666666666
+  },
+  "subrole": null,
+  "AXLabel": "android",
+  "content_required": false,
+  "role": "AXStaticText",
+  "pid": 14292,
+  "help": null,
+  "role_description": "text",
+  "AXFrame": "{{72.666666666666657, 475.83333333333331}, {45.666666666666657, 13.666666666666686}}",
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ]
+ },
+ {
+  "type": "Button",
+  "help": null,
+  "custom_actions": [],
+  "content_required": false,
+  "enabled": true,
+  "traits": [
+   "Scrollable",
+   "Button"
+  ],
+  "AXValue": null,
+  "subrole": null,
+  "frame": {
+   "y": 472,
+   "x": 330,
+   "height": 21.666666666666686,
+   "width": 42
+  },
+  "AXFrame": "{{330, 472}, {42, 21.666666666666686}}",
+  "AXUniqueId": null,
+  "AXLabel": "MORE",
+  "role": "AXButton",
+  "title": null,
+  "pid": 14292,
+  "role_description": "button"
+ },
+ {
+  "AXUniqueId": null,
+  "custom_actions": [],
+  "role": "AXStaticText",
+  "AXValue": null,
+  "frame": {
+   "height": 13.666666666666629,
+   "width": 214.66666666666666,
+   "x": 30,
+   "y": 542.6666666666666
+  },
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "title": null,
+  "enabled": true,
+  "AXFrame": "{{30, 542.66666666666663}, {214.66666666666666, 13.666666666666629}}",
+  "subrole": null,
+  "role_description": "text",
+  "type": "StaticText",
+  "pid": 14292,
+  "help": null,
+  "content_required": false,
+  "AXLabel": "android-developers.googleblog.com"
+ },
+ {
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "role": "AXStaticText",
+  "subrole": null,
+  "role_description": "text",
+  "custom_actions": [],
+  "AXValue": null,
+  "content_required": false,
+  "help": null,
+  "AXFrame": "{{333, 542.66666666666663}, {39, 13.666666666666629}}",
+  "type": "StaticText",
+  "enabled": true,
+  "AXLabel": "2h ago",
+  "frame": {
+   "width": 39,
+   "x": 333,
+   "height": 13.666666666666629,
+   "y": 542.6666666666666
+  },
+  "AXUniqueId": null,
+  "title": null,
+  "pid": 14292
+ },
+ {
+  "role": "AXStaticText",
+  "enabled": true,
+  "custom_actions": [],
+  "AXValue": null,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "AXUniqueId": null,
+  "content_required": false,
+  "type": "StaticText",
+  "frame": {
+   "y": 570.3333333333333,
+   "width": 273,
+   "height": 47.33333333333337,
+   "x": 30
+  },
+  "pid": 14292,
+  "subrole": null,
+  "help": null,
+  "title": null,
+  "AXLabel": "Bringing our latest frontier model to Android Developers",
+  "role_description": "text",
+  "AXFrame": "{{30, 570.33333333333326}, {273, 47.333333333333371}}"
+ },
+ {
+  "pid": 14292,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "role_description": "text",
+  "type": "StaticText",
+  "frame": {
+   "height": 90,
+   "y": 626.6666666666666,
+   "x": 30,
+   "width": 333
+  },
+  "title": null,
+  "AXFrame": "{{30, 626.66666666666663}, {333, 90}}",
+  "content_required": false,
+  "AXValue": null,
+  "AXLabel": "Posted by Jason Buchel, Creative Technologist, Platform &\u2026",
+  "help": null,
+  "enabled": true,
+  "custom_actions": [],
+  "role": "AXStaticText",
+  "AXUniqueId": null,
+  "subrole": null
+ },
+ {
+  "pid": 14292,
+  "AXUniqueId": null,
+  "frame": {
+   "x": 30,
+   "width": 32.666666666666664,
+   "y": 737.8333333333333,
+   "height": 13.666666666666629
+  },
+  "custom_actions": [],
+  "enabled": true,
+  "role_description": "text",
+  "title": null,
+  "AXFrame": "{{30, 737.83333333333326}, {32.666666666666664, 13.666666666666629}}",
+  "help": null,
+  "role": "AXStaticText",
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "content_required": false,
+  "type": "StaticText",
+  "subrole": null,
+  "AXValue": null,
+  "AXLabel": "3 min"
+ },
+ {
+  "AXLabel": "android",
+  "enabled": true,
+  "content_required": false,
+  "role_description": "text",
+  "pid": 14292,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "role": "AXStaticText",
+  "AXValue": null,
+  "frame": {
+   "y": 737.8333333333333,
+   "height": 13.666666666666629,
+   "x": 72.66666666666666,
+   "width": 45.66666666666666
+  },
+  "help": null,
+  "AXFrame": "{{72.666666666666657, 737.83333333333326}, {45.666666666666657, 13.666666666666629}}",
+  "custom_actions": [],
+  "subrole": null,
+  "type": "StaticText",
+  "AXUniqueId": null,
+  "title": null
+ },
+ {
+  "pid": 14292,
+  "AXValue": null,
+  "title": null,
+  "role": "AXButton",
+  "AXUniqueId": null,
+  "content_required": false,
+  "custom_actions": [],
+  "enabled": true,
+  "role_description": "button",
+  "frame": {
+   "width": 42,
+   "y": 733.6666666666666,
+   "height": 21.66666666666663,
+   "x": 330
+  },
+  "help": null,
+  "traits": [
+   "Scrollable",
+   "Button"
+  ],
+  "subrole": null,
+  "AXFrame": "{{330, 733.66666666666663}, {42, 21.666666666666629}}",
+  "type": "Button",
+  "AXLabel": "MORE"
+ },
+ {
+  "help": null,
+  "custom_actions": [],
+  "enabled": true,
+  "AXFrame": "{{30, 804.66666666666663}, {214.66666666666666, 13.666666666666629}}",
+  "role_description": "text",
+  "pid": 14292,
+  "AXLabel": "android-developers.googleblog.com",
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "subrole": null,
+  "type": "StaticText",
+  "AXUniqueId": null,
+  "role": "AXStaticText",
+  "frame": {
+   "x": 30,
+   "y": 804.6666666666666,
+   "width": 214.66666666666666,
+   "height": 13.666666666666629
+  },
+  "content_required": false,
+  "title": null,
+  "AXValue": null
+ },
+ {
+  "AXUniqueId": null,
+  "frame": {
+   "width": 39,
+   "height": 13.666666666666629,
+   "x": 333,
+   "y": 804.6666666666666
+  },
+  "subrole": null,
+  "role": "AXStaticText",
+  "pid": 14292,
+  "help": null,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "content_required": false,
+  "AXLabel": "1d ago",
+  "custom_actions": [],
+  "role_description": "text",
+  "enabled": true,
+  "AXValue": null,
+  "type": "StaticText",
+  "AXFrame": "{{333, 804.66666666666663}, {39, 13.666666666666629}}",
+  "title": null
+ },
+ {
+  "AXValue": null,
+  "content_required": false,
+  "AXUniqueId": null,
+  "frame": {
+   "height": 47.33333333333337,
+   "y": 832.3333333333333,
+   "width": 342,
+   "x": 30
+  },
+  "subrole": null,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "role_description": "text",
+  "AXLabel": "Introducing the Googlebook Linux Terminal Preview: A VM-B\u2026",
+  "AXFrame": "{{30, 832.33333333333326}, {342, 47.333333333333371}}",
+  "type": "StaticText",
+  "title": null,
+  "enabled": true,
+  "role": "AXStaticText",
+  "pid": 14292,
+  "custom_actions": [],
+  "help": null
+ },
+ {
+  "AXUniqueId": null,
+  "enabled": true,
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "content_required": false,
+  "pid": 14292,
+  "title": null,
+  "type": "StaticText",
+  "subrole": null,
+  "AXLabel": "Posted by Cyrus Stoller, Group Product Manager, Laptops &\u2026",
+  "role_description": "text",
+  "AXValue": null,
+  "AXFrame": "{{30, 888.66666666666663}, {338.33333333333331, 90}}",
+  "frame": {
+   "y": 888.6666666666666,
+   "x": 30,
+   "width": 338.3333333333333,
+   "height": 90
+  },
+  "help": null,
+  "role": "AXStaticText",
+  "custom_actions": []
+ },
+ {
+  "pid": 14292,
+  "frame": {
+   "height": 13.666666666666629,
+   "y": 999.8333333333333,
+   "width": 32.666666666666664,
+   "x": 30
+  },
+  "title": null,
+  "role": "AXStaticText",
+  "AXUniqueId": null,
+  "AXLabel": "3 min",
+  "custom_actions": [],
+  "traits": [
+   "StaticText",
+   "Scrollable"
+  ],
+  "AXValue": null,
+  "AXFrame": "{{30, 999.83333333333326}, {32.666666666666664, 13.666666666666629}}",
+  "type": "StaticText",
+  "role_description": "text",
+  "content_required": false,
+  "subrole": null,
+  "help": null,
+  "enabled": true
+ }
+]

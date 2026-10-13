@@ -91,6 +91,10 @@ def test_config_inputs_and_blocking(tmp_path: Path):
     assert cfg.input_for("anything else") == "test"
     assert cfg.is_blocked("Sign out") and cfg.is_blocked("Delete account")
     assert not cfg.is_blocked("Settings")
+    # Destructive wordings seen in real apps (DuskRead's Settings has "Erase everything on this device").
+    for label in ("Erase everything on this device", "Wipe data", "Reset all settings", "Clear app data"):
+        assert cfg.is_blocked(label), label
+    assert not cfg.is_blocked("Reset password")  # resets a password, not the device
     toml = tmp_path / "c.toml"
     toml.write_text(
         '[crawl]\nmax_steps = 10\n[inputs]\n"email" = "me@x.dev"\ndefault = "hello"\n[safety]\nblocked_text = ["archive"]\n'
