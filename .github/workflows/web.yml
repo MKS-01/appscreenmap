@@ -2,9 +2,9 @@ name: web
 
 on:
   push:
-    paths: ["web/**", "docs/MAP_SCHEMA.md", ".github/workflows/web.yml"]
+    paths: ["web/**", "design/**", "docs/MAP_SCHEMA.md", ".github/workflows/web.yml"]
   pull_request:
-    paths: ["web/**", "docs/MAP_SCHEMA.md", ".github/workflows/web.yml"]
+    paths: ["web/**", "design/**", "docs/MAP_SCHEMA.md", ".github/workflows/web.yml"]
 
 jobs:
   build:

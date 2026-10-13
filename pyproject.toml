@@ -7,7 +7,7 @@ license = "MIT"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.11"
 authors = [{ name = "AppScreenMap contributors" }]
-keywords = ["android", "testing", "crawler", "ui-automation", "maestro", "visual-testing"]
+keywords = ["android", "ios", "testing", "crawler", "ui-automation", "maestro", "visual-testing", "accessibility", "wcag"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",

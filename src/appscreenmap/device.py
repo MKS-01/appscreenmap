@@ -2,7 +2,7 @@
 
 Pure parsing, so it is testable without a device. The driver runs `getprop` and `PROBE` (one shell call
 each) and hands the output to `build_info`. Nothing personal is read: no user-set device name, accounts,
-IMEI or network names. `run.device` is committed with sample runs.
+IMEI or network names. `run.device` is stored in the run, so it travels with it when shared.
 """
 
 from __future__ import annotations
