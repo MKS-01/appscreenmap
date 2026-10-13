@@ -127,7 +127,10 @@ class Fake:
         if "describe-all" in joined:
             return json.dumps(self.tree)
         if "launchctl" in joined:
-            return "123\t0\tUIKitApplication:dev.mks.sample-app[abcd][rb-legacy]\n"
+            return (
+                "9001\t0\tUIKitApplication:com.apple.mobilecal[dad3][rb-legacy]\n"
+                f"{HOME[0]['pid']}\t0\tUIKitApplication:dev.mks.sample-app[abcd][rb-legacy]\n"
+            )
         return ""
 
 
@@ -166,3 +169,89 @@ def test_driver_refuses_an_ipa_and_several_simulators():
 
     with pytest.raises(DriverError, match="several"):
         IosSimulatorDriver(run=Two(HOME))
+
+
+# ── what the crawl relies on ────────────────────────────────────────────────
+
+
+def test_a_tree_with_no_content_is_reported_as_another_package(monkeypatch):
+    """An in-app browser or system sheet: the explorer must see a package that isn't the app's, so it restarts the app
+    (never presses Back into it)."""
+    d = IosSimulatorDriver(run=Fake([HOME[0]]))
+    snap = d.snapshot()
+    assert snap.package == "ios.external" and snap.out_of_process
+
+
+def test_the_bundle_is_the_process_that_owns_the_tree_not_the_first_app_running():
+    d = IosSimulatorDriver(run=Fake(HOME))
+    assert d.snapshot().package == BUNDLE  # com.apple.mobilecal is listed first by launchctl
+
+
+def test_font_scale_maps_to_dynamic_type_and_back():
+    calls = []
+
+    class Ui(Fake):
+        current = "large"
+
+        def __call__(self, args, **kw):
+            if (
+                args[:3] == ["xcrun", "simctl", "ui"] and len(args) > 5
+            ):  # xcrun simctl ui <udid> content_size <name>
+                Ui.current = args[5]
+                calls.append(args[5])
+                return ""
+            if args[:3] == ["xcrun", "simctl", "ui"]:
+                return Ui.current + "\n"
+            return super().__call__(args, **kw)
+
+    d = IosSimulatorDriver(run=Ui(HOME))
+    assert d.get_font_scale() == 1.0
+    d.set_font_scale(2.0)  # WCAG 1.4.4: 200%
+    assert calls[-1] == "accessibility-large" and d.get_font_scale() == 1.95
+    d.set_font_scale(1.0)
+    assert calls[-1] == "large"
+
+
+def test_clear_data_empties_the_container_but_keeps_its_folders(tmp_path):
+    for sub in ("Documents", "Library", "tmp"):
+        (tmp_path / sub).mkdir()
+        (tmp_path / sub / "state.db").write_text("x")
+    (tmp_path / "stray.txt").write_text("x")
+
+    class Container(Fake):
+        def __call__(self, args, **kw):
+            if "get_app_container" in args:
+                return f"{tmp_path}\n"
+            return super().__call__(args, **kw)
+
+    IosSimulatorDriver(run=Container(HOME)).clear_data(BUNDLE)
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["Documents", "Library", "tmp"]
+    assert not any(list(p.iterdir()) for p in tmp_path.iterdir())
+
+
+def test_crash_log_finds_a_new_report_for_the_launched_app(tmp_path, monkeypatch):
+    reports = tmp_path / "Library" / "Logs" / "DiagnosticReports"
+    reports.mkdir(parents=True)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    class Info(Fake):
+        def __call__(self, args, **kw):
+            if "appinfo" in args:
+                return '{ CFBundleExecutable = sample-app; CFBundleIdentifier = "dev.mks.sample-app"; }'
+            return super().__call__(args, **kw)
+
+    d = IosSimulatorDriver(run=Info(HOME))
+    d.launch(BUNDLE)
+    (reports / "sample-app-2026-10-13-120000.ips").write_text("old crash")
+    old = reports / "sample-app-2026-10-13-120000.ips"
+    import os
+    import time
+
+    os.utime(old, (time.time() - 3600, time.time() - 3600))
+    d.clear_crash_log()
+    assert d.crash_log() == ""  # the old report predates the mark
+    (reports / "sample-app-2026-10-13-130000.ips").write_text('{"exception": "EXC_BAD_ACCESS"}')
+    log = d.crash_log()
+    assert (
+        log.startswith(f"Process: {BUNDLE},") and "EXC_BAD_ACCESS" in log
+    )  # the format the explorer looks for

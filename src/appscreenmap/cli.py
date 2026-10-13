@@ -94,22 +94,8 @@ def cmd_doctor(args) -> int:
     return 0 if ok else 1
 
 
-def cmd_crawl(args) -> int:
-    cfg = CrawlConfig.load(
-        args.config,
-        max_steps=args.max_steps,
-        max_minutes=args.max_minutes,
-        clear_data=True if args.clear_data else None,
-        settle_seconds=args.settle,
-        font_scale=args.font_scale,
-        disable_animations=False if args.keep_animations else None,
-    )
-    if missing := cfg.missing_secrets():
-        print(
-            f"Set {', '.join(missing)} in the environment: [inputs] uses them as ${{NAME}} placeholders.",
-            file=sys.stderr,
-        )
-        return 2
+def _setup_android(args, cfg: CrawlConfig):
+    """Connect, install if asked, and describe the app. Returns (driver, app, package, launch_activity) or an exit code."""
     d = AdbDriver(args.serial)
     app: dict = {}
     if args.apk:
@@ -147,13 +133,86 @@ def cmd_crawl(args) -> int:
     launch = args.activity or app.get("launch_activity") or d.resolve_launch_activity(package)
     app["launch_activity"] = launch
 
+    return d, app, package, launch
+
+
+def _setup_ios(args, cfg: CrawlConfig):
+    """Same for an iOS Simulator: install a `.app` if given, read its Info.plist. Returns (driver, app, bundle_id, None)."""
+    import plistlib
+
+    from .driver_ios import IosSimulatorDriver
+
+    d = IosSimulatorDriver(args.serial)
+    app: dict = {}
+    if args.app:
+        bundle = Path(args.app)
+        plist = bundle / "Info.plist"
+        if not plist.is_file():
+            print(
+                f"Not an app bundle (no Info.plist): {bundle}. Pass the .app from an iphonesimulator build.",
+                file=sys.stderr,
+            )
+            return 2
+        info = plistlib.loads(plist.read_bytes())
+        package = args.package or info.get("CFBundleIdentifier")
+        app = {
+            "package": package,
+            "version": info.get("CFBundleShortVersionString"),
+            "build": info.get("CFBundleVersion"),
+            "label": info.get("CFBundleDisplayName") or info.get("CFBundleName"),
+            "min_os": info.get("MinimumOSVersion"),
+        }
+        print(f"📦 installing {bundle.name} ({package}) …")
+        d.install(bundle)
+    else:
+        package = args.package
+        if not d.is_installed(package):
+            print(f"{package} is not installed on {d.udid}. Pass --app to install it.", file=sys.stderr)
+            return 2
+        app = {"version": d.app_version(package)}
+    app.setdefault("package", package)
+    app.setdefault("label", package.rsplit(".", 1)[-1])
+    app["platform"] = "ios"
+    app["activities"] = []
+    app["launch_activity"] = None
+    return d, app, package, None
+
+
+def cmd_crawl(args) -> int:
+    cfg = CrawlConfig.load(
+        args.config,
+        max_steps=args.max_steps,
+        max_minutes=args.max_minutes,
+        clear_data=True if args.clear_data else None,
+        settle_seconds=args.settle,
+        font_scale=args.font_scale,
+        disable_animations=False if args.keep_animations else None,
+    )
+    if missing := cfg.missing_secrets():
+        print(
+            f"Set {', '.join(missing)} in the environment: [inputs] uses them as ${{NAME}} placeholders.",
+            file=sys.stderr,
+        )
+        return 2
+    ios = bool(args.app) or args.platform == "ios"
+    if ios:
+        cfg.measure_load = (
+            False  # load timing reads Android's frame counters; iOS has no equivalent wired yet
+        )
+    setup = (_setup_ios if ios else _setup_android)(args, cfg)
+    if isinstance(setup, int):
+        return setup
+    d, app, package, launch = setup
+
     original_font_scale = None
     if cfg.font_scale:
         original_font_scale = d.get_font_scale()
         d.set_font_scale(cfg.font_scale)
 
     runs_root = Path(args.out)
-    run_dir = new_run_dir(runs_root, package, args.name, args.project)
+    # Android and iOS builds of one app have different screens: keep their runs in separate project folders.
+    project = args.project or (f"{package.rsplit('.', 1)[-1]}-ios" if ios else None)
+    run_dir = new_run_dir(runs_root, package, args.name, project)
     run = {
         "id": run_dir.name,
         "status": "running",
@@ -478,9 +537,20 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("crawl", help="explore an app and build its screen map")
     src = s.add_mutually_exclusive_group(required=True)
     src.add_argument("--apk", help="APK to install and crawl")
-    src.add_argument("--package", help="package name of an already installed app")
+    src.add_argument(
+        "--app", help="iOS Simulator build (.app folder from an iphonesimulator build) to install and crawl"
+    )
+    src.add_argument(
+        "--package", help="package name (Android) or bundle id (iOS) of an already installed app"
+    )
+    s.add_argument(
+        "--platform",
+        choices=["android", "ios"],
+        default="android",
+        help="android (default) or ios (simulator)",
+    )
     s.add_argument("--activity", help="launch activity (default: the app's launcher activity)")
-    s.add_argument("--serial", help="device serial (default: the only connected device)")
+    s.add_argument("--serial", help="device serial, or simulator UDID (default: the only connected device)")
     s.add_argument("--config", help="appscreenmap.toml with budgets, input values, blocked actions")
     s.add_argument("--max-steps", type=int)
     s.add_argument("--max-minutes", type=float)

@@ -166,6 +166,14 @@ object). The flat keys at the top are the original ones and keep their meaning. 
 (absent on old runs) and is grouped. Any value can be `null` when the device doesn't report it. Nothing
 personal is recorded: no user-set device name, accounts, IMEI or network names.
 
+**iOS Simulator runs** (`crawl --platform ios`) write the same object with `"platform": "ios"` and the Android-only
+parts replaced: `type: "emulator"` (a simulator), `name` "iPhone 17 (Simulator)", `os: { "name": "iOS", "release": "27.0" }`
+(no `android`/`sdk`), `width`/`height` in **points** with `density: 160` so px-per-dp is 1 and the accessibility checks
+read points as dp, `display.window_class`, and `font_scale` from Dynamic Type (2.0 = `accessibility-large`).
+`run.app.package` is the bundle id, `activities` is `[]` and `launch_activity` is `null` (iOS has no activities; screens
+are told apart by structure and text). Runs go to the project folder `<app>-ios` so they never mix with Android runs
+of the same app. Not recorded on iOS yet: load times (`perf.json` has no screens), crash dialogs.
+
 ```jsonc
 "device": {
   "serial": "emulator-5554", "model": "SM-S911B", "manufacturer": "samsung",

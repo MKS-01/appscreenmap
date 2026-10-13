@@ -18,6 +18,8 @@ import shutil
 import subprocess
 import time
 from pathlib import Path
+from typing import ClassVar
+from urllib.parse import unquote, urlparse
 
 from .driver import DriverError, Snapshot
 from .ios_hierarchy import element_type, idb_to_xml, is_out_of_process
@@ -34,6 +36,8 @@ class IosSimulatorDriver:
         self._idb = self._find_idb()
         self._info: dict | None = None
         self._size: tuple[int, int] | None = None
+        self._crash_mark = time.time()
+        self._executable: dict[str, str] = {}
 
     # ── process plumbing ────────────────────────────────────────────────────
 
@@ -95,24 +99,44 @@ class IosSimulatorDriver:
         return devices[0][0]
 
     def info(self) -> dict:
+        """Device record in the shape map.json expects (see docs/MAP_SCHEMA.md "device"). Sizes are points, and
+        `density` is 160 so px-per-dp is 1: the accessibility checks then read points as dp, as intended."""
         if self._info is None:
-            out = self._simctl("list", "devices", "--json", check=False)
             meta = {}
             try:
-                for runtime, devices in json.loads(out).get("devices", {}).items():
+                for runtime, devices in (
+                    json.loads(self._simctl("list", "devices", "--json", check=False))
+                    .get("devices", {})
+                    .items()
+                ):
                     for d in devices:
                         if d["udid"] == self.udid:
-                            meta = {"model": d["name"], "runtime": runtime.rsplit(".", 1)[-1]}
+                            meta = {
+                                "name": d["name"],
+                                "release": runtime.rsplit(".", 1)[-1].removeprefix("iOS-").replace("-", "."),
+                            }
             except (json.JSONDecodeError, AttributeError):
                 pass
             w, h = self.screen_size()
+            name = meta.get("name", "iOS Simulator")
             self._info = {
                 "serial": self.udid,
                 "platform": "ios",
+                "type": "emulator",
+                "name": f"{name} (Simulator)",
+                "model": name,
                 "manufacturer": "Apple",
+                "form_factor": "tablet" if "iPad" in name else "phone",
+                "os": {"name": "iOS", "release": meta.get("release", "")},
                 "width": w,
                 "height": h,
-                **meta,
+                "density": 160,
+                "font_scale": self.get_font_scale(),
+                "display": {
+                    "width_dp": w,
+                    "height_dp": h,
+                    "window_class": "compact" if w < 600 else "medium" if w < 840 else "expanded",
+                },
             }
         return self._info
 
@@ -149,6 +173,7 @@ class IosSimulatorDriver:
         return m.group(1).strip() if m else None
 
     def launch(self, bundle_id: str, activity: str | None = None) -> dict:
+        self._remember_executable(bundle_id)
         out = self._simctl("launch", self.udid, bundle_id, timeout=60)
         return {"pid": out.strip().rsplit(" ", 1)[-1]}
 
@@ -175,22 +200,30 @@ class IosSimulatorDriver:
 
     def snapshot(self, retries: int = 3) -> Snapshot:
         """The accessibility tree as hierarchy XML. `activity` is None: iOS has no activity, so screens are told apart
-        by structure and text alone (the analyzer's signature already works that way for single-activity apps)."""
+        by structure and text alone (the analyzer's signature already works that way for single-activity apps).
+
+        The package is the bundle id of the process that owns the tree. A tree with no content (an in-app browser,
+        a system sheet) is reported as `ios.external`, so the explorer treats it as having left the app."""
         nodes = self._describe(retries)
         w, h = self.screen_size()
         app = next((n for n in nodes if element_type(n) == "Application"), {})
-        bundle = self._frontmost_bundle() or app.get("AXLabel") or "unknown"
-        xml = idb_to_xml(nodes, w, h, bundle)
-        snap = Snapshot(xml, bundle, None)
-        snap.out_of_process = is_out_of_process(nodes)  # type: ignore[attr-defined]
+        out = is_out_of_process(nodes)
+        bundle = (
+            "ios.external" if out else (self._bundle_of(app.get("pid")) or app.get("AXLabel") or "unknown")
+        )
+        snap = Snapshot(idb_to_xml(nodes, w, h, bundle), bundle, None)
+        snap.out_of_process = out  # type: ignore[attr-defined]
         return snap
 
-    def _frontmost_bundle(self) -> str | None:
+    def _bundle_of(self, pid) -> str | None:
+        """Bundle id of the running app with this pid (`launchctl list` names every UIKit app the simulator runs)."""
+        if pid is None:
+            return None
         out = self._simctl("spawn", self.udid, "launchctl", "list", check=False)
         for line in out.splitlines():
-            m = re.search(r"UIKitApplication:([\w.\-]+)\[", line)
-            if m:
-                return m.group(1)
+            m = re.match(r"\s*(\d+)\s+\S+\s+UIKitApplication:([\w.\-]+)\[", line)
+            if m and int(m.group(1)) == int(pid):
+                return m.group(2)
         return None
 
     def screenshot(self, path: str | Path) -> None:
@@ -230,7 +263,85 @@ class IosSimulatorDriver:
         for _ in range(length):
             self._idb_run("ui", "key", "42", check=False)  # HID usage 0x2A: delete
 
-    def clear_data(self, bundle_id: str) -> None:
-        raise DriverError(
-            "clear_data needs the app reinstalled on iOS; pass the .app via --app so it can be reinstalled"
+    # ── the app lock, animations, text size ─────────────────────────────────
+
+    def pin(self, bundle_id: str) -> bool:
+        """Android pins the task; iOS has no scriptable equivalent (Guided Access needs a passcode UI). The lock is
+        enforced by the explorer instead: any screen whose package isn't the app's counts as having left it, and the
+        crawl restarts the app rather than pressing Back into another app."""
+        return True
+
+    def unpin(self) -> None:
+        return None
+
+    def get_animations(self) -> dict[str, str]:
+        return {}
+
+    def set_animations(self, values) -> None:
+        return (
+            None  # no system-wide switch on iOS; SwiftUI honours Reduce Motion, which is a separate setting
         )
+
+    _SIZES: ClassVar[list[tuple[str, float]]] = [
+        ("extra-small", 0.82), ("small", 0.88), ("medium", 0.94), ("large", 1.0), ("extra-large", 1.12),
+        ("extra-extra-large", 1.23), ("extra-extra-extra-large", 1.35), ("accessibility-medium", 1.64),
+        ("accessibility-large", 1.95), ("accessibility-extra-large", 2.35),
+        ("accessibility-extra-extra-large", 2.76), ("accessibility-extra-extra-extra-large", 3.12),
+    ]  # fmt: skip
+
+    def get_font_scale(self) -> float:
+        """Dynamic Type size as a scale (1.0 = the default, "large")."""
+        current = self._simctl("ui", self.udid, "content_size", check=False).strip()
+        return next((scale for name, scale in self._SIZES if name == current), 1.0)
+
+    def set_font_scale(self, scale: float) -> None:
+        """Set Dynamic Type to the size nearest this scale. 2.0 lands on accessibility-large (1.95): WCAG 1.4.4 at 200%."""
+        name = min(self._SIZES, key=lambda s: abs(s[1] - scale))[0]
+        self._simctl("ui", self.udid, "content_size", name)
+        self._info = None
+
+    # ── crashes ─────────────────────────────────────────────────────────────
+
+    def clear_crash_log(self) -> None:
+        self._crash_mark = time.time()
+
+    def crash_log(self) -> str:
+        """Newest crash report for the app launched last, written since `clear_crash_log`. The simulator's crashes land
+        in ~/Library/Logs/DiagnosticReports. The first line is `Process: <bundle>, …` so the explorer's check (written for
+        Android's logcat) recognises it."""
+        reports = Path.home() / "Library" / "Logs" / "DiagnosticReports"
+        found = []
+        for bundle, exe in self._executable.items():
+            for f in reports.glob(f"{exe}*.ips"):
+                if f.stat().st_mtime >= self._crash_mark:
+                    found.append((f.stat().st_mtime, bundle, f))
+        if not found:
+            return ""
+        _, bundle, f = max(found)
+        return f"Process: {bundle}, report {f.name}\n" + f.read_text(errors="replace")
+
+    def _remember_executable(self, bundle_id: str) -> None:
+        if bundle_id not in self._executable:
+            m = re.search(
+                r"CFBundleExecutable\s*=\s*\"?([^\";\n]+)",
+                self._simctl("appinfo", self.udid, bundle_id, check=False),
+            )
+            if m:
+                self._executable[bundle_id] = m.group(1).strip()
+
+    # ── data ────────────────────────────────────────────────────────────────
+
+    def clear_data(self, bundle_id: str) -> None:
+        """Empty the app's data container (documents, caches, preferences) without reinstalling it. The keychain is
+        shared by the whole simulator and is left alone."""
+        self.force_stop(bundle_id)
+        out = self._simctl("get_app_container", self.udid, bundle_id, "data", check=False).strip()
+        if not out:
+            raise DriverError(f"{bundle_id} is not installed on {self.udid}")
+        root = Path(unquote(urlparse(out).path) if out.startswith("file:") else out)
+        for child in root.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child, ignore_errors=True)
+                child.mkdir(exist_ok=True)  # the system expects Documents/, Library/, tmp/ to exist
+            else:
+                child.unlink(missing_ok=True)

@@ -57,8 +57,8 @@ browsable map, test flows, and accessibility and performance findings.
 
 ## Getting started
 
-> **Android only for now.** iOS comes after the Android side is solid; the map format and viewer are
-> platform-neutral. See the [roadmap](docs/PLAN.md#8-roadmap).
+> **Android first, iOS Simulator started.** `crawl --platform ios --app YourApp.app` maps an app on a booted simulator
+> (needs `idb`: see `doctor`). The map format and viewer are platform-neutral. See the [roadmap](docs/PLAN.md#8-roadmap).
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap

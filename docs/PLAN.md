@@ -242,7 +242,7 @@ long-press.
 | **0. Plan + scaffold** | This doc, repo layout, MIT license, CI-ready tooling | ✅ |
 | **1. Android MVP** | ADB driver, analyzer, explorer, live map.json, Maestro + Mermaid export, visual diff, web viewer (runs, map, gallery, detail, compare), WCAG 2.2 checks + report, navigation load times | ✅ crawler · viewer in progress |
 | 2. Robustness | uiautomator2 backend (5× faster), WebView handling, better dialog/IME handling, model reuse to resume a crawl, `--from-run` to recrawl only changed screens | |
-| 3. iOS | **After Android is solid.** Simulator driver (`driver_ios.py`: `simctl` + `idb`, started Oct 2026), same map format and viewer. sample-app is the iOS sample. See §8.3 | 🚧 driver + hierarchy translator done and tested on a live simulator; crawl wiring next |
+| 3. iOS | **After Android is solid.** Simulator driver (`driver_ios.py`: `simctl` + `idb`, started Oct 2026), same map format and viewer. sample-app is the iOS sample. See §8.3 | 🚧 `crawl --platform ios` works on a simulator (sample-app); perf, permissions, iOS a11y rules next |
 | 4. Intelligence | Optional LLM step: semantic screen names, smarter form inputs, goal-directed exploration ("reach checkout") | |
 | 5. Team | Docker image + GitHub Action, `appscreenmap publish` to a static site, Appium/Espresso page-object export | |
 | 6. Localisation | Crawl in several locales (incl. pseudo-locales), match screens across locales, l10n review in the viewer (untranslated text, truncation, overflow, RTL mirroring), side-by-side locale gallery, context screenshots for translators. Depends only on phase 1, so it can ship before 3–5. See §8.1 | |
@@ -320,13 +320,23 @@ analyzer keys on, `resource-id` from the accessibility identifier, `bounds` in p
 explorer, exporters and viewer work unchanged. Measured: tree dump 0.5 s (Android: ~2 s). Coordinates are points; the
 screenshot is native pixels and the viewer scales by ratio, as it does between Android densities.
 
-**Done:** driver, translator, `doctor` checks, 9 tests (a real sample-app tree recorded as `tests/fixtures/`), and a live
-run: read Home, analysed it (title, 7 buttons), tapped Settings, saw the screen identity change.
-**Next:** (1) wire `crawl --platform ios --app sample-app.app --bundle dev.mks.sample-app` (install, launch, app lock, crash
-detection from the simulator's logs); (2) treat an out-of-process screen as leaving the app (`is_out_of_process`), (3) back
-navigation: iOS has no Back key, so use the edge swipe or a visible Back/× button, else restart + replay; (4) iOS
-accessibility rules (VoiceOver names, Dynamic Type at the largest size, 44 pt targets: Apple HIG) beside WCAG; (5) Maestro
-runs iOS simulators too, so flows exported from an iOS map run the same way.
+**Done:** driver, translator, `doctor` checks, `crawl --platform ios --app X.app`, 14 tests (a real sample-app tree recorded
+as `tests/fixtures/`), and live crawls of sample-app on an iPhone 17 simulator: 7 screens, 15 transitions, 43 steps in 86 s,
+Maestro flows and the a11y audit written, then "nothing left to explore" (the tab bar is invisible to the tree; see below).
+How the Android-shaped explorer maps onto iOS:
+- *App lock.* No scriptable pinning on iOS, so the explorer enforces it: any tree whose owning process (matched by pid
+  against `launchctl`) is not the app is an external screen, and an empty tree (in-app browser, system sheet) is reported as
+  `ios.external`; either way the crawl restarts the app, never presses Back into another app. Observed: a link that opened
+  Safari was recorded as `x:com.apple.mobilesafari` and the crawl restarted.
+- *Back.* iOS has no Back key; `back()` is the edge swipe, used only inside the app.
+- *Data.* `--clear-data` empties the app's data container (no reinstall); the simulator-wide keychain is left alone.
+- *Text size.* `--font-scale 2.0` sets Dynamic Type to `accessibility-large` (the WCAG 1.4.4 crawl).
+- *Crashes.* A report newer than the crawl's mark in `~/Library/Logs/DiagnosticReports/<Executable>*.ips` is read as the
+  crash log (first line `Process: <bundle>,` so the explorer's check works unchanged).
+**Not yet:** load times (no frame counters wired; the Performance audit says so), system permission alerts (SpringBoard
+runs them outside the app's tree; `simctl privacy grant all` covers the common ones), physical devices, a crash *dialog*
+(iOS has none), and the iOS-specific accessibility rules (VoiceOver names, 44 pt targets per Apple HIG, Dynamic Type at the
+largest size) beside WCAG.
 
 **What the first look at sample-app found** (to fix in the app, then re-crawl to confirm):
 1. *Floating bottom bar has no accessibility.* `Shell/FloatingBar.swift` draws four icon buttons (Home, Following, Saved,

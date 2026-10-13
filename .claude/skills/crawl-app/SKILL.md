@@ -47,6 +47,19 @@ the app is unpinned, and animations are restored.
 Output goes to `runs/<project>/<run-id>/` (project = last part of the package, or `--project`).
 Runs are committed as samples, so delete broken or throwaway runs before committing.
 
+**iOS Simulator.** Build the app for the simulator (`xcodebuild -sdk iphonesimulator`; an `.ipa` can't run there),
+boot a simulator (Xcode 27 replaced Simulator.app with Device Hub), then:
+
+```bash
+uv run appscreenmap doctor    # lists booted simulators, idb and idb_companion
+uv run appscreenmap crawl --platform ios --app path/to/sample-app.app --clear-data --max-steps 150
+```
+
+It reads the accessibility tree (what VoiceOver sees) and taps through `idb`; a control with no accessibility label or
+identifier is invisible to the crawler, which is itself the finding. A tree with no content (in-app browser, system
+sheet) counts as leaving the app: the crawl restarts the app instead of pressing Back. Runs go to `runs/<app>-ios/`.
+Needs `brew install facebook/fb/idb-companion` and `uv tool install fb-idb`. sample-app (`../sample-app/iosApp`) is the sample.
+
 Useful flags: `--apk <file>` (installs first), `--max-minutes`, `--settle 1.2` (slow apps),
 `--config examples/appscreenmap.toml` (test credentials in `[inputs]`, extra `blocked_text`).
 
