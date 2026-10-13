@@ -30,6 +30,9 @@ Never fix exploration by guessing. Each fix follows this loop:
    re-crawl duskread with `--clear-data` and compare `report` numbers before and after
    (steps/screen, no-ops, near-duplicates, nav failures).
 
+> **iOS crawl?** Start with the `ios-simulator` skill: its table of symptoms (missing tab bar, in-app browser,
+> blank trees) separates app accessibility gaps from crawler bugs before you change any code.
+
 ## Symptom → where to look
 
 | Symptom (report / trace) | Likely cause | Code |

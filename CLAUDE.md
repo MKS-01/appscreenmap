@@ -41,6 +41,8 @@ uv run appscreenmap perf runs/duskread/<run-id>     # load time per screen, jank
 ## Skills (`.claude/skills/`)
 
 - `design-system`: the token system (`design/tokens.css`), its rules and decisions, and the contrast check
+- `ios-simulator`: set up, run and debug an iOS Simulator crawl (build DuskRead, simctl + idb, diagnosing a bad crawl)
+- `ios-a11y-rules`: iOS accessibility (VoiceOver, Dynamic Type, HIG 44 pt) mapped to WCAG, what is detected and the Swift fix
 - `crawl-app`: run a crawl and review the result
 - `tune-crawler`: turn a bad crawl into a test and a fix (screen identity, wasted taps, routing)
 - `extend-crawler`: add features (drivers, exports, patterns, config, schema fields, CLI)

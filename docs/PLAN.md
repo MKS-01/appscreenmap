@@ -344,9 +344,11 @@ largest size) beside WCAG.
    and the crawler can't tab between sections.
 2. *Settings "×" close button is unlabeled*, so it's missing from the tree too: nothing to tap to leave the screen.
 3. *No accessibility identifiers anywhere* (0 in `iosApp/`; 3 labels): no stable ids for screen identity or Maestro `id:` selectors.
-4. *Cards open an in-app browser* (SFSafariViewController): its content is out of process, so the tree is one node.
+4. *No heading traits.* 0 `.isHeader` in `iosApp/`: section titles (VOICE, NOTION, APPEARANCE) are plain text for the
+   VoiceOver Headings rotor. Plus 23 touch targets under 44 pt on Home alone.
+5. *Cards open an in-app browser* (SFSafariViewController): its content is out of process, so the tree is one node.
    Expected, but the crawler must record it as leaving the app.
-5. *Crawler side, fixed:* "Erase everything on this device" (Settings → Reset) wasn't in the default `blocked_text`; added
+6. *Crawler side, fixed:* "Erase everything on this device" (Settings → Reset) wasn't in the default `blocked_text`; added
    `erase`, `wipe`, `reset all/app/data/device`, `clear data`, with a test.
 
 ### 8.2 Ideas from Argent
