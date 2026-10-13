@@ -231,7 +231,7 @@ function Shot({
   const W = screen.width || 1080;
   const H = screen.height || 2400;
   return (
-    <div className="shot">
+    <div className="shot" style={{ "--ar": W / H } as React.CSSProperties}>
       {screen.screenshot ? <img src={runFile(run, screen.screenshot)} alt={screen.title} /> : <div style={{ aspectRatio: `${W}/${H}` }} />}
       {boxes.map((b) => {
         const [x1, y1, x2, y2] = b.bounds;
