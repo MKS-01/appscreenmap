@@ -10,6 +10,7 @@ ids, so screen identity and element keys have to come from structure and text.
 | `duskread-1.3.0.apk` | The release build (4.2 MB, signed by the author) |
 | `appscreenmap.toml` | Crawl config: budgets, the onboarding name, a dummy Notion token |
 | `build.sh` | Rebuilds the APK from source (uses `../../../duskread` or clones the repo) |
+| `build-ios.sh` | Builds the iOS app for the simulator into `build/ios/DuskRead.app` (git-ignored; needs Xcode) |
 
 ## What a crawl finds
 
@@ -28,3 +29,19 @@ uv run appscreenmap crawl --apk samples/duskread/duskread-1.3.0.apk \
 ```
 
 The committed sample run lives in `runs/duskread/`.
+
+## iOS Simulator
+
+DuskRead also has a SwiftUI iOS target over the same Kotlin Multiplatform core, so it's the iOS sample too.
+A simulator runs a `.app` from an `iphonesimulator` build (an `.ipa` is device-signed and won't run there):
+
+```bash
+samples/duskread/build-ios.sh                      # → samples/duskread/build/ios/DuskRead.app (first build: minutes)
+uv run appscreenmap crawl --platform ios --app samples/duskread/build/ios/DuskRead.app \
+  --config samples/duskread/appscreenmap.toml --clear-data
+```
+
+Needs a booted simulator and idb (`appscreenmap doctor` checks). The crawler reads the accessibility tree, so it sees
+what VoiceOver sees: a control with no label is invisible to it, and that is itself a finding (the committed run stops
+after 7 screens because the floating tab bar isn't in the tree). The committed run lives in `runs/duskread-ios/`;
+the [`ios-simulator` skill](../../.claude/skills/ios-simulator/SKILL.md) covers setup and debugging.

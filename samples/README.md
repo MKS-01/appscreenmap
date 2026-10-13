@@ -1,24 +1,31 @@
 # Samples: end-to-end playground
 
-Two apps for trying, demoing and testing AppScreenMap end to end. The APKs are committed, so
-nothing needs building. The sample runs they produce are committed under `runs/`, so the viewer has
-something to show straight after a clone.
+Two apps for trying, demoing and testing AppScreenMap end to end, on Android and the iOS Simulator. The
+APKs are committed, so Android needs no build; the iOS app is built from DuskRead's source by
+`duskread/build-ios.sh`. The sample runs are committed under `runs/`, so the viewer has something to show
+straight after a clone.
 
 | App | Why it's here | Folder | Runs |
 |---|---|---|---|
 | **Playground** | Built for AppScreenMap: every screen triggers a known feature, and two builds (v1, v2) give known diffs | [`playground-app/`](playground-app/) | `runs/playground/` |
 | **DuskRead** | A real Compose app: real-world layouts, no resource ids, a live timer | [`duskread/`](duskread/) | `runs/duskread/` |
+| **DuskRead iOS** | The same app's SwiftUI target on the iOS Simulator: same explorer, map format and viewer | [`duskread/`](duskread/) (`build-ios.sh`) | `runs/duskread-ios/` |
 
 ## Run every scenario
 
 ```bash
 samples/demo.sh             # all scenarios, about 25 minutes on an emulator
 samples/demo.sh playground  # only the Playground scenarios
-samples/demo.sh duskread    # only DuskRead
+samples/demo.sh duskread    # only DuskRead (Android)
+samples/demo.sh ios         # only DuskRead on the iOS Simulator (builds the .app on first use)
 ```
 
-Needs a running emulator (`adb devices`). The script installs the APKs, wipes their data first, and
+Android needs a running emulator (`adb devices`). The script installs the APKs, wipes their data first, and
 leaves the device's animation, font and pinning settings as it found them.
+
+iOS needs macOS with Xcode, a booted simulator (`xcrun simctl boot "iPhone 17"`) and idb
+(`brew install facebook/fb/idb-companion` and `uv tool install fb-idb`); `appscreenmap doctor` checks all three.
+`all` includes the iOS scenario only when a simulator is booted.
 
 ## Scenario matrix
 
@@ -43,5 +50,6 @@ leaves the device's animation, font and pinning settings as it found them.
 | 17 | Release check: replay every v1 path on v2 | Playground | `verify runs/playground/<v1> --apk …/playground-v2.apk` | paths into *Rate us* break (removed in v2); exit code 1 |
 | 18 | Agents use the map (MCP) | both | `appscreenmap mcp` | `where_am_i`, `route`, `go_to_screen` against the sample runs |
 | 19 | First-run screens after sign-in | Playground | (part of 1, `--clear-data`) | `data_reset` event; *Reset password* mapped although sign-in persists |
+| 20 | Same app on iOS: map, flows and a11y from the accessibility tree | DuskRead iOS | `crawl --platform ios --app …/DuskRead.app --clear-data` | `runs/duskread-ios/`; a Safari link recorded as external and the app restarted; controls VoiceOver can't see are missing (the finding) |
 
 Planned (roadmap §8.2): network profiles, Perfetto traces for slow screens, condition matrix.

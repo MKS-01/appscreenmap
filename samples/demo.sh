@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Run every AppScreenMap demo scenario on the sample apps (see samples/README.md).
-#   samples/demo.sh [all|playground|duskread]
-# Needs a running emulator. Installs the sample APKs, wipes their data, and leaves device settings as found.
+#   samples/demo.sh [all|playground|duskread|ios]
+# Needs a running emulator (and, for ios, a booted iOS Simulator with idb). Installs the sample apps, wipes their
+# data, and leaves device settings as found. `all` includes iOS only when a simulator is booted.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ASM=(uv run appscreenmap)
@@ -68,6 +69,20 @@ if [[ "$WHAT" == all || "$WHAT" == duskread ]]; then
   install_fresh samples/duskread/duskread-1.3.0.apk dev.mks.duskread
   "${ASM[@]}" crawl --package dev.mks.duskread --config "$DR_CFG" --clear-data --project duskread --name duskread
   analyse "$(latest duskread duskread)"
+fi
+
+booted_sim() { xcrun simctl list devices booted 2>/dev/null | grep -q Booted; }
+
+RUN_IOS=false
+[[ "$WHAT" == ios ]] && RUN_IOS=true
+[[ "$WHAT" == all ]] && booted_sim && RUN_IOS=true
+if $RUN_IOS; then
+  step "20: DuskRead on the iOS Simulator, from a clean install (same explorer, map format and viewer)"
+  booted_sim || { echo "  no booted simulator: xcrun simctl boot \"iPhone 17\""; exit 1; }
+  APP=samples/duskread/build/ios/DuskRead.app
+  [ -d "$APP" ] || samples/duskread/build-ios.sh
+  "${ASM[@]}" crawl --platform ios --app "$APP" --config "$DR_CFG" --clear-data --project duskread-ios --name duskread-ios
+  analyse "$(latest duskread-ios duskread-ios)"
 fi
 
 step "Done. Open the viewer:"

@@ -6,20 +6,22 @@
 
 <p align="center">
   <strong>Every screen of your app, mapped by an agent, not by hand.</strong><br>
-  Point it at a build and an emulator. It taps through the app on its own and gives you<br>
-  a map of every screen, how to reach it, and tests that jump straight there.
+  Point it at a build and an emulator or simulator. It taps through the app on its own and gives you<br>
+  a map of every screen, how to reach it, tests that jump straight there, and an audit of each one.
 </p>
 
 <p align="center">
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml/badge.svg" alt="Crawler CI"></a>
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/web.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/web.yml/badge.svg" alt="Web viewer CI"></a>
-  <img src="https://img.shields.io/badge/Android_first-0a0a0a?style=flat-square&logo=android&logoColor=white" alt="Android first">
+  <img src="https://img.shields.io/badge/Android-0a0a0a?style=flat-square&logo=android&logoColor=white" alt="Android">
+  <img src="https://img.shields.io/badge/iOS_Simulator_(beta)-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="iOS Simulator, beta">
   <img src="https://img.shields.io/badge/Python_3.11+-0a0a0a?style=flat-square&logo=python&logoColor=white" alt="Python 3.11 and up">
   <a href="https://maestro.mobile.dev"><img src="https://img.shields.io/badge/Maestro_flows-4da3ff?style=flat-square" alt="Exports Maestro flows"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/MIT-0a0a0a?style=flat-square" alt="MIT License"></a>
 </p>
 
 <p align="center">
+  <a href="#why-appscreenmap">Why</a> &nbsp;·&nbsp;
   <a href="#getting-started">Run it</a> &nbsp;·&nbsp;
   <a href="#web-viewer">Viewer</a> &nbsp;·&nbsp;
   <a href="#commands">Commands</a> &nbsp;·&nbsp;
@@ -40,41 +42,58 @@ browsable map, test flows, and accessibility and performance findings.
   <img src="docs/media/map-tree.png" alt="The viewer's Tree map of DuskRead: each screen shown whole, under the screen it was found from, connected by the taps that led there">
 </p>
 
-## What it does
+## Why AppScreenMap
 
-- **Maps every screen.** A screenshot and view hierarchy for each unique screen, every transition ("tap X on
-  A opens B"), and labelled patterns: lists, tabs, bottom nav, forms, login, dialogs, webviews.
-- **Writes the tests.** A [Maestro](https://maestro.mobile.dev) flow per screen, so automation can jump
-  straight there. `verify` replays every path on a new build for CI.
-- **Compares builds.** Changed pixel regions plus exact text changes read from the view hierarchy (no OCR).
-- **Audits accessibility and speed.** WCAG 2.2 checks with a report you can triage; load time, jank and cold
-  start for every navigation.
-- **Works with agents.** An MCP server lets coding agents ask the map instead of exploring the app again,
-  and the repo ships [skills](.claude/skills/) so an agent knows how to crawl, tune and audit.
-- **Deterministic and safe.** Same build and settings give the same map, so a regression is a diff, not
-  noise. The app stays pinned, it never taps log out, delete or pay, and test passwords can be `${ENV}`
-  placeholders that never reach the output.
+Knowing what's in a mobile app is still manual work: someone taps through every screen to take screenshots,
+writes a test per path, runs an accessibility scanner screen by screen, profiles the slow bits, and does it all
+again for the next release. **One crawl does all of it, in one package.** Every answer comes from the same map:
+
+| You want to know | Usually | With AppScreenMap |
+|---|---|---|
+| What screens does the app have, and how do you reach each one? | Tap around, screenshot, draw a flow chart | A map of every screen, with its screenshot, hierarchy, patterns and the taps that lead there |
+| Can tests reach every screen? | Write a flow per screen by hand | A [Maestro](https://maestro.mobile.dev) flow per screen, generated |
+| Did the new build break or change anything? | Manual regression pass | `verify` replays every path (CI exit codes); `diff` shows changed pixels and text |
+| Is it accessible? | A scanner, one screen at a time | A WCAG 2.2 report across every screen, with fixes, screenshots and triage |
+| Which screens are slow or janky? | A profiler session per suspect | Load time, jank and cold start for every navigation |
+| How does an agent learn the app? | It explores again, every session | It asks the map over MCP: "how do I reach Settings?" |
+
+And it stays practical:
+
+- **Deterministic, local, no model calls.** Same build and settings give the same map, so a regression is a
+  diff, not noise. It runs on your machine with no cloud service.
+- **Plain files.** `map.json` plus images: read them in the viewer, your scripts, CI, or an agent.
+- **Safe by default.** The crawl stays inside the app, never taps log out, delete or pay, and test passwords
+  can be `${ENV}` placeholders that never reach the output.
+- **Agent-ready.** Ask a coding agent to "map my app and review it": the repo ships [skills](.claude/skills/)
+  so it knows how to crawl, review the result, audit the app and tune the crawler.
+- **Android and iOS, one format.** The same explorer, map, viewer and reports for an Android emulator or device
+  and the iOS Simulator.
 
 ## Getting started
-
-> **Android first, iOS Simulator started.** `crawl --platform ios --app YourApp.app` maps an app on a booted simulator
-> (needs `idb`: see `doctor`). The map format and viewer are platform-neutral. See the [roadmap](docs/PLAN.md#8-roadmap).
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
 uv sync
-uv run appscreenmap doctor                     # checks adb, device, aapt2, viewer build
-uv run appscreenmap crawl --apk path/to/app.apk  # install + map
-uv run appscreenmap serve                      # browse the result
+uv run appscreenmap doctor                       # checks adb, devices, simulators, idb, aapt2, viewer build
+uv run appscreenmap crawl --apk path/to/app.apk  # Android: install + map
+uv run appscreenmap serve                        # browse the result
 ```
 
 Already installed? `crawl --package com.example.app --clear-data` maps it from a clean first-run state.
 Or have your agent do it: *"Map my app on the emulator and review the map."*
 
+**iOS Simulator (beta).** Build the app for the simulator (`xcodebuild -sdk iphonesimulator`; an `.ipa` is
+device-signed and won't run there), boot a simulator, then:
+
+```bash
+uv run appscreenmap crawl --platform ios --app path/to/YourApp.app --clear-data   # runs go to runs/<app>-ios/
+```
+
 | | |
 |---|---|
 | **Python** | 3.11 or newer, with [uv](https://docs.astral.sh/uv/) |
 | **Android** | Platform-tools (`adb`) and a running emulator or USB device |
+| **iOS** | macOS with Xcode, a booted simulator, and [idb](https://fbidb.io): `brew install facebook/fb/idb-companion` and `uv tool install fb-idb` |
 | **Optional** | `aapt2` (build-tools) for activity coverage; [Bun](https://bun.sh) to rebuild the viewer; [Maestro](https://maestro.mobile.dev) to run the flows |
 
 A crawl looks like this:
@@ -91,15 +110,34 @@ A crawl looks like this:
 ✔ 11 screens, 36 transitions, 0 crashes, 95 steps in 350s
 ```
 
+### Platform support
+
+| | Android (emulator or device) | iOS Simulator (beta) |
+|---|---|---|
+| Map, screenshots, patterns, form filling | ✅ | ✅ from the accessibility tree |
+| Stays inside the app | ✅ lock task pinning | ✅ enforced by the explorer (restarts the app if it leaves) |
+| Maestro flows, `diff`, `report`, viewer, MCP map queries | ✅ | ✅ |
+| WCAG 2.2 checks and report | ✅ | ✅ (iOS-specific rules next) |
+| Resize-text crawl (`--font-scale 2.0`) | ✅ font scale | ✅ Dynamic Type |
+| Crash capture | ✅ logcat | ✅ DiagnosticReports |
+| Load time, jank, cold start | ✅ | not yet |
+| `verify` on a new build, MCP `where_am_i` / `go_to_screen` | ✅ | not yet |
+
+On iOS the crawler sees what VoiceOver sees: a control with no accessibility label isn't in the tree, so it
+can't be tapped, and that is itself a finding. Setup and debugging: the
+[`ios-simulator` skill](.claude/skills/ios-simulator/SKILL.md); status: [roadmap §8.3](docs/PLAN.md#83-ios-started).
+
 ### Sample apps
 
-Two apps ship in [`samples/`](samples/) with their APKs and crawl results committed, so the viewer works
-straight after a clone: the **Playground**, built so every screen triggers a known feature (with v1 and v2
-builds for release comparisons), and **DuskRead**, a real Compose app.
+The samples in [`samples/`](samples/) ship with their crawl results committed, so the viewer works straight
+after a clone: the **Playground**, built so every screen triggers a known feature (with v1 and v2 builds for
+release comparisons), and **DuskRead**, a real Kotlin Multiplatform app, crawled on Android (Compose) and on
+the iOS Simulator (SwiftUI).
 
 ```bash
-uv run appscreenmap serve   # browse the committed sample maps
-samples/demo.sh             # re-run every scenario on your emulator (~25 min)
+uv run appscreenmap serve      # browse the committed sample maps
+samples/demo.sh                # re-run every scenario (~25 min; includes iOS when a simulator is booted)
+samples/demo.sh ios            # only DuskRead on the iOS Simulator (builds the .app on first use)
 ```
 
 ## Web viewer
@@ -132,21 +170,21 @@ on the viewer: `cd web && bun install && bun run dev` (see [`web/README.md`](web
 
 | Command | What it does |
 |---|---|
-| `doctor` | Check adb, connected devices, aapt2 and the viewer build |
-| `crawl --apk app.apk` / `--package id` | Explore the app and write `runs/<project>/<run-id>/` |
+| `doctor` | Check adb, devices, booted simulators, idb, aapt2 and the viewer build |
+| `crawl --apk app.apk` / `--platform ios --app X.app` / `--package id` | Explore the app and write `runs/<project>/<run-id>/` |
 | `serve` | Open the web viewer on `runs/` |
 | `report <run>` | Health check: wasted taps, near-duplicate screens, navigation failures, and device conditions that skew results |
 | `a11y <run> [--report]` | WCAG 2.2 checks; `--report` rebuilds `a11y-report.html` and `.md` (also written after every crawl) |
 | `perf <run> [--budget 1000]` | Load time per screen, slowest transitions, jank, cold start |
 | `diff <base> <candidate>` | Match screens across two runs and diff pixels and text |
-| `verify <run> [--apk new.apk]` | Replay every screen's path on a new build; exit 1 when one breaks ([CI](#ci-verify-a-new-build)) |
+| `verify <run> [--apk new.apk]` | Replay every screen's path on a new build; exit 1 when one breaks ([CI](#ci-verify-a-new-build)). Android for now |
 | `export <run>` | Regenerate Maestro flows and the Mermaid graph |
 | `mcp` | Serve the maps to coding agents ([Agents](#agents-mcp)) |
 
 All run as `uv run appscreenmap <command>`; `<run>` is a run folder such as `runs/duskread/<run-id>`.
 Useful `crawl` flags: `--clear-data` (first-run state), `--max-steps`, `--max-minutes`, `--font-scale 2.0`
-(WCAG 1.4.4 resize-text crawl), `--keep-animations` (load times as users see them), `--serial`,
-`--config appscreenmap.toml`.
+(WCAG 1.4.4 resize-text crawl), `--keep-animations` (load times as users see them), `--serial` (device serial
+or simulator UDID), `--config appscreenmap.toml`.
 
 ## Accessibility report
 
@@ -167,7 +205,9 @@ organised by **WCAG 2.2 success criterion** rather than as a flat list:
   ones are included.
 
 Automated checks catch only part of WCAG. The [`a11y-audit` skill](.claude/skills/a11y-audit/SKILL.md) covers
-the device and manual tests (rotation, keyboard, TalkBack) a crawl can't do.
+the device and manual tests (rotation, keyboard, TalkBack) a crawl can't do; for iOS apps,
+[`ios-a11y-rules`](.claude/skills/ios-a11y-rules/SKILL.md) maps WCAG to VoiceOver, Dynamic Type and Apple's 44 pt
+targets, with the SwiftUI and UIKit fix for each.
 
 ## Performance
 
@@ -191,12 +231,12 @@ Navigation performance for playground-v1-20261013-031007 (budget 1000 ms, animat
 ```
 
 The same numbers are in `perf.json` and the MCP `perf_summary` tool. Animations are off during a crawl for
-stable results; `--keep-animations` measures what users see.
+stable results; `--keep-animations` measures what users see. Android only for now.
 
 ## End-to-end tests
 
-Every screen gets a [Maestro](https://maestro.mobile.dev) flow that launches the app fresh, follows the
-recorded path (typing into forms on the way) and asserts it arrived. Selectors prefer a resource-id, then
+Every screen gets a [Maestro](https://maestro.mobile.dev) flow, on Android and iOS, that launches the app fresh,
+follows the recorded path (typing into forms on the way) and asserts it arrived. Selectors prefer a resource-id, then
 text or content description, and fall back to a position only when nothing else exists.
 
 ```yaml
@@ -270,7 +310,8 @@ claude mcp add appscreenmap -- uv run --directory /path/to/appscreenmap appscree
 
 The viewer's **How it works** page walks through this loop on your own latest run.
 
-1. **Observe**: dump the UI hierarchy and screenshot, and read the foreground activity.
+1. **Observe**: dump the UI hierarchy (the accessibility tree on iOS) and screenshot, and read the foreground
+   activity.
 2. **Identify**: fingerprint the layout, ignoring list contents and digits (clocks, counters).
    Near-identical screens merge by similarity.
 3. **Act**: pick the next untried element: bottom nav → tabs → buttons → scroll → list rows → toggles → back.
@@ -280,23 +321,27 @@ The viewer's **How it works** page walks through this loop on your own latest ru
 
 Along the way it:
 
-- **Stays inside the app.** The app is pinned (Android lock task mode), so BACK at the root or a link to
-  another app can't leave it. If something still escapes, it relaunches and never repeats that action.
+- **Stays inside the app.** On Android the app is pinned (lock task mode), so BACK at the root or a link to
+  another app can't leave it. iOS has no pinning, so the explorer treats any screen owned by another process
+  (Safari, an in-app browser, a system sheet) as leaving. Either way it relaunches the app and never repeats
+  that action.
 - **Learns list patterns.** If the first rows of a list open the same kind of screen, the rest are skipped;
   menus whose rows go to different places are fully explored.
 - **Infers navigation.** A bottom-nav item that opens *Saved* from one screen is assumed to do so everywhere
   (recorded as an inferred edge).
 - **Fills forms** from regex rules (email, password, phone, …) so login walls work.
 - **Won't tap dangerous things**: log out, delete, pay, subscribe, uninstall, call… (configurable).
-- **Handles system UI**: permission dialogs are allowed, crashes are recorded with logcat.
+- **Handles system UI**: permission dialogs are allowed, crashes are recorded (logcat on Android, crash reports
+  on iOS).
 
 <p align="center">
   <img src="docs/media/architecture.svg" alt="The crawler talks to an emulator or device and writes a run folder of map.json, screenshots and traces. The web viewer, exporters, reports and CI checks, and the MCP server all read that folder">
 </p>
 
-A small Python crawler drives the device through `adb`: the **driver** dumps hierarchies, takes screenshots
-and sends taps; the **analyzer** turns a hierarchy into elements, a fingerprint and UI patterns; the
-**explorer** picks the next action and records the transition. Everything else (the viewer, exporters,
+A small Python crawler drives the device: the **driver** (`adb` on Android, `simctl` + `idb` on the iOS
+Simulator) dumps hierarchies, takes screenshots and sends taps; the **analyzer** turns a hierarchy into elements, a fingerprint and UI patterns; the
+**explorer** picks the next action and records the transition. The iOS driver translates the accessibility tree
+into the same hierarchy format, so the analyzer and explorer are shared. Everything else (the viewer, exporters,
 reports, `verify` and the MCP server) only reads the run folder, which is why `map.json` is the contract in
 [`docs/MAP_SCHEMA.md`](docs/MAP_SCHEMA.md). The design and roadmap are in [`docs/PLAN.md`](docs/PLAN.md).
 
@@ -333,17 +378,18 @@ runs/
     verify/<verify-id>/       replay results on a new build (written by `verify`)
 ```
 
-Runs are grouped per project (`--project`, default: the last part of the package name). The `runs/` folder
-is committed, so the repo ships sample maps of the Playground and DuskRead.
+Runs are grouped per project (`--project`, default: the last part of the package name; iOS runs add `-ios`, so
+they never mix with the Android runs of the same app). The `runs/` folder is committed, so the repo ships sample
+maps of the Playground and DuskRead (Android and iOS).
 
 ## Project layout
 
 ```
-src/appscreenmap/   crawler: driver, analyzer, explorer, model, export, visual diff, a11y, perf,
-                    replay + verify, MCP server, CLI
+src/appscreenmap/   crawler: drivers (Android, iOS Simulator), analyzer, explorer, model, export,
+                    visual diff, a11y, perf, replay + verify, MCP server, CLI
 web/                web viewer (React + Vite, built with Bun)
 design/             tokens.css: colour, type, space and motion for the viewer and reports
-samples/            Playground and DuskRead APKs, sources and demo.sh
+samples/            Playground and DuskRead APKs, sources, iOS build script and demo.sh
 runs/               committed sample crawls
 docs/               PLAN.md (design + roadmap), MAP_SCHEMA.md (data contract)
 examples/           sample config
