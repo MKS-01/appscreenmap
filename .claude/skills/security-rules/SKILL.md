@@ -24,7 +24,7 @@ One catalogue, three readers:
 ```
 
 - **platform**: `android`, `ios` or `both`. **category**: `manifest`, `static`, `dynamic`, `data` (the four kinds of evidence).
-- **status**: `planned` until a scanner implements it, then `ready`. The viewer treats `planned` as "not set up".
+- **status**: `planned` until `appscreenmap security` (`src/appscreenmap/security.py`) implements it, then `ready`. The viewer treats `planned` as "not set up".
 - **severity**: `error` fix before release; `warning` fix or justify in writing; `info` a decision to make on purpose.
 - **refs**: official pages only (developer.android.com, developer.apple.com, support.google.com, source.android.com,
   w3.org). No blogs, no OWASP copies. Android has a page per vulnerability class under

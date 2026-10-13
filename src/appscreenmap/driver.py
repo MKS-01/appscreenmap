@@ -149,6 +149,18 @@ class AdbDriver:
     def pull(self, remote: str, local: str | Path) -> None:
         self._run(["pull", remote, str(local)], timeout=300)
 
+    def run_as(self, package: str, command: str) -> str | None:
+        """Run a shell command in an app's data folder: `run-as` for a debuggable build, else `su 0` on a rooted
+        emulator. None when neither can enter it."""
+        for cmd in (
+            f'run-as {package} sh -c "{command}"',
+            f'su 0 sh -c "cd /data/data/{package} && {command}"',
+        ):
+            out = self.shell(f"{cmd} 2>&1", timeout=60)
+            if not re.match(r"\s*(run-as:|su:|/system/bin/sh: su:)|.*inaccessible or not found", out):
+                return out
+        return None
+
     def launch(self, package: str, activity: str | None) -> dict:
         """Start the app. Returns `am start -W` timing ({TotalTime, WaitTime, LaunchState}) when known."""
         if activity:

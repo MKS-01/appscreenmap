@@ -29,6 +29,13 @@ from .perf import format_perf
 from .perf import summarize as summarize_perf
 from .report import build_report, format_report
 from .runs import new_run_dir, resolve_run, update_index
+from .security import (
+    load_evidence,
+    parse_frida_log,
+    scan_apk,
+    scan_device_data,
+    write_audit,
+)
 from .verify import format_verify, required_secrets, update_baselines, verify_run
 from .visual import diff_runs
 
@@ -323,6 +330,64 @@ def cmd_a11y(args) -> int:
     if args.report:
         out = write_reports(args.run, args.level)
         print(f"\n📄 report → {out['html']}\n            {out['md']}")
+    return 0
+
+
+def cmd_security(args) -> int:
+    run = Path(args.run)
+    if not (run / "map.json").is_file():
+        print(f"Not a run directory (no map.json): {run}", file=sys.stderr)
+        return 2
+    data = load_map(run)
+    app = data["run"]["app"]
+    if (app.get("platform") or data["run"]["device"].get("platform")) == "ios":
+        print(
+            "The security scanner covers Android builds for now (iOS: see the security-audit skill).",
+            file=sys.stderr,
+        )
+        return 2
+    if not (args.apk or args.pull or args.device or args.frida_log):
+        print("Nothing to scan: pass --apk FILE, --pull, --device and/or --frida-log FILE.", file=sys.stderr)
+        return 2
+    sources = load_evidence(run)
+    drv = None
+    if args.pull or args.device:
+        drv = AdbDriver(args.serial)
+    apk = args.apk
+    if args.pull and not apk:
+        remote = drv.apk_path(app["package"])
+        if not remote:
+            print(f"{app['package']} is not installed on {drv.serial}.", file=sys.stderr)
+            return 2
+        apk = str(Path(tempfile.mkdtemp(prefix="asm-sec-")) / "base.apk")
+        drv.pull(remote, apk)
+    if apk:
+        sources["apk"] = {**scan_apk(apk), "at": datetime.now(UTC).isoformat(timespec="seconds")}
+    if args.device:
+        sources["device"] = {
+            **scan_device_data(drv, app["package"]),
+            "at": datetime.now(UTC).isoformat(timespec="seconds"),
+        }
+    if args.frida_log:
+        sources["frida"] = {
+            **parse_frida_log(Path(args.frida_log).read_text(errors="replace")),
+            "at": datetime.now(UTC).isoformat(timespec="seconds"),
+        }
+    audit = write_audit(run, sources)
+    if args.json:
+        print(json.dumps(audit, indent=1))
+        return 0
+    print(
+        f"🔒 security audit for {app.get('label') or app['package']}: score {audit['score']}, {audit['summary']}"
+    )
+    for f in audit["findings"]:
+        print(f"  {f['severity']:7} {f['title']}")
+    for m in audit["metrics"]:
+        if m["label"] == "note":
+            print(f"  ! {m['value']}")
+    print(
+        f"📄 {run / 'audits' / 'security.json'}  (open the Insights → Security page in `appscreenmap serve`)"
+    )
     return 0
 
 
@@ -623,6 +688,27 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--json", action="store_true")
     s.add_argument("--report", action="store_true", help="also write a11y-report.html and a11y-report.md")
     s.set_defaults(fn=cmd_a11y)
+
+    s = sub.add_parser(
+        "security",
+        help="security audit of an Android build (manifest, secrets, data at rest, Frida log) → audits/security.json",
+    )
+    s.add_argument("run")
+    s.add_argument(
+        "--apk", help="APK to scan statically (manifest flags, exported components, hard-coded secrets)"
+    )
+    s.add_argument(
+        "--pull", action="store_true", help="scan the installed build: pull its APK from the device"
+    )
+    s.add_argument(
+        "--device",
+        action="store_true",
+        help="look for secrets left in the app's data folder (debuggable or rooted)",
+    )
+    s.add_argument("--frida-log", help="output of frida-observe.js (see the security-audit skill)")
+    s.add_argument("--serial")
+    s.add_argument("--json", action="store_true", help="print the audit as JSON")
+    s.set_defaults(fn=cmd_security)
 
     s = sub.add_parser("report", help="health report for a run: wasted steps, identity issues, failures")
     s.add_argument("run")

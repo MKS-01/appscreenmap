@@ -1,0 +1,11 @@
+E: network-security-config (line=1)
+    E: base-config (line=2)
+      A: cleartextTrafficPermitted=false
+        E: trust-anchors (line=2)
+            E: certificates (line=2)
+              A: src="system" (Raw: "system")
+    E: domain-config (line=3)
+      A: cleartextTrafficPermitted=true
+        E: domain (line=3)
+          A: includeSubdomains=true
+            T: 'legacy.example.com'

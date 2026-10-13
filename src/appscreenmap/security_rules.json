@@ -16,7 +16,7 @@
       "category": "manifest",
       "severity": "warning",
       "needs": ["aapt2"],
-      "status": "planned",
+      "status": "ready",
       "why": "An activity, service, receiver or provider that is exported can be started by any app. Without a permission, other apps can drive it or read its data.",
       "fix": "Set android:exported=\"false\" unless another app must reach it; otherwise guard it with a signature-level android:permission.",
       "refs": [
@@ -30,7 +30,7 @@
       "category": "manifest",
       "severity": "warning",
       "needs": ["aapt2"],
-      "status": "planned",
+      "status": "ready",
       "why": "android:usesCleartextTraffic=\"true\", or a network security config that permits cleartext, lets the app send data over HTTP, where it can be read and changed on the network. Android 17 starts deprecating the attribute.",
       "fix": "Remove the attribute and use HTTPS. If one domain truly needs HTTP, allow it per domain in network_security_config.xml.",
       "refs": [
@@ -46,7 +46,7 @@
       "category": "manifest",
       "severity": "error",
       "needs": ["aapt2"],
-      "status": "planned",
+      "status": "ready",
       "why": "A build with android:debuggable=\"true\" lets anyone attach a debugger, read the app's data and run code inside its process. It must never ship.",
       "fix": "Build release variants with debuggable false (Gradle's release build type does this by default) and remove the manifest attribute.",
       "refs": [
@@ -60,7 +60,7 @@
       "category": "manifest",
       "severity": "warning",
       "needs": ["aapt2"],
-      "status": "planned",
+      "status": "ready",
       "why": "With android:allowBackup on (the default), backups can copy the app's data, tokens included, off the device.",
       "fix": "Set allowBackup=\"false\", or add dataExtractionRules / fullBackupContent that exclude tokens and databases.",
       "refs": [
@@ -73,8 +73,8 @@
       "platform": "both",
       "category": "static",
       "severity": "error",
-      "needs": ["jadx", "strings"],
-      "status": "planned",
+      "needs": ["apk"],
+      "status": "ready",
       "why": "API keys, tokens, private keys or passwords compiled into the app can be read by anyone who unpacks it.",
       "fix": "Keep secrets on a server. For client keys use per-user tokens, or restrict the key (package name, signing certificate, quota). Rotate any key that shipped.",
       "refs": [
@@ -145,7 +145,7 @@
       "category": "dynamic",
       "severity": "info",
       "needs": ["frida"],
-      "status": "planned",
+      "status": "ready",
       "why": "While the app runs it accepts a certificate from a user-installed authority, so a proxy can read its traffic. Pinning is optional, but worth a deliberate decision for sensitive APIs.",
       "fix": "Pin your API hosts' public keys: <pin-set> in the network security config on Android; the URLSession delegate or NSPinnedDomains in Info.plist on iOS.",
       "refs": [
@@ -159,7 +159,7 @@
       "category": "dynamic",
       "severity": "error",
       "needs": ["frida"],
-      "status": "planned",
+      "status": "ready",
       "why": "A request to an http:// URL was sent while the app ran, so its data crossed the network unencrypted.",
       "fix": "Serve the endpoint over HTTPS, update the client, and remove the cleartext exception that allowed it.",
       "refs": [
@@ -174,7 +174,7 @@
       "category": "data",
       "severity": "warning",
       "needs": ["adb or simctl"],
-      "status": "planned",
+      "status": "ready",
       "why": "After a crawl, the app's data folder holds tokens or credentials in plain files, SharedPreferences or UserDefaults. Backups and rooted or jailbroken devices can read them.",
       "fix": "Keep secrets in the Android Keystore (for example EncryptedSharedPreferences) or the iOS Keychain, not in preferences or files.",
       "refs": [
