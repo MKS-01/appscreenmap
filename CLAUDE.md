@@ -12,7 +12,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   the viewer and the HTML reports. Change it only through the `design-system` skill.
 - `samples/`: the end-to-end playground. `playground-app/` (purpose-built Compose app, v1/v2 APKs + source,
   every screen = a scenario) and `duskread/` (real app APK). `samples/demo.sh` runs every scenario.
-- `runs/<project>/<run-id>/`: crawl output, **committed** as sample maps (one folder per app). Run ids
+- `runs/<project>/<run-id>/`: crawl output, **git-ignored** (generated locally; `samples/demo.sh` makes sample ones). Run ids
   are flat and unique; `appscreenmap serve` resolves `/runs/<run-id>/…` to the project folder.
 
 ## Rules

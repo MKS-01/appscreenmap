@@ -336,7 +336,7 @@ telemetry (AppScreenMap sends nothing; keep it that way).
 
 ### 8.3 iOS (started)
 
-**Sample: DuskRead.** It has a real SwiftUI iOS target (`/Users/mks/Desktop/C0D3/duskread/iosApp`, KMP shared core), builds
+**Sample: DuskRead.** It has a real SwiftUI iOS target (`iosApp/` in the DuskRead repo, KMP shared core), builds
 for the simulator with `xcodebuild -sdk iphonesimulator`, and is the owner's own code, so every issue the crawl finds can
 be fixed at the source and re-crawled to prove the tool works. No separate "Playground iOS" for now. A simulator needs a
 `.app` from an iphonesimulator build: an `.ipa` is device-signed and won't run there (the driver says so).

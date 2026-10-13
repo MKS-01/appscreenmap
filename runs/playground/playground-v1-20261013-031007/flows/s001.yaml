@@ -1,8 +1,0 @@
-# AppScreenMap: reach s001 — Welcome back
-# Generated from run playground-v1-20261013-031007
-appId: dev.appscreenmap.playground
----
-- launchApp:
-    stopApp: true
-- assertVisible: { id: "sign_in" }
-- takeScreenshot: s001

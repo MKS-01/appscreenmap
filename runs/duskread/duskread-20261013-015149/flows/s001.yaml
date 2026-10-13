@@ -1,8 +1,0 @@
-# AppScreenMap: reach s001 — DuskRead
-# Generated from run duskread-20261013-015149
-appId: dev.mks.duskread
----
-- launchApp:
-    stopApp: true
-- assertVisible: "DuskRead"
-- takeScreenshot: s001

@@ -28,7 +28,7 @@ uv run appscreenmap crawl --apk samples/duskread/duskread-1.3.0.apk \
   --config samples/duskread/appscreenmap.toml --clear-data --project duskread
 ```
 
-The committed sample run lives in `runs/duskread/`.
+The run is written to `runs/duskread/` (git-ignored).
 
 ## iOS Simulator
 
@@ -42,6 +42,6 @@ uv run appscreenmap crawl --platform ios --app samples/duskread/build/ios/DuskRe
 ```
 
 Needs a booted simulator and idb (`appscreenmap doctor` checks). The crawler reads the accessibility tree, so it sees
-what VoiceOver sees: a control with no label is invisible to it, and that is itself a finding (the committed run stops
-after 7 screens because the floating tab bar isn't in the tree). The committed run lives in `runs/duskread-ios/`;
-the [`ios-simulator` skill](../../.claude/skills/ios-simulator/SKILL.md) covers setup and debugging.
+what VoiceOver sees: a control with no label is invisible to it, and that is itself a finding (the first crawl stopped
+after 7 screens because the floating tab bar isn't in the tree). The run is written to `runs/duskread-ios/`
+(git-ignored); the [`ios-simulator` skill](../../.claude/skills/ios-simulator/SKILL.md) covers setup and debugging.

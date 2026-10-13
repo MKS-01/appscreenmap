@@ -6,7 +6,7 @@ The crawler only **adds** fields within schema 1. Renaming or removing a field b
 ## Files a run produces
 
 ```
-runs/                              # committed to git as sample maps
+runs/                              # crawl output, git-ignored (generated locally)
   index.json                       # catalogue of runs, rebuilt by the crawler and by `appscreenmap serve`
   <project>/                       # one folder per app, e.g. duskread/
    <run-id>/                       # e.g. duskread-20261013-015149 (ids are unique across projects)

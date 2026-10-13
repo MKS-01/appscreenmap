@@ -2,10 +2,10 @@
 
 Two apps for trying, demoing and testing AppScreenMap end to end, on Android and the iOS Simulator. The
 APKs are committed, so Android needs no build; the iOS app is built from DuskRead's source by
-`duskread/build-ios.sh`. The sample runs are committed under `runs/`, so the viewer has something to show
-straight after a clone.
+`duskread/build-ios.sh`. Crawl results aren't committed: `demo.sh` writes them to `runs/` (git-ignored) and
+`appscreenmap serve` shows them.
 
-| App | Why it's here | Folder | Runs |
+| App | Why it's here | Folder | Where its runs go |
 |---|---|---|---|
 | **Playground** | Built for AppScreenMap: every screen triggers a known feature, and two builds (v1, v2) give known diffs | [`playground-app/`](playground-app/) | `runs/playground/` |
 | **DuskRead** | A real Compose app: real-world layouts, no resource ids, a live timer | [`duskread/`](duskread/) | `runs/duskread/` |
@@ -53,3 +53,16 @@ iOS needs macOS with Xcode, a booted simulator (`xcrun simctl boot "iPhone 17"`)
 | 20 | Same app on iOS: map, flows and a11y from the accessibility tree | DuskRead iOS | `crawl --platform ios --app …/DuskRead.app --clear-data` | `runs/duskread-ios/`; a Safari link recorded as external and the app restarted; controls VoiceOver can't see are missing (the finding) |
 
 Planned (roadmap §8.2): network profiles, Perfetto traces for slow screens, condition matrix.
+
+## Where the results go
+
+Nothing from a crawl is committed. `samples/demo.sh` writes each run to `runs/<project>/<run-id>/` (git-ignored), and
+`appscreenmap serve` shows them. For Compare and `verify` (scenarios 12, 13 and 17) you need both Playground builds,
+so run `samples/demo.sh playground`, which crawls v1 and v2. The APKs here are DuskRead 1.3.0 and Playground 1.0 / 2.0.
+
+## Licences and provenance
+
+Playground (source and APKs) is MIT like the rest of the repo; its APKs are signed with the Android debug key.
+DuskRead is a separate MIT project by the same author; its APK is signed with the author's release key. Both APKs
+bundle Apache-2.0 libraries (AndroidX, Compose, Kotlin). Details: [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+All form values the sample crawls type are dummy data, and passwords are `${APP_PASSWORD}` placeholders.
