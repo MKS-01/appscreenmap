@@ -182,7 +182,9 @@ Decide in this order (from `emil-design-eng`): **should it animate → why → e
 1. `bun run build` passes (tsc + vite).
 2. Screenshots at 1400px and 390px (dark; there is no light theme), captured over CDP after a real wait (the
    `web-ui` skill has the script; headless `--screenshot` freezes animations at frame 0 and shows empty panels).
-3. Keyboard: Tab through the change; focus is visible and order makes sense.
-4. Reduced motion: emulate it and confirm nothing moves that shouldn't.
-5. New component or token → update this file and `#/design`; a token change also runs the `design-system`
+3. Scroll: `scroll-check.ts` (web-ui skill) reports no page that scrolls into empty space or clips sideways. `.main` is
+   `position: relative` so absolutely positioned children (`.sr-only`) stay inside the scroll container.
+4. Keyboard: Tab through the change; focus is visible and order makes sense.
+5. Reduced motion: emulate it and confirm nothing moves that shouldn't.
+6. New component or token → update this file and `#/design`; a token change also runs the `design-system`
    contrast check.

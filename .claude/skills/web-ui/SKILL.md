@@ -51,6 +51,15 @@ bun ../.claude/skills/web-ui/scripts/shot.ts ... --reduced-motion --themes dark 
 Then **look at every screenshot** (Read the PNGs). Check: nothing clipped or overflowing at 390px, empty and
 loading states, real data with long titles. The viewer is dark only, so pass `--themes dark`.
 
+Also run the **scroll check** after any layout change. The app scrolls inside `.main`, so the *document* must never scroll:
+
+```bash
+bun ../.claude/skills/web-ui/scripts/scroll-check.ts --base http://127.0.0.1:8795/     # exit 1 + the page, if one is flagged
+```
+
+It flags a page whose document is taller than the window (an absolutely positioned element escaped the scroll container, which
+shows as empty space when you scroll past the end), content wider than the container, and empty space after the last element.
+
 > Don't use `chrome --headless --screenshot` for animated pages. It runs on virtual time, so CSS animations
 > stay at frame 0 and animated panels look empty. `shot.ts` drives Chrome over CDP and waits in real time.
 

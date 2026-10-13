@@ -133,7 +133,7 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
   return (
     <div className="page" style={{ maxWidth: 1400 }}>
       <div className="row wrap" style={{ marginBottom: 16, gap: 12 }}>
-        <div className="grow">
+        <div className="grow" style={{ minWidth: "min(100%, 320px)" }}>
           <span className="kicker">Crawl replay · {rows.length} steps</span>
           <h1>Watch the crawler map the app</h1>
           <p className="lede">

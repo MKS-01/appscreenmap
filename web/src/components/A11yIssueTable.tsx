@@ -23,6 +23,7 @@ export default function A11yIssueTable({
   const RULES = useRules();
   if (!issues.length) return <div className="small muted" style={{ padding: 12 }}>No issues.</div>;
   return (
+    <div className="tbl-scroll">
     <table className="tbl a11y-tbl">
       <thead>
         <tr>
@@ -87,5 +88,6 @@ export default function A11yIssueTable({
         })}
       </tbody>
     </table>
+    </div>
   );
 }
