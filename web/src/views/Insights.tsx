@@ -5,7 +5,7 @@ import { ScreenLink } from "../components/common";
 import { Icon, type IconName } from "../components/Icon";
 import { Bars, Chart, SampleTag, toneColor } from "../insights/charts";
 import { useAudits } from "../insights/registry";
-import type { AuditDef, AuditFinding, AuditRef, AuditReport, AuditStatus, Platform, Requirement, Severity, Tone } from "../insights/types";
+import type { AuditDef, AuditFinding, AuditRef, AuditReport, AuditStatus, Platform, PlannedCheck, Requirement, Severity, Tone } from "../insights/types";
 import { href } from "../router";
 import { keys, useStored } from "../storage";
 import type { AppMapData, RunIndexRow, Screen } from "../types";
@@ -276,6 +276,7 @@ function LedgerRow({ run, def, report, view, crawled }: { run: string; def: Audi
   const soon = !off && report.findings.some((f) => f.due && daysFrom(f.due) >= 0 && daysFrom(f.due) <= 60 && onPlatform(f, view));
   const n = SEVERITIES.map((s) => count(report, s, view));
   const notCrawled = view !== crawled && def.group === "crawl";
+  const notSetUp = def.setup === "planned" && (!report || report.status === "not_run");
   return (
     <a className={`ledger-row ${off ? "off" : ""}`} href={href("r", run, "insights", def.id)} role="listitem">
       <span className={`ins-tile ${soon ? "accent" : ""}`}>
@@ -289,7 +290,13 @@ function LedgerRow({ run, def, report, view, crawled }: { run: string; def: Audi
           {report?.source === "mixed" && <SampleTag label="part sample" />}
         </span>
         <span className="ledger-summary">
-          {notCrawled ? `${view === "ios" ? "iOS" : "Android"} wasn't crawled in this run. This audit reads the ${crawled === "ios" ? "iOS" : "Android"} crawl.` : off ? report?.summary || def.produces : report.summary}
+          {notCrawled
+            ? `${view === "ios" ? "iOS" : "Android"} wasn't crawled in this run. This audit reads the ${crawled === "ios" ? "iOS" : "Android"} crawl.`
+            : notSetUp
+              ? plannedSummary(def, crawled)
+              : off
+                ? report?.summary || def.produces
+                : report.summary}
         </span>
       </span>
       <span className="ledger-counts" aria-label={off ? "no findings" : SEVERITIES.map((s, i) => `${n[i]} ${s}`).join(", ")}>
@@ -302,7 +309,7 @@ function LedgerRow({ run, def, report, view, crawled }: { run: string; def: Audi
       {off ? (
         <span className="ledger-score">
           <span className="ledger-score-v faint">—</span>
-          <span className="ledger-status faint">{notCrawled ? "Not crawled" : "Not run"}</span>
+          <span className="ledger-status faint">{notCrawled ? "Not crawled" : notSetUp ? "Not set up" : "Not run"}</span>
         </span>
       ) : (
         <span className="ledger-score">
@@ -610,19 +617,7 @@ function AuditPage({ run, map, def, report }: { run: string; map: AppMapData; de
     return (
       <div className="ins-page">
         {back}
-        <section className="ins-empty">
-          <span className="ins-tile big">
-            <Icon name={def.icon} size={24} />
-          </span>
-          <h1>{def.title} hasn't run for this crawl</h1>
-          <p>{def.blurb}</p>
-          <p>
-            <b>How to get it:</b> {report.summary || def.produces}
-          </p>
-          <p className="faint">
-            Any tool can add an audit by writing <code>audits/{def.id}.json</code> into the run folder (docs/MAP_SCHEMA.md).
-          </p>
-        </section>
+        {def.setup === "planned" ? <NotSetUp run={run} map={map} def={def} /> : <NotRun def={def} report={report} />}
       </div>
     );
 
@@ -715,6 +710,159 @@ function AuditPage({ run, map, def, report }: { run: string; map: AppMapData; de
         </footer>
       )}
     </div>
+  );
+}
+
+/** "14 checks planned: exported components, hard-coded secrets, …" for the overview row of an audit that isn't set up. */
+function plannedSummary(def: AuditDef, crawled: View): string {
+  const checks = (def.planned ?? []).filter((c) => !c.platform || c.platform === "both" || c.platform === crawled);
+  if (!checks.length) return def.blurb;
+  const names = checks.slice(0, 3).map((c) => c.title.charAt(0).toLowerCase() + c.title.slice(1));
+  return `${plural(checks.length, "check")} planned: ${names.join(", ")}${checks.length > 3 ? ", …" : ""}`;
+}
+
+/** An audit the viewer can build from run files, when this crawl simply lacks them. */
+function NotRun({ def, report }: { def: AuditDef; report: AuditReport }) {
+  return (
+    <section className="ins-empty">
+      <span className="ins-tile big">
+        <Icon name={def.icon} size={24} />
+      </span>
+      <h1>{def.title} hasn't run for this crawl</h1>
+      <p>{def.blurb}</p>
+      <p>
+        <b>How to get it:</b> {report.summary || def.produces}
+      </p>
+    </section>
+  );
+}
+
+/**
+ * An audit whose checks don't exist yet (Security, Platform changes, Store readiness, Adaptive UI): say so plainly, then
+ * list every check it will run, grouped, each marked "not set up", so the page shows what coverage means before it ships.
+ */
+function NotSetUp({ map, def }: { run: string; map: AppMapData; def: AuditDef }) {
+  const crawled = crawledPlatform(map);
+  const [all, setAll] = useState(false);
+  const planned = def.planned ?? [];
+  const mine = (c: PlannedCheck) => !c.platform || c.platform === "both" || c.platform === crawled;
+  const shown = all ? planned : planned.filter(mine);
+  const hidden = planned.length - planned.filter(mine).length;
+  const groups = new Map<string, PlannedCheck[]>();
+  for (const c of shown) groups.set(c.category ?? "Planned checks", [...(groups.get(c.category ?? "Planned checks") ?? []), c]);
+  const sev = (c: PlannedCheck) => (c.severity ? SEV_WORD[c.severity].toUpperCase() : "");
+
+  return (
+    <>
+      <section className="ins-audit-head">
+        <span className="ins-tile big">
+          <Icon name={def.icon} size={24} />
+        </span>
+        <div className="ins-audit-title">
+          <span className="ins-kicker">
+            {def.group === "release" ? "Release readiness" : "From this crawl"}
+            {def.qualifier ? ` · ${def.qualifier}` : ""}
+          </span>
+          <h1>
+            {def.title} isn't set up yet
+            <span className="ins-state">NOT SET UP</span>
+          </h1>
+          <p>{def.blurb} Nothing below has run, so this audit is not a pass: it simply has no coverage yet.</p>
+        </div>
+      </section>
+
+      <section className="ins-totals" aria-label="Coverage">
+        <div className="ins-total">
+          <span className="ins-total-v">0</span>
+          <span className="ins-total-l">checks run</span>
+        </div>
+        <div className="ins-total">
+          <span className="ins-total-v">{planned.length}</span>
+          <span className="ins-total-l">checks planned</span>
+        </div>
+        {planned.some((c) => c.severity) && (
+          <div className="ins-total">
+            <span className="ins-total-v">{planned.filter((c) => c.severity === "error").length}</span>
+            <span className="ins-total-l">would block a release</span>
+          </div>
+        )}
+        <div className="ins-total">
+          <span className="ins-total-v">{[...new Set(planned.map((c) => c.needs).filter(Boolean))].length}</span>
+          <span className="ins-total-l">kinds of input needed</span>
+        </div>
+      </section>
+
+      <section className="ins-section">
+        <div className="ins-head">
+          <h2>What it will check</h2>
+          <span className="ins-sub">
+            {shown.length} for {all ? "every platform" : crawled === "ios" ? "iOS" : "Android"}
+          </span>
+          <span className="grow" />
+          {hidden > 0 && (
+            <button type="button" className="ins-btn sm" aria-pressed={all} onClick={() => setAll(!all)}>
+              {all ? "This platform only" : `Show ${hidden} for the other platform`}
+            </button>
+          )}
+        </div>
+        {[...groups].map(([cat, list]) => (
+          <div key={cat} className="plan-group">
+            <div className="plan-cap">
+              {cat} · {list.length}
+            </div>
+            <ul className="plan-list">
+              {list.map((c) => (
+                <li key={c.id ?? c.title} className="plan-row">
+                  <span className="plan-glyph" title="Not set up">
+                    <Icon name="status-unknown" size={18} label="not set up" />
+                  </span>
+                  <div className="plan-main">
+                    <span className="plan-title">
+                      {c.title}
+                      {c.platform && c.platform !== "both" && <span className="ins-tag">{PLATFORM_WORD[c.platform]}</span>}
+                    </span>
+                    <span className="plan-detail">{c.detail}</span>
+                    {c.fix && (
+                      <span className="plan-fix">
+                        <span className="faint">Fix</span> {c.fix}
+                      </span>
+                    )}
+                    {c.refs && c.refs.length > 0 && (
+                      <span className="plan-refs">
+                        {c.refs.map((r) => (
+                          <a key={r.url} href={r.url} target="_blank" rel="noreferrer">
+                            {r.publisher ? `${r.publisher}: ` : ""}
+                            {r.title} ↗
+                          </a>
+                        ))}
+                      </span>
+                    )}
+                  </div>
+                  <div className="plan-meta">
+                    {c.severity && <span style={{ color: SEV_COLOR[c.severity] }}>{sev(c)}</span>}
+                    {c.needs && <span>needs {c.needs}</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+
+      {def.enable && def.enable.length > 0 && (
+        <section className="ins-section">
+          <div className="ins-head">
+            <h2>Turn it on</h2>
+          </div>
+          <pre className="plan-cmd">{def.enable.join("\n")}</pre>
+        </section>
+      )}
+
+      <p className="ins-sub">
+        Any tool can fill this page: write <code>audits/{def.id}.json</code> into the run folder (docs/MAP_SCHEMA.md) and it
+        replaces this placeholder. The rules and how to run them live in the {def.id === "security" ? "security-rules and security-audit skills" : "audit's skill"}.
+      </p>
+    </>
   );
 }
 

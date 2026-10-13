@@ -306,6 +306,34 @@ preferring resource-id selectors; flows that can only use text selectors are fla
 **Open questions:** how to detect strings that are hard-coded rather than coming from resources (only possible with
 the APK's resource table, via `aapt2 dump resources`); and whether to translate the viewer UI itself (low priority).
 
+### 8.2 Ideas from Argent
+
+[Argent](https://github.com/software-mansion/argent) (Software Mansion, Apache-2.0 core) is an MCP toolkit
+that gives a coding agent hands on iOS/Android/TV/Electron apps: ~80 tools for driving the UI, recorded
+flows, visual regression, React and native profiling, and network logs
+([docs](https://docs.swmansion.com/argent/docs/fundamentals/getting-started)). It is **interactive**: an
+agent does one task at a time. AppScreenMap is **autonomous and whole-app**: it maps every screen and reports
+on all of them. They complement each other. What to adopt:
+
+| Argent does | What it teaches us | Plan | Priority |
+|---|---|---|---|
+| MCP server: the agent calls tools | Agents need the map, not just screenshots | `appscreenmap mcp`: `list_screens`, `get_screen` (elements, a11y, perf), `route` (steps to a screen), `go_to_screen` (drive the device there), `where_am_i` (match the live screen to the map), `crawl`/`crawl_status`, `a11y_findings`, `perf_summary`. The map becomes agent memory, so nothing is re-explored. | ✅ (+ `list_runs`, `find_screens`, `screenshot`; optional `mcp` extra, SDK 2.x) |
+| Flows: record once, replay in CI with exit codes, failed step gets a screenshot, `--update-baselines` | Our reach paths are flows already | `appscreenmap verify runs/<base> [--apk new.apk]`: replay every screen's reach path on a new build, check screen identity, snapshot each step against the base run, exit non-zero on broken paths. Fragments with a prerequisite = paths starting from a known screen. | ✅ (`--fail-on-change`, `--update-baselines`; fragments: next) |
+| Secrets as placeholders filled from the environment, never in agent context | We write typed values into map.json, Maestro flows and the trace | `[inputs] password = "${APP_PASSWORD}"`: resolved at type time, stored as the placeholder everywhere (Maestro reads `${VAR}` too). | ✅ |
+| Visual regression with OCR/font awareness: text appeared/disappeared/moved/restyled, regions marked brighter/darker, element-scoped snapshots, status bar removed | Pixel diff alone is noisy | Text-aware diff from the **hierarchy** (exact strings and bounds, so no OCR needed): per-element added/removed/moved/changed, plus pixel regions with direction. Element-scoped compare by element key. | ✅ text + regions. Next: element-scoped compare; "restyled" needs style data the hierarchy lacks |
+| `await-screen-idle`, `await-ui-element` (no screenshot loops) | Same idea as our gfxinfo settle | ✅ done (frame-counter settle). Next: wait for a specific element via the on-device helper. | ✅ / P2 |
+| Android helper instrumentation app resolves selectors on the device | The 2 s `uiautomator dump` is our bottleneck | On-device agent driver (Phase 2): fast tree, element waits, batched actions (`run-sequence`). | P2 |
+| Native profiler on Android = Perfetto (hangs with a jank reason, CPU, GC) | Frame counts tell *that* a screen is slow, not *why* | When a transition exceeds the budget, replay it under `perfetto` (gfx/view/am/sched) and attach the trace, top jank reasons and a ui.perfetto.dev link to perf.json. | P2 |
+| Screen recording (h264) | Video shows transitions and loading states a screenshot misses | Record the crawl in `screenrecord` segments; per-transition clips in the viewer; clips attached to failed `verify` steps. | P2 |
+| Network logs (JS `fetch` layer on Android; read-only, no throttling) | Load time needs a "why" too | Emulator network profiles (`adb emu network speed/delay`) for load times under 3G/edge; correlate slow loads with requests where the app logs them. | P2 |
+| Device controls: rotate, permissions grant/deny/reset, fold, D-pad | Conditions reveal different screens and bugs | Condition matrix per run: landscape (WCAG 1.3.4/1.4.10), dark mode (`cmd uimode night yes`), denied permissions (error states), display size, font scale (✅). | P2 |
+| TV D-pad, focus-driven navigation | Focus reachability is an accessibility signal | Keyboard/D-pad-only crawl: which elements can focus reach, and in what order → evidence for WCAG 2.1.1/2.4.3/2.4.7. | P3 |
+| Component source lookup (file, line) for profiling fixes | Findings should point at code | `--src <repo>`: link resource ids, Compose testTags and strings to source files, so a11y/perf findings show where to fix. | P3 |
+| Normalized 0–1 coordinates | Portable across screen sizes | Store normalized bounds alongside pixels in map.json; point taps in exports already use %. | P3 |
+
+Not adopting: Lens design variants (a different product), TV/Electron targets (out of scope for now), and
+telemetry (AppScreenMap sends nothing; keep it that way).
+
 ### 8.3 iOS (started)
 
 **Sample: DuskRead.** It has a real SwiftUI iOS target (`/Users/mks/Desktop/C0D3/duskread/iosApp`, KMP shared core), builds
@@ -351,33 +379,58 @@ largest size) beside WCAG.
 6. *Crawler side, fixed:* "Erase everything on this device" (Settings → Reset) wasn't in the default `blocked_text`; added
    `erase`, `wipe`, `reset all/app/data/device`, `clear data`, with a test.
 
-### 8.2 Ideas from Argent
+### 8.4 Security audit: depth (planned)
 
-[Argent](https://github.com/software-mansion/argent) (Software Mansion, Apache-2.0 core) is an MCP toolkit
-that gives a coding agent hands on iOS/Android/TV/Electron apps: ~80 tools for driving the UI, recorded
-flows, visual regression, React and native profiling, and network logs
-([docs](https://docs.swmansion.com/argent/docs/fundamentals/getting-started)). It is **interactive**: an
-agent does one task at a time. AppScreenMap is **autonomous and whole-app**: it maps every screen and reports
-on all of them. They complement each other. What to adopt:
+The rule catalogue is set up (`src/appscreenmap/security_rules.json`, 14 rules, documented in the `security-rules` skill; the
+workflow is the `security-audit` skill). Every rule is `planned`, so the Insights Security page says "not set up" and lists
+them. This section is how the scanner goes deeper than a manifest check, from two kinds of evidence.
 
-| Argent does | What it teaches us | Plan | Priority |
+**Build analysis** reads the artifact and never runs it, so it works in CI on any build, with no device:
+
+| Layer | Android (APK/AAB) | iOS (.app/.ipa) | Output |
 |---|---|---|---|
-| MCP server: the agent calls tools | Agents need the map, not just screenshots | `appscreenmap mcp`: `list_screens`, `get_screen` (elements, a11y, perf), `route` (steps to a screen), `go_to_screen` (drive the device there), `where_am_i` (match the live screen to the map), `crawl`/`crawl_status`, `a11y_findings`, `perf_summary`. The map becomes agent memory, so nothing is re-explored. | ✅ (+ `list_runs`, `find_screens`, `screenshot`; optional `mcp` extra, SDK 2.x) |
-| Flows: record once, replay in CI with exit codes, failed step gets a screenshot, `--update-baselines` | Our reach paths are flows already | `appscreenmap verify runs/<base> [--apk new.apk]`: replay every screen's reach path on a new build, check screen identity, snapshot each step against the base run, exit non-zero on broken paths. Fragments with a prerequisite = paths starting from a known screen. | ✅ (`--fail-on-change`, `--update-baselines`; fragments: next) |
-| Secrets as placeholders filled from the environment, never in agent context | We write typed values into map.json, Maestro flows and the trace | `[inputs] password = "${APP_PASSWORD}"`: resolved at type time, stored as the placeholder everywhere (Maestro reads `${VAR}` too). | ✅ |
-| Visual regression with OCR/font awareness: text appeared/disappeared/moved/restyled, regions marked brighter/darker, element-scoped snapshots, status bar removed | Pixel diff alone is noisy | Text-aware diff from the **hierarchy** (exact strings and bounds, so no OCR needed): per-element added/removed/moved/changed, plus pixel regions with direction. Element-scoped compare by element key. | ✅ text + regions. Next: element-scoped compare; "restyled" needs style data the hierarchy lacks |
-| `await-screen-idle`, `await-ui-element` (no screenshot loops) | Same idea as our gfxinfo settle | ✅ done (frame-counter settle). Next: wait for a specific element via the on-device helper. | ✅ / P2 |
-| Android helper instrumentation app resolves selectors on the device | The 2 s `uiautomator dump` is our bottleneck | On-device agent driver (Phase 2): fast tree, element waits, batched actions (`run-sequence`). | P2 |
-| Native profiler on Android = Perfetto (hangs with a jank reason, CPU, GC) | Frame counts tell *that* a screen is slow, not *why* | When a transition exceeds the budget, replay it under `perfetto` (gfx/view/am/sched) and attach the trace, top jank reasons and a ui.perfetto.dev link to perf.json. | P2 |
-| Screen recording (h264) | Video shows transitions and loading states a screenshot misses | Record the crawl in `screenrecord` segments; per-transition clips in the viewer; clips attached to failed `verify` steps. | P2 |
-| Network logs (JS `fetch` layer on Android; read-only, no throttling) | Load time needs a "why" too | Emulator network profiles (`adb emu network speed/delay`) for load times under 3G/edge; correlate slow loads with requests where the app logs them. | P2 |
-| Device controls: rotate, permissions grant/deny/reset, fold, D-pad | Conditions reveal different screens and bugs | Condition matrix per run: landscape (WCAG 1.3.4/1.4.10), dark mode (`cmd uimode night yes`), denied permissions (error states), display size, font scale (✅). | P2 |
-| TV D-pad, focus-driven navigation | Focus reachability is an accessibility signal | Keyboard/D-pad-only crawl: which elements can focus reach, and in what order → evidence for WCAG 2.1.1/2.4.3/2.4.7. | P3 |
-| Component source lookup (file, line) for profiling fixes | Findings should point at code | `--src <repo>`: link resource ids, Compose testTags and strings to source files, so a11y/perf findings show where to fix. | P3 |
-| Normalized 0–1 coordinates | Portable across screen sizes | Store normalized bounds alongside pixels in map.json; point taps in exports already use %. | P3 |
+| Identity and config | `aapt2 dump xmltree` / `badging`: exported components, intent filters (deep links, `autoVerify`), permissions, `debuggable`, `allowBackup`, `usesCleartextTraffic`, network security config | `Info.plist`: ATS exceptions, URL schemes, usage-description strings; entitlements (`get-task-allow`, keychain groups, associated domains) | `manifest.json` |
+| Signing | `apksigner verify --print-certs`: scheme v2/v3, debug or expired certificate | `codesign -d --entitlements :-`, provisioning profile type (development vs distribution) | `signing.json` |
+| Code | `jadx -d out`: the static rules (secrets, WebView bridge, TLS validation, weak crypto, logging); `apkanalyzer` for dex/method counts, R8 mapping present or not | `strings`, `otool -L` (linked frameworks), `otool -hv` (PIE), symbol checks for stack canaries and ARC | `findings` with file and line |
+| Native and bundled files | `.so` libraries (stripped? hardening flags), assets and `res/raw` with keys, certificates, databases | embedded frameworks and their versions, bundled plists, `.p12`/`.pem` files | `inventory.json` |
+| Dependencies | library list from dex packages and `META-INF`; match versions against a vulnerability database (OSV) | frameworks and Swift packages from the bundle | `sbom.json` + advisories |
+| Store hygiene | target/min SDK, Data safety vs the SDKs found | privacy manifest, required-reason APIs, SDK signatures | feeds *Store readiness* |
 
-Not adopting: Lens design variants (a different product), TV/Electron targets (out of scope for now), and
-telemetry (AppScreenMap sends nothing; keep it that way).
+**Crawl-driven analysis** needs the app running, and the crawl is what makes it deep: it reaches the screens, flows and states
+a static scan can't, while recording everything it passes through.
+
+| Signal | How the crawl gets it | Finding |
+|---|---|---|
+| Data at rest | after the crawl, read the data container (Android `run-as` on debuggable builds; iOS `simctl get_app_container … data`): `shared_prefs`, databases, plists, plain files | `secrets-at-rest` |
+| Network seen | route the device through a local proxy (emulator `-http-proxy`, simulator system proxy) while crawling; record hosts, schemes, TLS version, certificate errors | `cleartext-observed`, `no-cert-pinning`, plus a "who does this app talk to" list (first-party vs third-party hosts, a privacy signal) |
+| Logs during the run | tail `logcat` / the simulator's unified log for the whole crawl and scan for tokens, passwords, personal fields | `sensitive-logging` (dynamic confirmation of the static rule) |
+| Sensitive screens | every screen with a password, OTP or payment field: was the screenshot capturable? On Android a screen with `FLAG_SECURE` returns black from `screencap`; a clear capture means the screen can be recorded or shown in Recents | new rule `no-secure-flag` |
+| Reachable surface | for each exported activity and deep link in the manifest, launch it from the crawl's root state (`am start`, `simctl openurl`) with no extras and with malformed input; record where it lands (a post-login screen without logging in, a crash) | `exported-component` becomes confirmed, new rule `deeplink-crash` |
+| WebViews | record the URLs a WebView loads and whether the host is first-party; screens that render remote HTML | `webview-js-interface` becomes confirmed or dismissed |
+| Permissions timeline | which runtime permissions were requested on which screen, and whether the crawl was still useful when each was denied | privacy review, `permission-before-use` candidate |
+| Crashes and ANRs | already recorded (`crashes/`); a crash from untrusted input is a finding, not just a stability number | feeds *Stability* and `deeplink-crash` |
+| Stored credentials | the values the crawler typed are placeholders in `map.json`; assert none of the real values appear in any saved file (hierarchy XML, logs, screenshots metadata) | a self-check, never a finding about the app |
+
+**How they combine.** A finding carries its evidence: a static match is a *candidate*, a crawl observation *confirms* or
+*dismisses* it ("`addJavascriptInterface` found" + "WebView loaded only `https://app.example`" = low risk). Output goes to
+`runs/<project>/<run>/security/` (`manifest.json`, `signing.json`, `sbom.json`, `network.jsonl`, `evidence/`) and a summary
+`audits/security.json`, so the viewer's page, `report` and the MCP tools read one file.
+
+**Build order, cheapest first:**
+1. Manifest and Info.plist rules from `apkinfo.py`'s aapt2 calls and a plist read (6 rules; needs no device).
+2. `secrets-at-rest` from the data container the drivers already resolve; logs-during-crawl scan.
+3. Signing, SBOM and dependency advisories (OSV) from the build.
+4. jadx static rules with fixture tests (`hardcoded-secret`, TLS, WebView, crypto, logging).
+5. Proxy-observed network and `no-secure-flag` during a crawl; reachable-surface checks (exported components, deep links).
+6. frida for what the proxy can't see (certificate pinning, in-process hooks): last, because it needs a prepared target.
+
+**Tools to evaluate before building our own:** MobSF (static + dynamic mobile scanner, could be driven for a second
+opinion), semgrep rules for Android and Swift, OSV-Scanner for dependencies, mitmproxy for the proxy step, `apkanalyzer` and
+`apksigner` from the Android SDK. Prefer small direct checks we can test with fixtures over wrapping a large tool.
+
+**Rules:** only official sources back a rule (`security_rules.py` rejects any other host); a scan that skipped a category must
+say so in `summary` and `metrics`, never read as a pass; findings never include a secret's value or exploit steps. Only run
+against builds you own or are authorised to test (`security-audit` skill).
 
 ## 9. Todo
 
@@ -405,7 +458,7 @@ Next features, first batch. Unchecked means not started; the open questions need
     matched against what the app uses (manifest permissions, APIs it references).
   - **Store readiness.** Read target/min SDK from the APK (`aapt2`), check Google Play's target API deadline
     and App Store build SDK and screenshot requirements. Crawl screenshots can seed store screenshots.
-  - **Security.** `appscreenmap security <run>`: jadx static scan (secrets, WebView, reflection), manifest
+  - **Security.** Rules and skills are set up (§8.4); next is the scanner. `appscreenmap security <run>`: jadx static scan (secrets, WebView, reflection), manifest
     review (exported components, cleartext, backup), frida dynamic checks (pinning, root detection).
   - Each one ships by writing `audits/<id>.json` from the crawler; the viewer's sample builder is then deleted.
   - Yearly upkeep: after each Android / iOS release and store policy update, refresh `sources.ts` and the

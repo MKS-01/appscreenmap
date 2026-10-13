@@ -85,6 +85,19 @@ export interface AuditReport {
   refs: AuditRef[]; // official docs the audit's checks follow
 }
 
+/** A check an audit will run once it is set up. Shown as a placeholder while it isn't. */
+export interface PlannedCheck {
+  id?: string;
+  title: string;
+  detail: string; // what it looks at and why it matters, one or two sentences
+  fix?: string;
+  severity?: Severity;
+  category?: string; // group heading, e.g. "Manifest and Info.plist"
+  platform?: Platform;
+  needs?: string; // what has to exist first: "jadx", "frida", "the APK's manifest"
+  refs?: AuditRef[];
+}
+
 /** What the registry knows about an audit before any data loads. */
 export interface AuditDef {
   id: string;
@@ -94,4 +107,9 @@ export interface AuditDef {
   icon: import("../components/Icon").IconName;
   blurb: string; // what it checks, one line
   produces: string; // what will produce real data, for "not run" states
+  /** "ready": the viewer can build it from run files, so "not run" means this crawl lacks them. "planned": the checks
+   *  below don't exist yet, so the audit is "not set up" and lists what it will do. */
+  setup?: "ready" | "planned";
+  planned?: PlannedCheck[];
+  enable?: string[]; // commands or steps that turn it on, when known
 }

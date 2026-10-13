@@ -3874,6 +3874,98 @@ a.bars-label,
   background: var(--tone);
 }
 
+/* audit that isn't set up: what it will check */
+.ins-state {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  letter-spacing: 0.05em;
+  color: var(--faint);
+  border: 1px dashed var(--line-hi);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+}
+.plan-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.plan-cap {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.plan-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.plan-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 190px;
+  gap: var(--space-3);
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.plan-glyph {
+  color: var(--faint);
+  padding-top: 1px;
+}
+.plan-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.plan-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-weight: var(--weight-medium);
+}
+.plan-detail {
+  font-size: var(--text-base);
+  color: var(--dim);
+}
+.plan-fix {
+  font-size: var(--text-base);
+}
+.plan-refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: var(--text-sm);
+}
+.plan-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  text-align: right;
+}
+.plan-cmd {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--dim);
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
 /* phones */
 @media (max-width: 900px) {
   .ledger-cap,
@@ -3942,6 +4034,19 @@ a.bars-label,
   }
   .ins-totals {
     border-bottom: 0;
+  }
+}
+@media (max-width: 700px) {
+  .plan-row {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+  .plan-meta {
+    grid-column: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    align-items: baseline;
+    text-align: left;
   }
 }
 @media (max-width: 520px) {
