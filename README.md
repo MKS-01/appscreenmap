@@ -20,6 +20,7 @@
 </p>
 
 <p align="center">
+  <a href="#why-appscreenmap">Why</a> &nbsp;·&nbsp;
   <a href="#how-it-works-for-you">How it works</a> &nbsp;·&nbsp;
   <a href="#the-dashboard">Dashboard</a> &nbsp;·&nbsp;
   <a href="#export-and-share">Export</a> &nbsp;·&nbsp;
@@ -27,15 +28,43 @@
   <a href="#docs">Docs</a>
 </p>
 
-<p align="center"><sub>Deterministic crawler, no model calls. Plain files out. Early alpha.</sub></p>
+<p align="center"><sub>Deterministic crawler, no model calls. Plain files out. Early draft.</sub></p>
 
 ---
+
+> [!NOTE]
+> **Early draft.** AppScreenMap is early alpha and still taking shape: commands, flags and screens may change, the
+> iOS Simulator support is beta, and the security scanner covers Android only (its Frida script hasn't been run on
+> a device yet). Expect rough edges, and please open an issue when you hit one.
 
 Every mobile team needs to know what is in its app: which screens exist, how you reach each one, and what changed
 in this build. Today that lives in someone's head, an out-of-date diagram or a hand-written test suite.
 AppScreenMap has your coding agent crawl the app and write that map for you. Everything else is built on it:
 generated test flows, regression checks between builds, accessibility and performance audits, exports, and
 answers for the agent itself ("how do I reach Settings?"). The map is the product; the audits are one use of it.
+
+<p align="center">
+  <img src="docs/media/dashboard.png" alt="The dashboard's Insights page for the DuskRead sample app: three phone screens from the app, totals for screens mapped, transitions, errors and warnings, and one scored row per audit with error, warning and info counts and a status for each: crawl coverage, stability, accessibility and performance from the crawl, then adaptive UI, platform changes, store readiness and security under release readiness">
+  <br>
+  <sub>The Insights page of the built-in dashboard, for the DuskRead sample app. The first four rows come from an Android crawl (v1.2.0); the Security row is <code>appscreenmap security</code> run on the DuskRead 1.3.0 APK.</sub>
+</p>
+
+## Why AppScreenMap
+
+- **One crawl, many uses.** The map of every screen is the foundation. Test flows, regression checks, audits, exports
+  and the agent's own answers all read it, so there is no separate tool for each job.
+- **Your agent runs it, you review it.** Ask in plain language; the agent crawls, reviews, tunes and audits, and
+  everything lands in one dashboard instead of a trail of run folders and reports.
+- **Nothing to add to your app.** No SDK, no test IDs, no source access: it drives the build you ship through `adb`
+  (or `simctl` and `idb` on iOS), and copes with apps that expose almost no resource ids, such as Compose.
+- **Deterministic and local.** The crawler makes no model calls, so the same build and settings give the same map and
+  a regression is a diff, not noise. Nothing leaves your machine.
+- **Safe by default.** It stays inside the app, never taps log out, delete or pay, keeps passwords out of the output
+  (`${ENV}` placeholders), and never writes a secret it finds into a finding.
+- **Standards, with sources.** Accessibility is checked per WCAG 2.2 criterion, and every finding cites official
+  Android, Apple or W3C documentation. Anything that needs a person or a device is "Not tested", never a pass.
+- **Open files, two platforms.** MIT-licensed plain files, with `map.json` a documented, versioned contract any tool
+  can read, for Android and the iOS Simulator alike.
 
 ## How it works for you
 
