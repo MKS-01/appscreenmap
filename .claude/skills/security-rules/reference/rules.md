@@ -1,8 +1,9 @@
 # Security rules: the full catalogue
 
 Machine-readable twin: `src/appscreenmap/security_rules.json` (validated by `security_rules.py`; a test fails if a rule is
-missing here). Status is **planned** for every rule today: the scanner that runs them doesn't exist yet, so the viewer shows
-them as "not set up". "Detect" says how a rule will be checked and what you can do by hand now. Every source is official.
+missing here). Status is **ready** for a rule that `appscreenmap security` checks (the manifest, hard-coded-secret, data-at-rest and Frida-log
+rules, Android) and **planned** for the rest, which the viewer shows as "not set up". "Detect" says how a rule is checked and what
+you can do by hand. Every source is official.
 
 Severity: **error** = fix before release, **warning** = fix or justify, **info** = a decision to make on purpose.
 
