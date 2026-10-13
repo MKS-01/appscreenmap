@@ -27,6 +27,7 @@ runs/                              # crawl output, git-ignored (generated locall
     notes.json                     # viewer stars/notes + a11y triage (owned by the web session, notes.py)
     audits/index.json              # optional: audits this run has beyond the built-in ones (see "audits" below)
     audits/<audit-id>.json         # optional: one audit report (security, store, adaptive, …)
+    audits/security-evidence.json  # written by `appscreenmap security`: the evidence behind audits/security.json
 ```
 
 Older runs may sit directly in `runs/<run-id>/`. Use the index's `path` to locate a run's files.

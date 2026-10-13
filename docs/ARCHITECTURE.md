@@ -77,10 +77,16 @@ $ uv run appscreenmap perf runs/playground/<run-id> --budget 1000
    🟢  s005 'Article'      214 /  225 /  228  ×8
 ```
 
-**Security.** The [`security-audit` skill](../.claude/skills/security-audit/SKILL.md) gathers evidence from the
-build (manifest or Info.plist, static scan, data left on the device), judges it against the
-[`security-rules`](../.claude/skills/security-rules/SKILL.md) catalogue and writes the result into the run, so the
-Security audit in the dashboard shows real findings. For builds you own or are authorised to test.
+**Security** (Android). `appscreenmap security <run>` is a small stdlib-only scanner that takes three kinds of evidence:
+the APK (the manifest through one `aapt2` call, plus high-confidence secret formats found by regex over the raw dex,
+resource and asset bytes, so there is no decompiling and a scan takes about 0.1 s), the app's data folder over adb
+(plain-text secrets in preferences and files), and a log from the observation-only
+[Frida script](../.claude/skills/security-audit/scripts/frida-observe.js) (plain-HTTP hosts, missing certificate pins).
+Findings use the text and official sources of the [`security-rules`](../.claude/skills/security-rules/SKILL.md)
+catalogue, never contain a secret's value, and are written to `audits/security.json`, so the Security audit in the
+dashboard shows real findings. The [`security-audit` skill](../.claude/skills/security-audit/SKILL.md) tells an agent how
+to run and judge it. Rules the scanner doesn't cover yet stay `planned`, and the audit never reads as a pass while any
+remain. For builds you own or are authorised to test.
 
 **Your own audits.** Any audit written to `runs/<project>/<run-id>/audits/<id>.json` shows up in Insights, scored
 and exportable like the built-in ones (format in [MAP_SCHEMA.md](MAP_SCHEMA.md)).
@@ -98,7 +104,8 @@ runs/
     map.mmd                   Mermaid flowchart
     a11y.json, a11y-report.*  WCAG 2.2 findings and report
     perf.json                 load times, jank, cold start
-    audits/<id>.json          extra audits written by an agent (security, …)
+    audits/<id>.json          extra audits (security is written by `appscreenmap security`)
+    audits/security-evidence.json   the evidence the security audit was built from (apk, device, frida)
     notes.json                your stars, notes and triage decisions
     crashes/                  logcat for each crash
     diff/<base-run>/          diff against another run (written by `diff`)
