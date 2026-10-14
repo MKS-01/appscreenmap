@@ -103,3 +103,13 @@ a local release folder (`APPSCREENMAP_RELEASE_URL=file://…`).
 
 Until step 8 the engine also installs the `appscreenmap` command, so skills, docs and `samples/demo.sh` keep
 working throughout.
+
+## Log
+
+One row per commit on `refactor/monorepo`. **Outside crawler code** lists every change to files another
+session owns (`web/`, `design/`), so they can review exactly what was touched.
+
+| Step | Commit | What moved | Outside crawler code |
+|---|---|---|---|
+| 1 | `c74ebac` | `src/` + `tests/` → `apps/engine/`; virtual workspace root; Makefile; repo-wide ruff | — |
+| 1 | (this) | — | `web/src/insights/registry.ts`: rules import → `apps/engine/src/appscreenmap/security_rules.json` (import path + comment only) |
