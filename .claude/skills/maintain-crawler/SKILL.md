@@ -13,7 +13,7 @@ uv run appscreenmap doctor
 ```
 
 Then a short real crawl as a smoke test (budget 40 steps is enough):
-`uv run appscreenmap crawl --package dev.mks.sample-app --clear-data --max-steps 40` and
+`APP_PASSWORD=playground-demo uv run appscreenmap crawl --apk samples/playground-app/apk/playground-v1.apk --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 40` and
 `uv run appscreenmap report runs/<project>/<run-id>`. Compare with the last good run.
 
 ## Dependency upgrades
@@ -69,7 +69,7 @@ the new one. Add a unit test with both formats as literal strings.
 ## Open-source hygiene
 
 - `runs/` is **git-ignored** (generated locally, one folder per project: `runs/<project>/<run-id>/`); `samples/demo.sh` makes sample ones.
-  Keep it curated: one or two good runs per sample app (sample-app), no broken, `running`, or
+  Keep it curated: one or two good runs per sample app (Playground), no broken, `running`, or
   throwaway runs, and no third-party apps. Watch repo size (PNG screenshots are ~100–300 KB each);
   if it grows, prune old runs or move samples to Git LFS. Tests still use synthetic XML only.
 - Keep README commands working: when a CLI flag changes, update README and

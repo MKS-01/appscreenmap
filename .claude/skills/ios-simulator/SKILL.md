@@ -1,6 +1,6 @@
 ---
 name: ios-simulator
-description: Set up, run and debug AppScreenMap against an iOS Simulator — building sample-app for the simulator, booting it (Xcode 27 Device Hub), installing idb, reading the accessibility tree, recording a test fixture, and diagnosing a bad iOS crawl (missing tab bar, in-app browser, flat trees, stuck screens). Use for any iOS work: `crawl --platform ios`, `doctor` showing no simulator, an iOS crawl that stops early or maps too little, or extending `drivers/ios.py` / `drivers/ios_hierarchy.py`.
+description: Set up, run and debug AppScreenMap against an iOS Simulator — building the app for the simulator, booting it (Xcode 27 Device Hub), installing idb, reading the accessibility tree, recording a test fixture, and diagnosing a bad iOS crawl (missing tab bar, in-app browser, flat trees, stuck screens). Use for any iOS work: `crawl --platform ios`, `doctor` showing no simulator, an iOS crawl that stops early or maps too little, or extending `drivers/ios.py` / `drivers/ios_hierarchy.py`.
 ---
 
 # iOS Simulator: set up, run, debug
@@ -32,26 +32,27 @@ xcrun simctl boot "iPhone 17"
   `idb_companion --udid <UDID> --grpc-port 10882 &` then `idb connect localhost 10882`, then `idb ui describe-all --udid <UDID>`.
 - One booted simulator is picked automatically; with several, pass `--serial <udid>`.
 
-## 2. Build the app (sample-app is the sample)
+## 2. Build the app
 
 A simulator runs a **`.app` from an `iphonesimulator` build**. An `.ipa` is device-signed (arm64, provisioning) and will not
-run there; the driver rejects it. sample-app (`../sample-app/iosApp`) is SwiftUI over a Kotlin Multiplatform core:
+run there; the driver rejects it. There's no iOS sample in the repo yet (a SwiftUI Playground with the same scenarios as
+the Android one is planned, `docs/PLAN.md`), so build the user's app:
 
 ```bash
-cd ../sample-app/iosApp
-xcodebuild -project iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -configuration Debug \
+cd path/to/YourApp
+xcodebuild -project YourApp.xcodeproj -scheme YourApp -sdk iphonesimulator -configuration Debug \
   -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath <scratch>/dd CODE_SIGNING_ALLOWED=NO build
-# → <scratch>/dd/Build/Products/Debug-iphonesimulator/sample-app.app
+# → <scratch>/dd/Build/Products/Debug-iphonesimulator/YourApp.app   (use -workspace for CocoaPods / KMP projects)
 ```
 
-The first build runs Gradle to compile the Kotlin framework (minutes); later ones are fast. Don't edit the sample-app repo
-unless asked: the owner fixes what the crawl finds there and re-crawls to verify.
+A Kotlin Multiplatform app's first build also compiles the shared framework (minutes); later ones are fast. Don't edit
+the app's source unless asked: its owner fixes what the crawl finds and re-crawls to verify.
 
 ## 3. Crawl
 
 ```bash
-uv run appscreenmap crawl --platform ios --app <path>/sample-app.app --clear-data --max-steps 150
-uv run appscreenmap serve        # the run is in runs/sample-app-ios/
+uv run appscreenmap crawl --platform ios --app <path>/YourApp.app --clear-data --max-steps 150
+uv run appscreenmap serve        # the run is in runs/<app>-ios/
 ```
 
 `--font-scale 2.0` sets Dynamic Type to `accessibility-large` (WCAG 1.4.4). Load times and system permission alerts aren't

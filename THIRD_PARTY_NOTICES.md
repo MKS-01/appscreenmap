@@ -197,13 +197,10 @@ ideas, not code, with them.
 
 - **Playground** (`samples/playground-app/`): written for this project, MIT like the rest of the repo. Its APKs are
   release builds signed with the Android debug key.
-- **sample-app** (`samples/sample-app/sample-app-1.3.0.apk`): a build of [sample-app](https://github.com/MKS-01/sample-app),
-  MIT, maintained by the same author, signed with the author's release key.
-- **Apache-2.0 components inside the binaries.** Both APKs, built with Jetpack Compose, contain AndroidX, Compose,
-  Material 3 and the Kotlin standard library (Google and JetBrains, Apache-2.0); sample-app adds the libraries its own
-  repository declares. `samples/playground-app/gradle/wrapper/gradle-wrapper.jar` is Apache-2.0 too. Full text:
+- **Apache-2.0 components inside the binaries.** The Playground APKs, built with Jetpack Compose, contain AndroidX,
+  Compose, Material 3 and the Kotlin standard library (Google and JetBrains, Apache-2.0). `samples/playground-app/gradle/wrapper/gradle-wrapper.jar` is Apache-2.0 too. Full text:
   <https://www.apache.org/licenses/LICENSE-2.0>.
 - **Crawl output** (`runs/`) is git-ignored and not distributed with the project. `samples/demo.sh` generates crawls
-  of those two apps: screenshots, view hierarchies and reports. The form values are dummy data (for example
+  of the Playground: screenshots, view hierarchies and reports. The form values are dummy data (for example
   `demo@playground.dev`), and passwords appear only as `${APP_PASSWORD}` placeholders. Device screenshots can show
   Android or iOS system UI such as the status bar and keyboard; those belong to Google and Apple.

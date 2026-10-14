@@ -27,7 +27,7 @@ Never fix exploration by guessing. Each fix follows this loop:
 3. **Fix** in the right layer (map below). Keep the change minimal and explain *why* in a comment
    only where it's non-obvious.
 4. **Verify.** Run `uv run pytest -q && uv run ruff check && uv run ruff format`, then
-   re-crawl sample-app with `--clear-data` and compare `report` numbers before and after
+   re-crawl the Playground with `--clear-data` and compare `report` numbers before and after
    (steps/screen, no-ops, near-duplicates, nav failures).
 
 > **iOS crawl?** Start with the `ios-simulator` skill: its table of symptoms (missing tab bar, in-app browser,

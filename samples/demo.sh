@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Run every AppScreenMap demo scenario on the sample apps (see samples/README.md).
-#   samples/demo.sh [all|playground|sample-app|ios]
-# Needs a running emulator (and, for ios, a booted iOS Simulator with idb). Installs the sample apps, wipes their
-# data, and leaves device settings as found. `all` includes iOS only when a simulator is booted.
+# Run every AppScreenMap demo scenario on the Playground sample app (see samples/README.md).
+#   samples/demo.sh [all|playground]
+# Needs a running emulator. Installs the Playground APKs, wipes their data, and leaves device settings as found.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ASM=(uv run appscreenmap)
@@ -10,7 +9,6 @@ WHAT="${1:-all}"
 PG_CFG=samples/playground-app/appscreenmap.toml
 # The Playground's password comes from the environment (scenario 16: secrets never land in run files).
 export APP_PASSWORD="${APP_PASSWORD:-playground-demo}"
-DR_CFG=samples/sample-app/appscreenmap.toml
 
 step() { printf '\n\033[1m▶ %s\033[0m\n' "$*"; }
 latest() { ls -td "runs/$1/$2"-2* 2>/dev/null | head -1; }
@@ -62,27 +60,6 @@ if [[ "$WHAT" == all || "$WHAT" == playground ]]; then
 
   step "16: secrets: the password never reaches the run files"
   if grep -rq "$APP_PASSWORD" "$V1" "$V2"; then echo "  ✘ password found in run files"; exit 1; else echo "  ✔ only \${APP_PASSWORD} is stored"; fi
-fi
-
-if [[ "$WHAT" == all || "$WHAT" == sample-app ]]; then
-  step "1, 2, 4, 9, 10: sample-app, a real app, from a clean install"
-  install_fresh samples/sample-app/sample-app-1.3.0.apk dev.mks.sample-app
-  "${ASM[@]}" crawl --package dev.mks.sample-app --config "$DR_CFG" --clear-data --project sample-app --name sample-app
-  analyse "$(latest sample-app sample-app)"
-fi
-
-booted_sim() { xcrun simctl list devices booted 2>/dev/null | grep -q Booted; }
-
-RUN_IOS=false
-[[ "$WHAT" == ios ]] && RUN_IOS=true
-[[ "$WHAT" == all ]] && booted_sim && RUN_IOS=true
-if $RUN_IOS; then
-  step "20: sample-app on the iOS Simulator, from a clean install (same explorer, map format and viewer)"
-  booted_sim || { echo "  no booted simulator: xcrun simctl boot \"iPhone 17\""; exit 1; }
-  APP=samples/sample-app/build/ios/sample-app.app
-  [ -d "$APP" ] || samples/sample-app/build-ios.sh
-  "${ASM[@]}" crawl --platform ios --app "$APP" --config "$DR_CFG" --clear-data --project sample-app-ios --name sample-app-ios
-  analyse "$(latest sample-app-ios sample-app-ios)"
 fi
 
 step "Done. Open the viewer:"

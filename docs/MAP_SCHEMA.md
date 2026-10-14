@@ -8,8 +8,8 @@ The crawler only **adds** fields within schema 1. Renaming or removing a field b
 ```
 runs/                              # crawl output, git-ignored (generated locally)
   index.json                       # catalogue of runs, rebuilt by the crawler and by `appscreenmap serve`
-  <project>/                       # one folder per app, e.g. sample-app/
-   <run-id>/                       # e.g. sample-app-20261013-015149 (ids are unique across projects)
+  <project>/                       # one folder per app, e.g. playground/
+   <run-id>/                       # e.g. playground-20261013-015149 (ids are unique across projects)
     map.json                       # this schema; rewritten atomically after every step (poll it for live view)
     trace.jsonl                    # one JSON object per step
     screens/<sid>.png|.jpg|.xml    # full screenshot, 360px-wide thumbnail, raw uiautomator hierarchy
@@ -45,9 +45,9 @@ rather than building them. Paths are relative to the run directory.
 
 ```jsonc
 { "runs": [ {
-  "id": "sample-app-20261013-014108",               // unique, flat (no "/"); use in URLs/routes
-  "project": "sample-app",                           // folder under runs/; group runs by this
-  "path": "sample-app/sample-app-20261013-014108",     // run folder relative to runs/
+  "id": "playground-20261013-014108",              // unique, flat (no "/"); use in URLs/routes
+  "project": "playground",                         // folder under runs/; group runs by this
+  "path": "playground/playground-20261013-014108", // run folder relative to runs/
   "status": "running | done | stopped | failed",
   "started_at": "2026-10-13T01:41:08+00:00", "finished_at": null,
   "app": { "package", "label", "version", "launch_activity", "activities": [],
@@ -57,7 +57,7 @@ rather than building them. Paths are relative to the run directory.
               "font_scale": 1.0 },   // system font scale during the crawl (2.0 with --font-scale 2.0)
   "steps": 93, "elapsed_s": 301.2,
   "screens": 30, "transitions": 74, "crashes": 0,
-  "thumb": "sample-app/sample-app-20261013-014108/screens/s001.jpg",   // relative to runs/
+  "thumb": "playground/playground-20261013-014108/screens/s001.jpg", // relative to runs/
   "diffs": ["<base-run-id>", …],                           // diff reports stored in this run
   "verifies": ["verify-20261013-101500", …]                // verify reports stored in this run (base)
 } ] }
@@ -80,8 +80,8 @@ rather than building them. Paths are relative to the run directory.
     "id": "s001",                       // app screens: s001…; external: "x:<package>"; crash: "crash"
     "kind": "app | external | crash",
     "title": "Hello, Reader",           // best-effort human name
-    "activity": "dev.mks.sample-app.android.MainActivity",
-    "package": "dev.mks.sample-app",
+    "activity": "dev.appscreenmap.playground.MainActivity",
+    "package": "dev.appscreenmap.playground",
     "signature": "db0076db5f93",
     "patterns": ["list", "tabs", "bottom_nav", "form", "login", "dialog", "drawer", "webview", "scrollable", "empty"],
     "variant_of": null,                 // or the id of a screen with the same layout but different data

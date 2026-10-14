@@ -13,8 +13,8 @@ iOS. WCAG 2.2 still decides pass/fail; Apple's HIG sets stricter numbers in plac
 The crawler reads what `idb ui describe-all` returns (see `ios-simulator`): the same tree VoiceOver walks. So:
 
 - **A control that isn't in the tree can't be reached by VoiceOver, Voice Control, Switch Control or the crawler.** That's
-  the strongest iOS finding and it is detected for free: the crawl simply can't get there. sample-app's floating tab bar and
-  Settings "×" are the live examples.
+  the strongest iOS finding and it is detected for free: the crawl simply can't get there. A custom floating tab bar and an
+  unlabeled close "×" are the typical examples.
 - Per element the tree gives: `AXLabel` (the accessible name), `AXValue`, `AXUniqueId` (the `accessibilityIdentifier`;
   tests only, VoiceOver never reads it), `type`, `traits` (Button, StaticText, TextEntry, NotEnabled, Selected, Header…),
   `frame` in points, `enabled`, `custom_actions`. Order in the list is the VoiceOver reading order.
@@ -52,7 +52,7 @@ The crawler reads what `idb ui describe-all` returns (see `ios-simulator`): the 
 | Control not reachable (absent from tree) | 4.1.2, 2.1.1, 2.5.3 | crawl can't reach it / screenshot shows it | **found by crawling**; no dedicated rule yet |
 | Tappable element with no `AXLabel` | 4.1.2, 1.1.1 | Button with empty label | works in the **viewer's scanner** (`label-missing`, `apps/viewer/src/a11y.ts`) for a control that is present but unnamed; no crawler rule yet |
 | Target < 44 pt (warn) / < 24 pt (fail) | 2.5.8 | `frame` | viewer scanner flags < 44 pt (Apple HIG) as a warning; the crawler's `target-size-min` (`a11y.json`) fails < 24 pt with the spacing exception |
-| Section titles without Header trait | 1.3.1, 2.4.6 | no `Header` in traits on any title-like text | planned; sample-app has 0 `.isHeader` |
+| Section titles without Header trait | 1.3.1, 2.4.6 | no `Header` in traits on any title-like text | planned |
 | No `accessibilityIdentifier` | (testability, not WCAG) | `AXUniqueId` null | reported as an info on screens with actions |
 | Label doesn't contain visible text | 2.5.3 (Voice Control) | the tree has one string (`AXLabel`), not the drawn text | **not detectable yet**: `label-in-name` needs both; would need OCR or matching against the screenshot |
 | Text truncated at 200 % | 1.4.4 | crawl with `--font-scale 2.0`, ellipsis in labels | works (`text-truncated`) |
@@ -91,13 +91,4 @@ with `/`, activities, `content-desc`) must branch on it or be skipped. In the vi
 by platform lives in the `IOS` overrides (read through `useRules()`, set by the run shell's `PlatformCtx`), and
 `TARGET_MIN` holds the per-platform target size (48 dp Android, 44 pt iOS). The translated XML puts `AXLabel` in `text` (or
 `hint` for fields) and `AXUniqueId` in `resource-id` as `<bundle>:id/<id>`. Test with a recorded tree
-(`packages/drivers/tests/fixtures/sample-app-ios-home.json`), never a device.
-
-## Known findings in sample-app (the iOS sample), Oct 2026
-
-1. `Shell/FloatingBar.swift`: the four tab buttons have no label/trait, so they are not in the tree.
-2. Settings "×" close button: unlabeled, absent from the tree.
-3. 0 `accessibilityIdentifier`, 3 `accessibilityLabel` across `iosApp/`.
-4. 0 `.isHeader` traits: section titles (VOICE, NOTION, APPEARANCE…) are plain text.
-5. 23 touch targets under 44 pt on Home alone (Settings 34×34 pt, the 15/25/30 MIN buttons 32 pt tall).
-6. Cards open an in-app browser (out of process: nothing for the crawler to read there).
+(`packages/drivers/tests/fixtures/ios-reader-home.json`), never a device.

@@ -44,12 +44,6 @@ AppScreenMap has your coding agent crawl the app and write that map for you. Eve
 generated test flows, regression checks between builds, accessibility and performance audits, exports, and
 answers for the agent itself ("how do I reach Settings?"). The map is the product; the audits are one use of it.
 
-<p align="center">
-  <img src="docs/media/dashboard.png" alt="The dashboard's Insights page for the sample-app sample app: three phone screens from the app, totals for screens mapped, transitions, errors and warnings, and one scored row per audit with error, warning and info counts and a status for each: crawl coverage, stability, accessibility and performance from the crawl, then adaptive UI, platform changes, store readiness and security under release readiness">
-  <br>
-  <sub>The Insights page of the built-in dashboard, for the sample-app sample app. The first four rows come from an Android crawl (v1.2.0); the Security row is <code>appscreenmap security</code> run on the sample-app 1.3.0 APK.</sub>
-</p>
-
 ## Why AppScreenMap
 
 - **Your agent runs it, you review it.** Ask in plain language and read the result in one dashboard, not a trail of
@@ -76,7 +70,7 @@ answers for the agent itself ("how do I reach Settings?"). The map is the produc
    > *Map my app on the emulator and review the map.*
    > *Audit accessibility on the latest run at WCAG 2.2 AA.*
    > *Crawl the new build and compare it with the last run.*
-   > *Map sample-app on the iOS Simulator.*
+   > *Map my app on the iOS Simulator.*
 
 2. **The agent does the work.** It checks the device, runs the crawl, reads the health report, and when something
    looks off (two screens merged, wasted taps, a failed route) it tunes the config and crawls again. Then it
@@ -160,11 +154,11 @@ uv run appscreenmap crawl --apk path/to/app.apk  # Android: install + map
 uv run appscreenmap serve                        # open the dashboard
 ```
 
-On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. Two sample apps ship in
-[`samples/`](samples/); `samples/demo.sh` crawls them so the dashboard has something to show.
+On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. The Playground sample app ships in
+[`samples/`](samples/); `samples/demo.sh` crawls it so the dashboard has something to show.
 
 More: [setup and every command](docs/SETUP.md), [how the crawl and audits work](docs/ARCHITECTURE.md), the
-[`map.json` format](docs/MAP_SCHEMA.md) and the [roadmap](docs/PLAN.md); the sample apps are in [`samples/`](samples/README.md).
+[`map.json` format](docs/MAP_SCHEMA.md) and the [roadmap](docs/PLAN.md); the sample app is in [`samples/`](samples/README.md).
 
 ## Inside the repo
 
@@ -185,7 +179,7 @@ One product, built as a monorepo: `apps/` are what you run, `packages/` are the 
 | [`packages/regression`](packages/regression/) | `verify` and the visual diff between builds |
 | [`packages/exporters`](packages/exporters/) | Maestro flows and the Mermaid graph |
 | [`packages/design-tokens`](packages/design-tokens/) | Colour, type and motion for the dashboard and the reports |
-| [`samples`](samples/) | The Playground and sample-app sample apps, and `demo.sh` |
+| [`samples`](samples/) | The Playground sample app (Android; an iOS version is planned) and `demo.sh` |
 
 Each package has its own README and tests (shared test helpers live in `packages/testkit`). How the pieces fit
 and depend on each other: [`docs/MONOREPO.md`](docs/MONOREPO.md).

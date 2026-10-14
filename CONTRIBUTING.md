@@ -35,7 +35,7 @@ CI runs the same checks.
 | Data contract | `docs/MAP_SCHEMA.md` | `map.json` is the interface between crawler and viewer |
 | Setup and architecture | `docs/SETUP.md`, `docs/ARCHITECTURE.md` | Commands, platforms, how the crawl works |
 | Design and roadmap | `docs/PLAN.md` | |
-| Sample apps | `samples/` | Playground and sample-app, with `demo.sh` to crawl them |
+| Sample app | `samples/` | Playground (Android; iOS planned), with `demo.sh` to crawl it |
 
 ## Ground rules
 

@@ -29,8 +29,9 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 - `packages/design-tokens/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode
   blue, Geist), for
   the viewer and the HTML reports. Change it only through the `design-system` skill.
-- `samples/`: the end-to-end playground. `playground-app/` (purpose-built Compose app, v1/v2 APKs + source,
-  every screen = a scenario) and `sample-app/` (real app APK). `samples/demo.sh` runs every scenario.
+- `samples/`: the end-to-end playground, `playground-app/` (purpose-built Compose app, v1/v2 APKs + source, every
+  screen = a scenario; a SwiftUI iOS version is planned). `samples/demo.sh` runs every scenario. No real third-party or
+  personal app lives in the repo: real-app testing happens locally, outside it.
 - `runs/<project>/<run-id>/`: crawl output, **git-ignored** (generated locally; `samples/demo.sh` makes sample ones). Run ids
   are flat and unique; `appscreenmap serve` resolves `/runs/<run-id>/…` to the project folder.
 
@@ -38,7 +39,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 
 - `map.json` is the contract with `apps/viewer/`. Within schema 1, only add fields; never rename or remove
   them. Update `docs/MAP_SCHEMA.md` in the same change.
-- Test against the samples (Playground for known answers, sample-app for a real app), not stock apps. Use
+- Test against the Playground (known answers), not stock apps; real apps are tested locally, outside the repo. Use
   `--clear-data` to map the first-run state. When a feature needs a new scenario, add a screen to the
   Playground (mark deliberate bugs `A11Y BUG (WCAG x.y.z)`), rebuild with `samples/playground-app/build.sh`,
   and list it in `samples/README.md`.
@@ -53,15 +54,16 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 ```bash
 uv sync && uv run pytest -q && uv run ruff check && uv run ruff format
 uv run appscreenmap doctor
-uv run appscreenmap crawl --package dev.mks.sample-app --clear-data --max-steps 200
-uv run appscreenmap report runs/sample-app/<run-id>   # health: wasted steps, identity issues, nav failures
-uv run appscreenmap perf runs/sample-app/<run-id>     # load time per screen, jank, cold start
+APP_PASSWORD=playground-demo uv run appscreenmap crawl --apk samples/playground-app/apk/playground-v1.apk \
+  --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 200
+uv run appscreenmap report runs/playground/<run-id>   # health: wasted steps, identity issues, nav failures
+uv run appscreenmap perf runs/playground/<run-id>     # load time per screen, jank, cold start
 ```
 
 ## Skills (`.claude/skills/`)
 
 - `design-system`: the token system (`packages/design-tokens/tokens.css`), its rules and decisions, and the contrast check
-- `ios-simulator`: set up, run and debug an iOS Simulator crawl (build sample-app, simctl + idb, diagnosing a bad crawl)
+- `ios-simulator`: set up, run and debug an iOS Simulator crawl (build for the simulator, simctl + idb, diagnosing a bad crawl)
 - `security-audit`: run `appscreenmap security` on an Android build (manifest, secrets, data at rest, Frida log) and judge the result
 - `security-rules`: the security rule catalogue (`packages/security/.../rules.json`): ids, severities, fixes, official sources
 - `ios-a11y-rules`: iOS accessibility (VoiceOver, Dynamic Type, HIG 44 pt) mapped to WCAG, what is detected and the Swift fix

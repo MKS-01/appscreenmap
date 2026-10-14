@@ -5,7 +5,7 @@ from appscreenmap.drivers.dumpsys import frame_metrics, parse_am_start, parse_fr
 GFX = """Applications Graphics Acceleration Info:
 Uptime: 1234567 Realtime: 1234567
 
-** Graphics info for pid 4321 [dev.mks.sample-app] **
+** Graphics info for pid 4321 [com.example.app] **
 
 Stats since: 1234000000000ns
 Total frames rendered: 42
