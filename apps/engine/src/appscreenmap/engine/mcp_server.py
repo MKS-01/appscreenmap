@@ -5,7 +5,7 @@ a11y_findings, perf_summary. Device tools: where_am_i (match the live screen to 
 go_to_screen (drive the device there), crawl / crawl_status (map an app in the background).
 
 The tool logic lives in `MapTools` (plain Python, unit tested); `build_server` registers it with the
-MCP SDK (`pip install 'appscreenmap[mcp]'`).
+MCP SDK (`pip install 'appscreenmap-engine[mcp]'`).
 """
 
 from __future__ import annotations
@@ -493,7 +493,7 @@ class MapTools:
         logs = self.runs_root / ".mcp"
         logs.mkdir(parents=True, exist_ok=True)
         job = datetime.now().strftime("crawl-%Y%m%d-%H%M%S")
-        cmd = [sys.executable, "-m", "appscreenmap.cli", "crawl", "--out", str(self.runs_root)]
+        cmd = [sys.executable, "-m", "appscreenmap.engine", "crawl", "--out", str(self.runs_root)]
         cmd += ["--apk", apk] if apk else ["--package", package]
         cmd += ["--max-steps", str(max_steps)] + (["--clear-data"] if clear_data else [])
         if serial or self.serial:

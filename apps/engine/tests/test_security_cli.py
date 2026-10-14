@@ -6,7 +6,7 @@ import json
 import zipfile
 from argparse import Namespace
 
-from appscreenmap import cli
+from appscreenmap.engine.cli.security import cmd_security
 from appscreenmap.security import HOOK
 
 AWS = "AKIA" + "ABCDEFGHIJKLMNOP"  # fake, built at runtime so no scanner flags this file
@@ -57,8 +57,8 @@ def test_command_merges_evidence_from_separate_runs_of_the_scanner(tmp_path, cap
         z.writestr("classes.dex", AWS.encode())
     log = tmp_path / "frida.log"
     log.write_text(LOG)
-    assert cli.cmd_security(args(run, apk=str(apk))) == 0
-    assert cli.cmd_security(args(run, frida_log=str(log))) == 0
+    assert cmd_security(args(run, apk=str(apk))) == 0
+    assert cmd_security(args(run, frida_log=str(log))) == 0
     audit = json.loads((run / "audits" / "security.json").read_text())
     rules = {f["id"].split(":")[0] for f in audit["findings"]}
     assert {"hardcoded-secret", "cleartext-observed", "no-cert-pinning"} <= rules
@@ -70,12 +70,12 @@ def test_command_merges_evidence_from_separate_runs_of_the_scanner(tmp_path, cap
 
 
 def test_command_refuses_without_input_and_for_ios(tmp_path, capsys):
-    assert cli.cmd_security(args(make_run(tmp_path))) == 2
-    assert cli.cmd_security(args(make_run(tmp_path / "ios", "ios"), apk="x.apk")) == 2
-    assert cli.cmd_security(args(tmp_path / "missing")) == 2
+    assert cmd_security(args(make_run(tmp_path))) == 2
+    assert cmd_security(args(make_run(tmp_path / "ios", "ios"), apk="x.apk")) == 2
+    assert cmd_security(args(tmp_path / "missing")) == 2
 
 
 def test_frida_script_prints_the_bundled_hook(capsys):
-    assert cli.cmd_security(Namespace(run=None, frida_script=True)) == 0
+    assert cmd_security(Namespace(run=None, frida_script=True)) == 0
     assert capsys.readouterr().out.strip() == str(HOOK) and HOOK.is_file()
     assert HOOK.read_text().startswith("// AppScreenMap security audit")
