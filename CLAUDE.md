@@ -24,6 +24,8 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   - `apps/engine/`: `appscreenmap.engine`: the CLI (`engine/cli/`, one module per command group) and the MCP
     server (`engine/mcp_server.py`), on top of every package
   - tests live next to their code (`<package>/tests/`), on synthetic hierarchies; no device needed
+- `apps/cli/`: the `appscreenmap` binary (Bun + Ink): terminal home that runs the dashboard (the engine's `serve`),
+  hands every other command to the engine. macOS first. `make cli`, `make cli-check`.
 - `apps/viewer/`: React viewer, **owned by a separate session**. Don't edit it from crawler work. It imports the
   tokens and the security rules as workspace packages, never by relative path.
 - `packages/design-tokens/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode

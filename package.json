@@ -2,9 +2,15 @@
   "name": "appscreenmap-monorepo",
   "private": true,
   "packageManager": "bun@1.4.2",
-  "workspaces": ["apps/viewer", "packages/design-tokens", "packages/security"],
+  "workspaces": [
+    "apps/cli",
+    "apps/viewer",
+    "packages/design-tokens",
+    "packages/security"
+  ],
   "scripts": {
     "viewer": "bun run --cwd apps/viewer build",
-    "viewer:dev": "bun run --cwd apps/viewer dev"
+    "viewer:dev": "bun run --cwd apps/viewer dev",
+    "cli": "bun run --cwd apps/cli dev"
   }
 }

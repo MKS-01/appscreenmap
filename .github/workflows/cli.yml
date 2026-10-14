@@ -1,0 +1,21 @@
+name: cli
+
+on:
+  push:
+    paths: ["apps/cli/**", "packages/design-tokens/**", "package.json", "bun.lock", ".github/workflows/cli.yml"]
+  pull_request:
+    paths: ["apps/cli/**", "packages/design-tokens/**", "package.json", "bun.lock", ".github/workflows/cli.yml"]
+
+jobs:
+  test:
+    runs-on: macos-latest  # the CLI is built and tested for macOS first
+    defaults:
+      run:
+        working-directory: apps/cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun test
+      - run: bun run typecheck
+      - run: bun run build

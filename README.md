@@ -13,6 +13,8 @@
 <p align="center">
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml/badge.svg" alt="Crawler CI"></a>
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/viewer.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/viewer.yml/badge.svg" alt="Viewer CI"></a>
+  <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/cli.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/cli.yml/badge.svg" alt="CLI CI"></a>
+  <img src="https://img.shields.io/badge/Tested_on-macOS-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="Tested on macOS">
   <img src="https://img.shields.io/badge/Android-0a0a0a?style=flat-square&logo=android&logoColor=white" alt="Android">
   <img src="https://img.shields.io/badge/iOS_Simulator_(beta)-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="iOS Simulator, beta">
   <img src="https://img.shields.io/badge/Python_3.11+-0a0a0a?style=flat-square&logo=python&logoColor=white" alt="Python 3.11 and up">
@@ -131,6 +133,8 @@ needs a person or a device as *Not tested*, never as a pass. It is evidence, not
 
 ## Prerequisites
 
+AppScreenMap is built and tested on **macOS** (Apple silicon) for now; other platforms may work but aren't tested.
+
 | You need | For | Notes |
 |---|---|---|
 | Python 3.11+ and [uv](https://docs.astral.sh/uv/) | everything | `make setup` installs the engine (a uv workspace) |
@@ -154,6 +158,8 @@ uv run appscreenmap crawl --apk path/to/app.apk  # Android: install + map
 uv run appscreenmap serve                        # open the dashboard
 ```
 
+`make cli` builds the `appscreenmap` binary (`apps/cli/dist/appscreenmap`): run it with no arguments for a terminal
+home with the dashboard, device status, your runs and agent prompts in one place; every other command works as above.
 On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. The Playground sample app ships in
 [`samples/`](samples/); `samples/demo.sh` crawls it so the dashboard has something to show.
 
@@ -168,7 +174,8 @@ One product, built as a monorepo: `apps/` are what you run, `packages/` are the 
 
 | Folder | What it is |
 |---|---|
-| [`apps/engine`](apps/engine/) | The `appscreenmap` command line and the MCP server |
+| [`apps/cli`](apps/cli/) | The `appscreenmap` binary: a terminal home that runs the dashboard, and the front door to the engine (macOS) |
+| [`apps/engine`](apps/engine/) | The Python engine: crawl, audits and exports behind every command, and the MCP server |
 | [`apps/viewer`](apps/viewer/) | The dashboard (React + Vite) |
 | [`packages/core`](packages/core/) | The `map.json` model, screen identity, crawl config and run folders |
 | [`packages/drivers`](packages/drivers/) | Android over `adb`, the iOS Simulator over `simctl` and `idb` |
