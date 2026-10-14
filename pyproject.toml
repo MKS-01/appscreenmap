@@ -1,4 +1,4 @@
-# Workspace root (virtual: not a package itself). The product is apps/engine plus packages/*; see docs/MONOREPO.md.
+# Workspace root (virtual: not a package itself). The product is apps/engine plus packages/*.
 
 [tool.uv.workspace]
 members = ["apps/engine", "packages/*"]

@@ -135,7 +135,7 @@ packages/
   testkit/          dev-only test helpers (synthetic hierarchies, fake device), the package-layer check
 samples/            the Playground sample app (APKs + source) and demo.sh
 runs/               crawl output (git-ignored, generated locally)
-docs/               SETUP, ARCHITECTURE, MONOREPO (layout + migration), PLAN, MAP_SCHEMA (data contract)
+docs/               SETUP, ARCHITECTURE, PLAN, MAP_SCHEMA (data contract)
 examples/           sample config
 pyproject.toml      uv workspace (Python)  ·  package.json  Bun workspace (TypeScript)  ·  Makefile
 ```

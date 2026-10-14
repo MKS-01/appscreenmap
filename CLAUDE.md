@@ -5,8 +5,8 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 
 ## Layout
 
-- A monorepo: `apps/` (what people run) + `packages/` (building blocks); layout, plan and the migration log in
-  `docs/MONOREPO.md`. Two workspaces: uv for Python (`pyproject.toml`), Bun for TypeScript (`package.json`: the
+- A monorepo: `apps/` (what people run) + `packages/` (building blocks); layout in
+  `docs/ARCHITECTURE.md`. Two workspaces: uv for Python (`pyproject.toml`), Bun for TypeScript (`package.json`: the
   viewer, `packages/design-tokens`, and `packages/security` as `@appscreenmap/security-rules`). `make setup`.
 - Python is a uv workspace (the root `pyproject.toml` is virtual). Everything imports as `appscreenmap.*` (a namespace
   package: never add `src/appscreenmap/__init__.py`). A package imports only what its `pyproject.toml` depends on

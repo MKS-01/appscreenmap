@@ -17,4 +17,4 @@ only builds the parser from `GROUPS` and runs the command. The CLI parses and pr
 It installs the `appscreenmap-engine` command (also `python -m appscreenmap.engine`); the `appscreenmap` command is the
 Bun CLI in `apps/cli`, which hands these commands to it. From the repo root: `uv sync`, then
 `uv run appscreenmap-engine --help`.
-Layout and plan: [docs/MONOREPO.md](../../docs/MONOREPO.md).
+Layout: [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md).

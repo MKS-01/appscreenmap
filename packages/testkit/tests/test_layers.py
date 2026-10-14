@@ -1,4 +1,4 @@
-"""Package layers (docs/MONOREPO.md): a package imports only the appscreenmap.* packages its pyproject.toml depends on."""
+"""Package layers: a package imports only the appscreenmap.* packages its pyproject.toml depends on."""
 
 from __future__ import annotations
 

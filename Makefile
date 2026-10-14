@@ -1,4 +1,4 @@
-# Day-to-day commands for the whole monorepo (Python via uv, TypeScript via Bun). See docs/MONOREPO.md.
+# Day-to-day commands for the whole monorepo (Python via uv, TypeScript via Bun).
 BIN_DIR ?= $(HOME)/.local/bin
 .PHONY: install setup test lint fmt check viewer viewer-dev cli cli-check release-local demo
 
