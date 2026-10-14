@@ -71,7 +71,7 @@ appscreenmap mcp                  → the engine's MCP server over stdio
 - **start:** runs the engine's `serve` (viewer, `runs/`, notes endpoint) in the background and opens the browser. (The
   plan said `Bun.serve`; reading the server showed that would re-implement run-id resolution, the `runs/index.json`
   rebuild and notes validation in TypeScript, two copies of one contract, so the CLI supervises the engine's server
-  instead, like readback does.) Then it shows tabs: Home (devices, recent runs), Crawl (start one, live progress from the engine's JSON-lines events),
+  instead, like readback does.) Then it shows tabs: Home (devices, recent runs), Crawl (start one, live progress read from the files every crawl writes),
   Runs (open, report, perf, a11y, security), Agent (commands to start an agent session in a new terminal
   tab). It watches `runs/index.json`, so a run an agent records elsewhere appears in the TUI and the
   dashboard reloads.
@@ -101,7 +101,7 @@ a local release folder (`APPSCREENMAP_RELEASE_URL=file://…`).
 | 6 | Bun workspace: `design/` → `packages/design-tokens/`, `web/` → `apps/viewer/`, `packages/security/package.json` (`@appscreenmap/security-rules`) (coordinated with the web session) |
 | 7 | CI, CLAUDE.md files, docs and skill paths; `samples/demo.sh playground` end to end |
 | 8 | `apps/cli`: `start` terminal home (supervises the engine's `serve`), pass-through to the engine, `version` |
-| 9 | Crawl tab with live progress, run watcher |
+| 9 | Crawl tab: live progress of any running crawl (from `index.json`, `map.json`, `trace.jsonl`), run start/finish notices, start/stop a crawl here |
 | 10 | `setup`, `update`, `paths`, `clean`, install script |
 | 11 | Release workflow (switched off) |
 | 12 | Playground iOS: a SwiftUI version of `samples/playground-app/` with the same scenarios, so iOS crawls get known answers |
@@ -127,3 +127,4 @@ session owns (`web/`, `design/`), so they can review exactly what was touched.
 | README | `652a66f` | README: CI badge → `viewer.yml`; Quick start and Prerequisites use `make setup` / `make viewer`; new "Inside the repo" section (what each `apps/` and `packages/` folder is, linked from the nav). CONTRIBUTING and SETUP setup blocks use `make setup` (fixes a `cd apps/viewer && bun install && cd ..` left by the step 6 rewrite) | — |
 | Samples | `6fe1531` | Playground is the only sample: `samples/duskread/` removed (APK, build scripts, config; still in git history), `demo.sh` keeps only the Playground scenarios, samples README rewritten around it (scenario 20, iOS, waits for Playground iOS, step 12). iOS fixture `duskread-ios-home.json` → `ios-reader-home.json` with the app name, bundle id and a personal greeting neutralised (same tree otherwise). Skills, CLAUDE.md, docs and test examples use the Playground; README dashboard screenshot and `docs/media/dashboard.*` removed until a Playground one exists; DuskRead licence notice removed | — |
 | 8 | `8be92b8` | New `apps/cli` (`@appscreenmap/cli`, Bun + Ink 5 / React 18.3.1, the viewer's React, so the workspace has one React and one `@types/react`): `appscreenmap` / `start` opens a terminal home (dashboard via the engine's `serve`, Android/iOS status, Home · Crawl · Runs · Agent tabs, copy / open run / new terminal keys), `version`, every other command passed to the engine with its exit code. Colours from `@appscreenmap/design-tokens`. 12 Bun tests (fake engine for the dashboard), typecheck, compiled binary; `.github/workflows/cli.yml` on macOS; `make cli` / `make cli-check`. Bun workspace adds `apps/cli` (43 packages added to `bun.lock`, existing 140 versions unchanged; viewer CSS byte-identical). README: Tested on macOS badge, CLI CI badge, `apps/cli` row | — |
+| 9 | (this) | `apps/cli`: `watch.ts` (live progress from `runs/index.json`, the run's `map.json` and the tail of `trace.jsonl`; run started/finished events; works for crawls started anywhere, so the planned engine JSON event stream isn't needed) and `launch.ts` (`x` runs a command in the background, output in `runs/.logs/`; `s` / quit stop it with SIGINT so the crawl saves). Crawl tab live panel; a ready-to-run Playground crawl in a checkout. 21 Bun tests (watcher, launcher with a fake crawl); checked in a pseudo-terminal against a simulated crawl | — |

@@ -1,22 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Text, useApp, useInput, useStdout } from "ink";
+import { existsSync } from "node:fs";
 import { join, relative } from "node:path";
-import { AGENT, CRAWL, runCommands, type Suggestion } from "../content";
+import { AGENT, crawlSuggestions, runCommands, runnable } from "../content";
 import { openUrl, type Dashboard } from "../dashboard";
 import { androidDevices, simulators, type AndroidDevice, type Simulator } from "../devices";
 import { engineVersion, type Engine } from "../engine";
-import { ago, readRuns, runUrl, type RunSummary } from "../runs";
+import { launch, stop, type Launched } from "../launch";
+import { readRuns, runUrl, type RunSummary } from "../runs";
 import { copy, openTerminal } from "../system";
 import { C } from "../theme";
+import { readProgress, runEvents, tail, type Progress } from "../watch";
+import { Live, LogTail, RunRow, StatusRow, SuggestionList, statusTone, type Line, type Tone } from "./parts";
 
 export const MAP_SCHEMA = 1;
 const TABS = ["Home", "Crawl", "Runs", "Agent"] as const;
+const POLL_MS = 1000;
 
 // Half-block wordmark (plain Unicode, any mono font): "APPSCREEN" in text colour, "MAP" in blue.
 const MARK: [string, string][] = [
   ["▄▀█ █▀█ █▀█ █▀ █▀▀ █▀█ █▀▀ █▀▀ █▄ █ ", "█▀▄▀█ ▄▀█ █▀█"],
   ["█▀█ █▀▀ █▀▀ ▄█ █▄▄ █▀▄ ██▄ ██▄ █ ▀█ ", "█ ▀ █ █▀█ █▀▀"],
 ];
+
+const stripAnsi = (s: string) => s.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "");
 
 export interface AppProps {
   version: string;
@@ -26,58 +33,6 @@ export interface AppProps {
   opened: boolean;
   runsRoot: string;
   cwd: string;
-}
-
-type Tone = "good" | "warn" | "bad" | "faint";
-interface Line {
-  glyph: string;
-  label: string;
-  detail: string;
-  tone: Tone;
-}
-
-function StatusRow({ glyph, label, detail, tone }: Line) {
-  return (
-    <Text wrap="truncate-end">
-      <Text color={C[tone]}>{glyph}</Text> <Text color={C.text}>{label.padEnd(10)}</Text>
-      <Text color={tone === "faint" ? C.faint : C.dim}>{detail}</Text>
-    </Text>
-  );
-}
-
-function SuggestionList({ items, sel }: { items: Suggestion[]; sel: number }) {
-  const width = Math.max(...items.map((i) => i.cmd.length)) + 3;
-  return (
-    <Box flexDirection="column">
-      {items.map((item, i) => (
-        <Text key={item.cmd} wrap="truncate-end">
-          <Text color={i === sel ? C.accent : C.faint}>{i === sel ? "› " : "  "}</Text>
-          <Text color={i === sel ? C.accent : C.text}>{item.cmd.padEnd(width)}</Text>
-          <Text color={C.dim}>{item.what}</Text>
-        </Text>
-      ))}
-    </Box>
-  );
-}
-
-const STATUS: Record<string, Tone> = { done: "good", running: "warn", stopped: "faint", failed: "bad" };
-
-function RunRow({ run, selected }: { run: RunSummary; selected?: boolean }) {
-  return (
-    <Text wrap="truncate-end">
-      <Text color={selected ? C.accent : C.faint}>{selected ? "› " : "  "}</Text>
-      <Text color={C[STATUS[run.status] ?? "faint"]}>{run.status.padEnd(8)}</Text>
-      <Text color={selected ? C.accent : C.text}>
-        {run.app}
-        {run.version ? ` ${run.version}` : ""}
-      </Text>
-      <Text color={C.dim}>
-        {"  "}
-        {run.platform === "ios" ? "iOS" : "Android"} · {run.screens} screens · {ago(run.startedAt)}
-      </Text>
-      <Text color={C.faint}>{"  "}{run.id}</Text>
-    </Text>
-  );
 }
 
 export function App({ version, engine, dashboard, dashboardError, opened, runsRoot, cwd }: AppProps) {
@@ -90,35 +45,74 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
   const [android, setAndroid] = useState<AndroidDevice[] | null | undefined>(undefined);
   const [sims, setSims] = useState<Simulator[] | null | undefined>(undefined);
   const [engineVer, setEngineVer] = useState<string | null>(null);
+  const [progress, setProgress] = useState<Progress | null>(null);
+  const [launched, setLaunched] = useState<Launched | null>(null);
+  const [launchedExit, setLaunchedExit] = useState<string | null>(null);
+  const [logLines, setLogLines] = useState<string[]>([]);
+  const prevRuns = useRef(runs);
 
-  const refresh = () => {
-    setRuns(readRuns(runsRoot));
+  const crawlItems = useMemo(
+    () => crawlSuggestions(existsSync(join(cwd, "samples", "playground-app", "apk", "playground-v1.apk"))),
+    [cwd],
+  );
+  const say = (text: string, tone: Tone = "good") => setFlash({ text, tone });
+
+  const refreshDevices = () => {
     androidDevices().then(setAndroid);
     simulators().then(setSims);
   };
+
+  // Every second: new or finished runs (a crawl here, or an agent's in another terminal), and the live crawl.
   useEffect(() => {
-    refresh();
+    refreshDevices();
     engineVersion(engine).then(setEngineVer);
-    const timer = setInterval(() => setRuns(readRuns(runsRoot)), 3000); // a crawl in another tab shows up here
+    const tick = () => {
+      const next = readRuns(runsRoot);
+      for (const ev of runEvents(prevRuns.current, next)) {
+        if (ev.kind === "started") say(`● ${ev.run.app} is being mapped: ${ev.run.id} (2 Crawl shows it live)`, "warn");
+        else {
+          say(`${ev.run.status === "done" ? "✔" : "○"} ${ev.run.id} ${ev.run.status}: ${ev.run.screens} screens`, statusTone(ev.run.status));
+          setProgress(readProgress(runsRoot, ev.run)); // keep the final numbers on screen
+        }
+      }
+      prevRuns.current = next;
+      setRuns(next);
+      const live = next.find((r) => r.status === "running");
+      if (live) setProgress(readProgress(runsRoot, live));
+    };
+    const timer = setInterval(tick, POLL_MS);
     return () => clearInterval(timer);
   }, []);
 
+  // Output of a command started here, until it records a run (or for good, if it doesn't record one).
+  useEffect(() => {
+    if (!launched) return;
+    const read = () => setLogLines(tail(launched.log, 8).map(stripAnsi));
+    read();
+    const timer = setInterval(read, POLL_MS);
+    launched.proc.exited.then((code) => {
+      read();
+      setLaunchedExit(String(code));
+    });
+    return () => clearInterval(timer);
+  }, [launched]);
+
   const runsShown = relative(cwd, runsRoot).startsWith("..") ? runsRoot : relative(cwd, runsRoot) || ".";
   const runDir = (r: RunSummary) => join(runsShown, r.path);
-  const lengths = [0, CRAWL.length, runs.length, AGENT.length];
+  const lengths = [0, crawlItems.length, runs.length, AGENT.length];
   const current = sel[tab] ?? 0;
-  const say = (text: string, tone: Tone = "good") => setFlash({ text, tone });
+  const launchedRunning = launched !== null && launchedExit === null;
   const copyCmd = (cmd: string) =>
     copy(cmd) ? say(`copied: ${cmd}`) : say(`no clipboard tool here; run: ${cmd}`, "warn");
 
   const selectedCmd = (): string | null => {
-    if (tab === 1) return CRAWL[current]?.cmd ?? null;
+    if (tab === 1) return crawlItems[current]?.cmd ?? null;
     if (tab === 3) return AGENT[current]?.cmd ?? null;
     if (tab === 2) {
       const run = runs[current];
       return run ? runCommands(runDir(run))[0]!.cmd : null;
     }
-    return CRAWL[0]!.cmd;
+    return crawlItems[0]!.cmd;
   };
 
   useInput((input, key) => {
@@ -135,6 +129,23 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
     if (input === "c") {
       const cmd = selectedCmd();
       return cmd ? copyCmd(cmd) : undefined;
+    }
+    if (input === "x" && tab === 1) {
+      const item = crawlItems[current]!;
+      if (!runnable(item)) return say("this one needs editing first: c copies it", "warn");
+      if (launchedRunning) return say("a command started here is still running: s stops it", "warn");
+      const started = launch(engine, item, runsRoot, cwd);
+      if (!started) return;
+      setLaunchedExit(null);
+      setLogLines([]);
+      setProgress(null);
+      setLaunched(started);
+      return say(`started: ${item.cmd}`, "warn");
+    }
+    if (input === "s" && tab === 1) {
+      if (!launchedRunning) return say("nothing started here is running (a crawl from another terminal stops there)", "faint");
+      stop(launched!);
+      return say("stopping: the crawl saves what it has and records the run as stopped", "warn");
     }
     if (key.return) {
       if (tab === 2 && runs[current]) {
@@ -156,7 +167,8 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
         : say(`open a new terminal tab in ${cwd}`, "warn");
     }
     if (input === "r") {
-      refresh();
+      setRuns(readRuns(runsRoot));
+      refreshDevices();
       return say("refreshed", "faint");
     }
   });
@@ -194,6 +206,11 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
     );
   }
 
+  const keys =
+    tab === 1
+      ? "x run here · s stop · c copy · ↑↓ select · o dashboard · q quit"
+      : `1–4 tab · ↑↓ select · c copy · ↵ ${tab === 2 ? "open run" : "copy"} · o dashboard · t new terminal · r refresh · q quit`;
+
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box flexDirection="column">
@@ -217,7 +234,7 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
       <Box marginTop={1}>
         {TABS.map((name, i) => (
           <Text key={name} color={i === tab ? C.accent : C.dim} bold={i === tab}>
-            {` ${i + 1} ${name} `}
+            {` ${i + 1} ${name}${name === "Crawl" && runs.some((r) => r.status === "running") ? " ●" : ""} `}
           </Text>
         ))}
       </Box>
@@ -231,18 +248,27 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
               {runs.slice(0, 5).map((r) => (
                 <RunRow key={r.id} run={r} />
               ))}
-              <Text color={C.faint}>{"\n"}3 Runs opens one in the dashboard · 4 Agent to hand the work to an agent</Text>
+              <Text color={C.faint}>{"\n"}2 Crawl to map an app · 3 Runs opens one in the dashboard · 4 Agent to hand the work to an agent</Text>
             </Box>
           ) : (
             <Box flexDirection="column">
-              <Text color={C.dim}>No runs in {runsShown}/ yet. Start one here, or ask an agent (4 Agent):</Text>
-              <SuggestionList items={CRAWL.slice(0, 2)} sel={-1} />
+              <Text color={C.dim}>No runs in {runsShown}/ yet. Start one in 2 Crawl, or ask an agent (4 Agent):</Text>
+              <SuggestionList items={crawlItems.slice(0, 2)} sel={-1} />
             </Box>
           ))}
         {tab === 1 && (
           <Box flexDirection="column">
-            <Text color={C.dim}>Run a crawl in another terminal; it shows up under Runs as it records.</Text>
-            <SuggestionList items={CRAWL} sel={current} />
+            {progress && (progress.status === "running" || progress.runId) ? (
+              <Live p={progress} />
+            ) : launched ? (
+              <LogTail title={launched.label} lines={logLines} status={launchedExit} />
+            ) : (
+              <Text color={C.dim}>No crawl running. Start one with x, or in another terminal: it shows up here live.</Text>
+            )}
+            {launched && progress && <Text color={C.faint}>log: {relative(cwd, launched.log)}</Text>}
+            <Box marginTop={1}>
+              <SuggestionList items={crawlItems} sel={current} canRun />
+            </Box>
           </Box>
         )}
         {tab === 2 &&
@@ -270,9 +296,13 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
 
       <Text color={C.line}>{"─".repeat(width)}</Text>
       <Text color={C.faint} wrap="truncate-end">
-        1–4 tab · ↑↓ select · c copy · ↵ {tab === 2 ? "open run" : "copy"} · o dashboard · t new terminal · r refresh · q quit
+        {keys}
       </Text>
-      {flash && <Text color={C[flash.tone]} wrap="truncate-end">{flash.text}</Text>}
+      {flash && (
+        <Text color={C[flash.tone]} wrap="truncate-end">
+          {flash.text}
+        </Text>
+      )}
     </Box>
   );
 }
