@@ -33,8 +33,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   blue, Geist), for
   the viewer and the HTML reports. Change it only through the `design-system` skill.
 - `samples/`: the end-to-end playground, `playground-app/` (purpose-built Compose app, v1/v2 APKs + source, every
-  screen = a scenario; `playground-ios/` is the SwiftUI version, first slice only; `demo-runs/` is the one committed sample run for the
-  viewer's Demo tab, spec in `docs/DEMO_TAB.md`). `samples/demo.sh` runs every scenario. No real third-party or
+  screen = a scenario; a SwiftUI iOS version is planned). `samples/demo.sh` runs every scenario. No real third-party or
   personal app lives in the repo: real-app testing happens locally, outside it.
 - `runs/<project>/<run-id>/`: crawl output, **git-ignored** (generated locally; `samples/demo.sh` makes sample ones). Run ids
   are flat and unique; `appscreenmap serve` resolves `/runs/<run-id>/…` to the project folder.
