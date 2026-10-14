@@ -1,0 +1,16 @@
+# AppScreenMap: reach s006 — Reset password
+# Generated from run playground-20261015-011121
+# Needs: maestro test -e APP_PASSWORD=…
+appId: dev.appscreenmap.playground
+---
+- launchApp:
+    stopApp: true
+- tapOn: { id: "email" }
+- inputText: "demo@playground.dev"
+- tapOn: { id: "password" }
+- inputText: "${APP_PASSWORD}"
+- hideKeyboard
+# on s001: click 'Forgot password?'
+- tapOn: { id: "forgot_password" }
+- assertVisible: { id: "navigate_up" }
+- takeScreenshot: s006

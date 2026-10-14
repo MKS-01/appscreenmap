@@ -1,0 +1,28 @@
+{"step": 2, "t": 12.36, "screen": "s001", "key": "click|View|sign_in", "action": "click", "label": "Sign in", "to": "s002", "effect": "new_screen", "explore": true, "load_ms": 213, "settled": true}
+{"step": 3, "t": 18.37, "screen": "s002", "key": "click|View|tab_search", "action": "click", "label": "Search", "to": "s003", "effect": "new_screen", "explore": true, "load_ms": 212, "settled": true}
+{"step": 3, "t": 18.37, "screen": "s003", "key": "click|View|tab_home", "label": "Home", "result": "not_found"}
+{"step": 3, "t": 18.37, "screen": "s003", "key": "click|View|tab_library", "label": "Library", "result": "not_found"}
+{"step": 3, "t": 18.38, "screen": "s003", "key": "click|View|tab_profile", "label": "Profile", "result": "not_found"}
+{"step": 4, "t": 21.18, "screen": "s003", "key": "click|View|navigate_up", "action": "click", "label": "Navigate up", "to": "s004", "effect": "new_screen", "explore": true, "load_ms": 218, "settled": true}
+{"step": 5, "t": 27.06, "screen": "s004", "key": "click|View|navigate_up", "action": "click", "label": "Navigate up", "to": "s003", "effect": "known_screen", "explore": true, "load_ms": 210, "settled": true}
+{"step": 6, "t": 29.87, "screen": "s003", "key": "L|View:382c20|getting started with the playground / playground.dev", "action": "click", "label": "Getting started with the Playground / playground.dev", "to": "s005", "effect": "new_screen", "explore": true, "load_ms": 222, "settled": true}
+{"step": 7, "t": 32.54, "screen": "s005", "key": "click|View|navigate_up", "action": "click", "label": "Navigate up", "to": "s004", "effect": "known_screen", "explore": true, "load_ms": 195, "settled": true}
+{"step": 8, "t": 35.15, "screen": "s004", "key": "L|View:382c20|getting started with the playground / playground.dev", "action": "click", "label": "Getting started with the Playground / playground.dev", "to": "s005", "effect": "known_screen", "explore": true, "load_ms": 195, "settled": true}
+{"step": 9, "t": 37.78, "screen": "s005", "key": "click|View|listen", "action": "click", "label": "Play audio / Listen", "to": "s005", "effect": "same_screen", "explore": true, "load_ms": 200, "settled": true}
+{"step": 10, "t": 40.41, "screen": "s005", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s004", "effect": "known_screen", "explore": true, "load_ms": 203, "settled": true}
+{"step": 11, "t": 43.06, "screen": "s004", "key": "L|View:382c20|why every screen should have a title / notes.example", "action": "click", "label": "Why every screen should have a title / notes.example", "to": "s005", "effect": "known_screen", "explore": true, "load_ms": 212, "settled": true}
+{"step": 12, "t": 45.69, "screen": "s005", "key": "click|View|navigate_up", "action": "click", "label": "Navigate up", "to": "s004", "effect": "known_screen", "explore": false, "load_ms": 201, "settled": true}
+{"step": 13, "t": 48.33, "screen": "s004", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s004", "effect": "same_screen", "explore": true, "load_ms": 205, "settled": true}
+{"step": 14, "t": 54.21, "screen": "s004", "key": "click|View|navigate_up", "action": "click", "label": "Navigate up", "to": "s003", "effect": "known_screen", "explore": false, "load_ms": 203, "settled": true}
+{"step": 14, "t": 54.21, "screen": "s003", "key": "L|ScrollView:007932|touch targets", "label": "touch targets", "result": "not_found"}
+{"step": 15, "t": 56.91, "screen": "s003", "key": "L|View:382c20|why every screen should have a title / notes.example", "action": "click", "label": "Why every screen should have a title / notes.example", "to": "s005", "effect": "known_screen", "explore": true, "load_ms": 217, "settled": true}
+{"step": 16, "t": 59.57, "screen": "s005", "key": "click|View|navigate_up", "action": "click", "label": "Navigate up", "to": "s004", "effect": "known_screen", "explore": false, "load_ms": 224, "settled": true}
+{"step": 17, "t": 65.48, "screen": "s004", "key": "click|View|navigate_up", "action": "click", "label": "Navigate up", "to": "s003", "effect": "known_screen", "explore": false, "load_ms": 219, "settled": true}
+{"step": 17, "t": 65.48, "screen": "s003", "key": "L|ScrollView:007932|contrast", "label": "contrast", "result": "not_found"}
+{"step": 17, "t": 65.49, "screen": "s003", "key": "L|ScrollView:007932|performance", "label": "performance", "result": "not_found"}
+{"step": 18, "t": 68.18, "screen": "s003", "key": "SYS|back", "action": "back", "label": "Back (system)", "to": "s004", "effect": "known_screen", "explore": true, "load_ms": 218, "settled": true}
+{"step": 21, "t": 89.71, "screen": "s001", "key": "click|View|forgot_password", "action": "click", "label": "Forgot password?", "to": "s006", "effect": "new_screen", "explore": true, "load_ms": 216, "settled": true}
+{"step": 22, "t": 96.03, "screen": "s006", "key": "click|View|navigate_up", "action": "click", "label": "Navigate up", "to": "s001", "effect": "known_screen", "explore": true, "load_ms": 209, "settled": true}
+{"step": 23, "t": 98.71, "screen": "s001", "key": "click|View|guest", "action": "click", "label": "Continue as guest", "to": "s002", "effect": "known_screen", "explore": true, "load_ms": 208, "settled": true}
+{"step": 24, "t": 101.45, "screen": "s002", "key": "click|View|tab_library", "action": "click", "label": "Library", "to": "s007", "effect": "new_screen", "explore": true, "load_ms": 195, "settled": true}
+{"step": 25, "t": 104.1, "screen": "s007", "key": "click|View|tab_home", "action": "click", "label": "Home", "to": "s002", "effect": "known_screen", "explore": true, "load_ms": 197, "settled": true}

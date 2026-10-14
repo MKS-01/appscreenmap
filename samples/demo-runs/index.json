@@ -1,0 +1,109 @@
+{
+ "runs": [
+  {
+   "id": "playground-20261015-011121",
+   "project": "playground",
+   "path": "playground/playground-20261015-011121",
+   "status": "done",
+   "started_at": "2026-10-14T19:41:21+00:00",
+   "finished_at": "2026-10-14T19:43:06+00:00",
+   "app": {
+    "package": "dev.appscreenmap.playground",
+    "version": "1.0",
+    "label": "Playground",
+    "launch_activity": "dev.appscreenmap.playground.MainActivity",
+    "activities": [
+     "dev.appscreenmap.playground.MainActivity",
+     "dev.appscreenmap.playground.ScannerActivity"
+    ],
+    "orientation_locked": {
+     "dev.appscreenmap.playground.ScannerActivity": "portrait"
+    }
+   },
+   "device": {
+    "serial": "emulator-5554",
+    "model": "sdk_gphone16k_arm64",
+    "manufacturer": "Google",
+    "android": "17",
+    "sdk": "37",
+    "width": 1080,
+    "height": 2400,
+    "density": 420,
+    "font_scale": 1.0,
+    "type": "emulator",
+    "name": "Android Emulator (Pixel_8a)",
+    "brand": "google",
+    "codename": "emu64a16k",
+    "product": "sdk_gphone16k_arm64",
+    "avd": "Pixel_8a",
+    "form_factor": "phone",
+    "connection": "emulator",
+    "os": {
+     "release": "17",
+     "sdk": 37,
+     "codename": "REL",
+     "preview_sdk": null,
+     "skin": null,
+     "security_patch": "2026-07-05",
+     "build_id": "CP31.260623.012",
+     "incremental": "16064790",
+     "build_type": "user",
+     "build_tags": "dev-keys",
+     "fingerprint": "google/sdk_gphone16k_arm64/emu64a16k:17/CP31.260623.012/16064790:user/dev-keys",
+     "kernel": "6.12.69-android16-6-g214d1615c480-ab15053784"
+    },
+    "hardware": {
+     "abi": "arm64-v8a",
+     "abis": [
+      "arm64-v8a"
+     ],
+     "soc": "AOSP ranchu",
+     "hardware": "ranchu",
+     "ram_mb": 3967,
+     "storage_free_mb": 8068
+    },
+    "display": {
+     "width": 1080,
+     "height": 2400,
+     "physical_width": 1080,
+     "physical_height": 2400,
+     "density": 420,
+     "physical_density": 420,
+     "width_dp": 411,
+     "height_dp": 914,
+     "smallest_width_dp": 411,
+     "window_class": "compact"
+    },
+    "settings": {
+     "locale": "en-US",
+     "timezone": "Asia/Kolkata",
+     "dark_mode": false,
+     "font_scale": 1.0,
+     "bold_text": null,
+     "high_contrast_text": null,
+     "color_inversion": null,
+     "animator_scale": 1.0,
+     "navigation": "gesture",
+     "talkback": false,
+     "accessibility_services": [],
+     "power_saver": false,
+     "airplane_mode": false,
+     "battery": 100,
+     "charging": false
+    },
+    "software": {
+     "webview": "com.google.android.webview 149.0.7827.5",
+     "play_services": "26.34.36"
+    }
+   },
+   "steps": 25,
+   "elapsed_s": 104.2,
+   "screens": 7,
+   "transitions": 17,
+   "crashes": 0,
+   "thumb": "playground/playground-20261015-011121/screens/s001.jpg",
+   "diffs": [],
+   "verifies": []
+  }
+ ]
+}

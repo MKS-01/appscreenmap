@@ -8,7 +8,7 @@ answers. The APKs are committed, so it needs no build. Crawl results aren't comm
 | App | Folder | Where its runs go |
 |---|---|---|
 | **Playground** (Android, Jetpack Compose) | [`playground-app/`](playground-app/) | `runs/playground/` |
-| **Playground iOS** (SwiftUI, same scenarios) | planned | `runs/playground-ios/` |
+| **Playground iOS** (SwiftUI, same scenarios) | first slice: `samples/playground-ios/` | `runs/playground-ios/` |
 
 For a real app, crawl your own build (`appscreenmap crawl --apk …`); nothing about it needs to live in this repo.
 
