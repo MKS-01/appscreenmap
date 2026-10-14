@@ -2,7 +2,10 @@
 
 The `appscreenmap` command (Bun + [Ink](https://github.com/vadimdemedes/ink), compiled to one binary). With no
 arguments it opens a **terminal home**: it starts the dashboard and opens it in your browser, shows what's connected
-(Android devices, booted iOS simulators), lists your runs, and suggests the next command or agent prompt. Every other
+(Android devices, booted iOS simulators), and answers "is the latest run ready to ship?": a readiness panel (elements
+explored, crashes, open WCAG findings, slow screens, the security score, each with OK / WARN / FAILING / NOT RUN) and
+the one next step worth taking (start a device, crawl, run a missing audit, triage findings, verify the next build).
+Tabs: home · crawl (live) · runs · agent. Every other
 command goes to the Python engine unchanged, so `appscreenmap crawl …` behaves exactly as before. Built and tested on
 macOS for now (Terminal, iTerm2); the Linux code paths exist but aren't tested.
 
@@ -45,18 +48,18 @@ binaries, the engine's wheels, `viewer-<version>.tar.gz` and `install.sh`. `make
 
 | Key | In the terminal home |
 |---|---|
-| `1`–`4`, `←` `→` | Home · Crawl · Runs · Agent |
+| `←` `→` (or `1`–`4`) | home · crawl · runs · agent |
 | `↑` `↓` | select a command or a run |
-| `c` | copy the selected command |
-| `x` / `s` | Crawl: run the selected command here (output in `runs/.logs/`) / stop it like Ctrl-C (the run is saved as `stopped`) |
-| `↵` | Runs: open the run in the dashboard; elsewhere: copy |
+| `c` | copy the selected command (home: the next step) |
+| `x` / `s` | home: run the next step; crawl: run the selected command here (output in `runs/.logs/`) / stop it like Ctrl-C (the run is saved as `stopped`) |
+| `↵` | home: open the latest run in the dashboard; runs: the selected one; elsewhere: copy |
 | `o` | open the dashboard |
 | `t` | open a new terminal window here for an agent session (macOS Terminal, iTerm2; elsewhere it copies `cd <dir>`) |
 | `r` / `q` | refresh / quit (stops what this CLI started: a crawl saves first, then the dashboard) |
 
 **Live crawls.** The Crawl tab follows whichever crawl is running in the runs folder, started here or by an agent in
 another terminal: budget bar, step and time, screens, transitions, crashes, and the latest steps with screen titles
-and outcomes (★ new screen, → known, · same screen, ↗ left the app, ✘ crash). It reads what the engine already writes
+and outcomes (new screen, known, same screen, left the app, crash). It reads what the engine already writes
 (`runs/index.json`, the run's `map.json` and `trace.jsonl`) once a second, so no engine change or event stream is
 needed. A run starting or finishing shows on the bottom line from any tab. In a source checkout the first Crawl entry
 is a ready-to-run Playground crawl.
@@ -69,8 +72,9 @@ to the next free one.
 (`uv run --project <checkout> appscreenmap-engine`; `make cli` bakes the path into the binary), then
 `appscreenmap-engine` on `PATH`.
 
-**Colours** come from `@appscreenmap/design-tokens` (`src/theme.ts` reads `tokens.css` at build time), with the
-dashboard's rules: blue only for what you can act on, status always with a word or glyph.
+**Look**: colours from `@appscreenmap/design-tokens` (`src/theme.ts` reads `tokens.css` at build time), with the
+dashboard's rules: a dim label column, blue only for what you can act on, status as a word, never a dot or glyph, and a
+plain bold wordmark (no block lettering).
 
 ## Develop
 
