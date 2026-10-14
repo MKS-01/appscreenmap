@@ -10,7 +10,12 @@ import pytest
 from appscreenmap.core.analyzer import analyze, parse_hierarchy
 from appscreenmap.drivers.base import DriverError
 from appscreenmap.drivers.ios import IosSimulatorDriver
-from appscreenmap.drivers.ios_hierarchy import idb_to_xml, is_out_of_process
+from appscreenmap.drivers.ios_hierarchy import (
+    collapsed_tab_bar,
+    idb_to_xml,
+    is_out_of_process,
+    tab_from_point,
+)
 
 HOME = json.loads((Path(__file__).parent / "fixtures" / "ios-reader-home.json").read_text())
 BUNDLE = "com.example.reader"
@@ -107,9 +112,10 @@ def test_a_control_with_no_accessibility_element_is_simply_absent():
 
 
 class Fake:
-    def __init__(self, tree):
+    def __init__(self, tree, points=None):
         self.calls: list[list[str]] = []
         self.tree = tree
+        self.points = points  # (x, y) -> the node `describe-point` returns there
 
     def __call__(self, args, timeout=60, binary=False, check=True):
         self.calls.append(args)
@@ -126,6 +132,9 @@ class Fake:
             )
         if "describe-all" in joined:
             return json.dumps(self.tree)
+        if "describe-point" in joined and self.points:
+            i = args.index("describe-point")
+            return json.dumps(self.points(int(args[i + 1]), int(args[i + 2])))
         if "launchctl" in joined:
             return (
                 "9001\t0\tUIKitApplication:com.apple.mobilecal[dad3][rb-legacy]\n"
@@ -255,3 +264,70 @@ def test_crash_log_finds_a_new_report_for_the_launched_app(tmp_path, monkeypatch
     assert (
         log.startswith(f"Process: {BUNDLE},") and "EXC_BAD_ACCESS" in log
     )  # the format the explorer looks for
+
+
+# ── a tab bar idb lists as one group (found with the iOS Playground, Oct 2026) ──────────────────────────────
+
+_TABS = [
+    ("Home", "house", 25),
+    ("Search", "magnifyingglass", 91),
+    ("Library", "heart", 194),
+    ("Profile", "person", 279),
+]
+
+
+def _tab_point(x, y, selected="Home"):
+    for label, ident, left in _TABS:
+        if left <= x < left + 98 and 795 <= y < 849:
+            return {
+                "type": "RadioButton",
+                "subrole": "AXTabButton",
+                "traits": ["TabButton", "Button"],
+                "AXLabel": label,
+                "AXUniqueId": ident,
+                "AXValue": 1 if label == selected else 0,
+                "frame": {"x": left, "y": 795, "width": 98, "height": 54},
+                "pid": 7,
+            }
+    return {"type": "Group", "AXLabel": "Tab Bar", "frame": {"x": 0, "y": 791, "width": 402, "height": 83}}
+
+
+_BAR_TREE = [
+    {
+        "type": "Application",
+        "AXLabel": "Playground",
+        "pid": 7,
+        "frame": {"x": 0, "y": 0, "width": 402, "height": 874},
+    },
+    {"type": "Heading", "AXLabel": "Discover", "frame": {"x": 16, "y": 120, "width": 139, "height": 41}},
+    {
+        "type": "Group",
+        "AXLabel": "Tab Bar",
+        "traits": ["Scrollable"],
+        "frame": {"x": 0, "y": 791, "width": 402, "height": 83},
+    },
+]
+
+
+def test_a_collapsed_tab_bar_is_found_and_a_complete_one_is_left_alone():
+    assert collapsed_tab_bar(_BAR_TREE) == (0, 791, 402, 83)
+    with_tabs = _BAR_TREE + [tab_from_point(_tab_point(30, 820))]
+    assert collapsed_tab_bar(with_tabs) is None
+    assert collapsed_tab_bar(HOME) is None  # no tab bar at all
+
+
+def test_the_driver_recovers_the_tabs_idb_leaves_out_and_they_become_tappable_buttons():
+    fake = Fake(_BAR_TREE, points=_tab_point)
+    d = IosSimulatorDriver(run=fake)
+    root = parse_hierarchy(d.snapshot().xml)
+    tabs = [n for n in root.walk() if n.text in {"Home", "Search", "Library", "Profile"}]
+    assert [n.text for n in tabs] == ["Home", "Search", "Library", "Profile"]
+    assert all(n.clickable and n.cls == "android.widget.Button" for n in tabs)
+    assert [n.selected for n in tabs] == [True, False, False, False]
+    assert sum("describe-point" in c for c in fake.calls) <= 8  # bounded: about one probe per tab
+
+
+def test_a_tree_without_a_tab_bar_costs_no_extra_calls():
+    fake = Fake(HOME, points=_tab_point)
+    IosSimulatorDriver(run=fake).snapshot()
+    assert not any("describe-point" in c for c in fake.calls)

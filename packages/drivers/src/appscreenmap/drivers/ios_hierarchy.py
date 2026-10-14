@@ -131,3 +131,46 @@ def is_out_of_process(nodes: list[dict]) -> bool:
     tree is just the host application's one node. The crawler must treat that as leaving the app, not as a blank screen.
     """
     return len([n for n in nodes if element_type(n) != "Application"]) == 0
+
+
+_TAB_TYPES = {"Tab", "RadioButton"}
+
+
+def collapsed_tab_bar(nodes: list[dict]) -> tuple[float, float, float, float] | None:
+    """The frame of a tab bar that `describe-all` listed without its tabs, else None.
+
+    idb returns a UITabBar as one "Tab Bar" group; its tab buttons (`RadioButton`, subrole `AXTabButton`) exist and
+    `describe-point` finds them, but they are missing from the list, so a crawl would never leave the first tab."""
+    for bar in nodes:
+        if bar.get("AXLabel") != "Tab Bar" and element_type(bar) != "TabBar":
+            continue
+        bx, by, bw, bh = _frame(bar)
+        if bw <= 0 or bh <= 0:
+            continue
+        for n in nodes:
+            x, y, w, h = _frame(n)
+            if (
+                n is not bar
+                and element_type(n) in _TAB_TYPES
+                and bx <= x + w / 2 <= bx + bw
+                and by <= y + h / 2 <= by + bh
+            ):
+                break
+        else:
+            return bx, by, bw, bh
+    return None
+
+
+def tab_from_point(node: dict | None) -> dict | None:
+    """A tab button found by `describe-point`, as the `Tab` node the rest of the pipeline understands."""
+    if not node or not (node.get("subrole") == "AXTabButton" or "TabButton" in (node.get("traits") or [])):
+        return None
+    selected = str(node.get("AXValue")).strip().lower() in {"1", "true"}
+    return {
+        "type": "Tab",
+        "AXLabel": node.get("AXLabel"),
+        "AXUniqueId": node.get("AXUniqueId"),
+        "frame": node.get("frame"),
+        "traits": ["Button", "Selected"] if selected else ["Button"],
+        "pid": node.get("pid"),
+    }

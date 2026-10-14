@@ -21,7 +21,8 @@ APP_PASSWORD=playground-demo appscreenmap crawl --platform ios --app samples/pla
 ## Known gaps
 
 - Not built yet: Reports, Gallery, Notifications, Text size, Terms, Developer options, the v2 build.
-- `idb ui describe-all` returns the tab bar as one "Tab Bar" group without its children, so a crawl never leaves
-  Home. `describe-point` does see the tabs (`RadioButton`, `AXTabButton`). Needs a driver fix (`drivers/ios.py`).
+- `idb ui describe-all` lists the tab bar as one group; the driver recovers the tabs with `describe-point`
+  (`drivers/ios.py` `_expand_tab_bar`). A crawl now reaches all four tabs.
+- The Feedback screen is split into several screens after typing (over-splitting, to tune with `tune-crawler`).
 - Inside a list row the bookmark and share icons merge into the card's button, so the 2.5.8 and 4.1.2 bugs are
   not visible to the tree.

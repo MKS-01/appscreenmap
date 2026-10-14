@@ -22,7 +22,7 @@ from typing import ClassVar
 from urllib.parse import unquote, urlparse
 
 from .base import DriverError, Snapshot
-from .ios_hierarchy import element_type, idb_to_xml, is_out_of_process
+from .ios_hierarchy import collapsed_tab_bar, element_type, idb_to_xml, is_out_of_process, tab_from_point
 
 _STATE = re.compile(r"\((Booted|Shutdown|Shutting Down|Creating)\)")
 
@@ -204,7 +204,7 @@ class IosSimulatorDriver:
 
         The package is the bundle id of the process that owns the tree. A tree with no content (an in-app browser,
         a system sheet) is reported as `ios.external`, so the explorer treats it as having left the app."""
-        nodes = self._describe(retries)
+        nodes = self._expand_tab_bar(self._describe(retries))
         w, h = self.screen_size()
         app = next((n for n in nodes if element_type(n) == "Application"), {})
         out = is_out_of_process(nodes)
@@ -214,6 +214,31 @@ class IosSimulatorDriver:
         snap = Snapshot(idb_to_xml(nodes, w, h, bundle), bundle, None)
         snap.out_of_process = out  # type: ignore[attr-defined]
         return snap
+
+    def _expand_tab_bar(self, nodes: list[dict]) -> list[dict]:
+        """Add the tab buttons idb leaves out of `describe-all`, found by probing along the bar with `describe-point`.
+        Each probe lands just past the previous tab's right edge, so n tabs cost about n + 1 calls (~0.1 s each)."""
+        bar = collapsed_tab_bar(nodes)
+        if bar is None:
+            return nodes
+        bx, by, bw, bh = bar
+        y, x, found = round(by + bh * 0.4), round(bx) + 2, []
+        for _ in range(8):
+            if x >= bx + bw:
+                break
+            try:
+                tab = tab_from_point(
+                    json.loads(self._idb_run("ui", "describe-point", str(x), str(y), check=False))
+                )
+            except (json.JSONDecodeError, DriverError):
+                tab = None
+            if tab is None:
+                x += 20  # a gap between tabs, or nothing there: step on
+                continue
+            found.append(tab)
+            f = tab["frame"]
+            x = round(f["x"] + f["width"]) + 2
+        return nodes + found
 
     def _bundle_of(self, pid) -> str | None:
         """Bundle id of the running app with this pid (`launchctl list` names every UIKit app the simulator runs)."""

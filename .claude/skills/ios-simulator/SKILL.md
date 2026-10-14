@@ -67,6 +67,7 @@ supported yet. `--package <bundle id>` re-crawls an already installed app.
 - **Off-screen nodes are included** (the tree lists the whole scroll content); `ios_hierarchy` clips to the screen and drops
   what isn't visible.
 - **`Scrollable` appears in every node's traits.** It's noise; scrollability comes from the element type (ScrollView, Table…).
+- **A standard tab bar comes back as one "Tab Bar" group** without its tabs. The driver probes along it with `describe-point` and adds them as `Tab` nodes (about one extra call per tab).
 - **Only what VoiceOver sees exists.** A control with no label/identifier or that isn't an accessibility element is not in
   the tree, so the crawler can't see or tap it. That is a finding about the app, not a crawler bug.
 - **Out-of-process UI has a one-node tree**: an in-app browser (SFSafariViewController), share sheet, system alert. The
