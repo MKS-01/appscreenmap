@@ -18,7 +18,7 @@ uiautomator-style XML the analyzer reads). Design and status: `docs/PLAN.md` §8
 ## 1. Preflight
 
 ```bash
-uv run appscreenmap doctor     # needs: a booted simulator, idb client, idb_companion
+uv run appscreenmap-engine doctor     # needs: a booted simulator, idb client, idb_companion
 brew install facebook/fb/idb-companion
 uv tool install fb-idb         # puts `idb` on PATH (uvx --from fb-idb idb also works, ~1 s slower)
 xcrun simctl list devices available | head
@@ -51,8 +51,8 @@ the app's source unless asked: its owner fixes what the crawl finds and re-crawl
 ## 3. Crawl
 
 ```bash
-uv run appscreenmap crawl --platform ios --app <path>/YourApp.app --clear-data --max-steps 150
-uv run appscreenmap serve        # the run is in runs/<app>-ios/
+uv run appscreenmap-engine crawl --platform ios --app <path>/YourApp.app --clear-data --max-steps 150
+uv run appscreenmap-engine serve        # the run is in runs/<app>-ios/
 ```
 
 `--font-scale 2.0` sets Dynamic Type to `accessibility-large` (WCAG 1.4.4). Load times and system permission alerts aren't

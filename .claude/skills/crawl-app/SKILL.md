@@ -8,7 +8,7 @@ description: Run an AppScreenMap crawl of an Android app on an emulator and revi
 ## 1. Preflight
 
 ```bash
-uv run appscreenmap doctor
+uv run appscreenmap-engine doctor
 ```
 
 Everything except the web viewer build must show ✔. If several devices are connected, pass
@@ -27,7 +27,7 @@ Don't crawl stock emulator apps for testing. Its APKs are committed (`samples/pl
 Run in the background so the user can follow along and stop it:
 
 ```bash
-APP_PASSWORD=playground-demo uv run appscreenmap crawl --apk samples/playground-app/apk/playground-v1.apk \
+APP_PASSWORD=playground-demo uv run appscreenmap-engine crawl --apk samples/playground-app/apk/playground-v1.apk \
   --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 200 \
   > <scratchpad>/crawl.log 2>&1        # run_in_background: true
 ```
@@ -53,8 +53,8 @@ Output goes to `runs/<project>/<run-id>/` (project = last part of the package, o
 boot a simulator (Xcode 27 replaced Simulator.app with Device Hub), then:
 
 ```bash
-uv run appscreenmap doctor    # lists booted simulators, idb and idb_companion
-uv run appscreenmap crawl --platform ios --app path/to/YourApp.app --clear-data --max-steps 150
+uv run appscreenmap-engine doctor    # lists booted simulators, idb and idb_companion
+uv run appscreenmap-engine crawl --platform ios --app path/to/YourApp.app --clear-data --max-steps 150
 ```
 
 It reads the accessibility tree (what VoiceOver sees) and taps through `idb`; a control with no accessibility label or
@@ -69,13 +69,13 @@ Useful flags: `--apk <file>` (installs first), `--max-minutes`, `--settle 1.2` (
 ## 3. Review
 
 ```bash
-uv run appscreenmap report runs/<project>/<run-id>
+uv run appscreenmap-engine report runs/<project>/<run-id>
 ```
 
 Read the `findings`. Then check navigation performance:
 
 ```bash
-uv run appscreenmap perf runs/<project>/<run-id>            # slowest screens, transitions, jank, cold start
+uv run appscreenmap-engine perf runs/<project>/<run-id>            # slowest screens, transitions, jank, cold start
 ```
 
 Compare load times only between runs on the same device with the same animation setting
@@ -101,10 +101,10 @@ Things to call out to the user:
 
 ## 4. Use the output
 
-- Viewer: `uv run appscreenmap serve` (needs `apps/viewer/dist`; the web session owns that build).
+- Viewer: `uv run appscreenmap-engine serve` (needs `apps/viewer/dist`; the web session owns that build).
 - Maestro flow to reach a screen: `runs/<project>/<run-id>/flows/s004.yaml` → `maestro test …`.
 - Visual diff between two builds: crawl each, then
-  `uv run appscreenmap diff runs/<project>/<old> runs/<project>/<new>`. The report lands in `<new>/diff/<old-id>/`.
+  `uv run appscreenmap-engine diff runs/<project>/<old> runs/<project>/<new>`. The report lands in `<new>/diff/<old-id>/`.
 
 ## 5. Report back
 

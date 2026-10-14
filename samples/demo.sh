@@ -4,7 +4,7 @@
 # Needs a running emulator. Installs the Playground APKs, wipes their data, and leaves device settings as found.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-ASM=(uv run appscreenmap)
+ASM=(uv run appscreenmap-engine)
 WHAT="${1:-all}"
 PG_CFG=samples/playground-app/appscreenmap.toml
 # The Playground's password comes from the environment (scenario 16: secrets never land in run files).
@@ -63,4 +63,4 @@ if [[ "$WHAT" == all || "$WHAT" == playground ]]; then
 fi
 
 step "Done. Open the viewer:"
-echo "  uv run appscreenmap serve"
+echo "  uv run appscreenmap-engine serve"

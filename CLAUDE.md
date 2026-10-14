@@ -56,11 +56,11 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 
 ```bash
 uv sync && uv run pytest -q && uv run ruff check && uv run ruff format
-uv run appscreenmap doctor
-APP_PASSWORD=playground-demo uv run appscreenmap crawl --apk samples/playground-app/apk/playground-v1.apk \
+uv run appscreenmap-engine doctor
+APP_PASSWORD=playground-demo uv run appscreenmap-engine crawl --apk samples/playground-app/apk/playground-v1.apk \
   --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 200
-uv run appscreenmap report runs/playground/<run-id>   # health: wasted steps, identity issues, nav failures
-uv run appscreenmap perf runs/playground/<run-id>     # load time per screen, jank, cold start
+uv run appscreenmap-engine report runs/playground/<run-id>   # health: wasted steps, identity issues, nav failures
+uv run appscreenmap-engine perf runs/playground/<run-id>     # load time per screen, jank, cold start
 ```
 
 ## Skills (`.claude/skills/`)

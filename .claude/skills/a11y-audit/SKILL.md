@@ -14,8 +14,8 @@ names another. Default level: **AA**.
 Use the newest good run, or crawl first (`crawl-app` skill):
 
 ```bash
-uv run appscreenmap a11y runs/<project>/<run-id>                 # level ≤ AA, open + confirmed issues
-uv run appscreenmap a11y runs/<project>/<run-id> --level AAA --json > <scratchpad>/a11y.json
+uv run appscreenmap-engine a11y runs/<project>/<run-id>                 # level ≤ AA, open + confirmed issues
+uv run appscreenmap-engine a11y runs/<project>/<run-id> --level AAA --json > <scratchpad>/a11y.json
 ```
 
 Every crawl also writes `<run>/a11y.json`. The web viewer's **Accessibility** tab adds the
@@ -28,10 +28,10 @@ for exact numbers.
 ## 2. Resize text: crawl at 200%
 
 ```bash
-APP_PASSWORD=playground-demo uv run appscreenmap crawl --package dev.appscreenmap.playground \
+APP_PASSWORD=playground-demo uv run appscreenmap-engine crawl --package dev.appscreenmap.playground \
   --config samples/playground-app/appscreenmap.toml --clear-data --font-scale 2.0 --name font200
-uv run appscreenmap a11y runs/playground/font200-<stamp>
-uv run appscreenmap diff runs/playground/<normal-run> runs/playground/font200-<stamp>
+uv run appscreenmap-engine a11y runs/playground/font200-<stamp>
+uv run appscreenmap-engine diff runs/playground/<normal-run> runs/playground/font200-<stamp>
 ```
 
 The font scale is restored afterwards. Look for `text-truncated` (1.4.4), screens missing compared
@@ -80,8 +80,8 @@ with `appscreenmap.core.notes.validate` before saving (format owned by the web s
 Generate the report after triage, so confirmed viewer findings and your decisions are included:
 
 ```bash
-uv run appscreenmap a11y runs/<project>/<run-id> --report            # AA (default)
-uv run appscreenmap a11y runs/<project>/<run-id> --report --level AAA
+uv run appscreenmap-engine a11y runs/<project>/<run-id> --report            # AA (default)
+uv run appscreenmap-engine a11y runs/<project>/<run-id> --report --level AAA
 ```
 
 This writes `a11y-report.html` (self-contained, shareable) and `a11y-report.md` (+ `a11y/crops/`).

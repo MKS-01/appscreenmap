@@ -70,7 +70,7 @@ went away. Cold start is recorded on every relaunch. Animations are off during a
 `perf_summary` tool.
 
 ```
-$ uv run appscreenmap perf runs/playground/<run-id> --budget 1000
+$ uv run appscreenmap-engine perf runs/playground/<run-id> --budget 1000
   cold start: 151 ms median, 161 ms max over 11 launch(es)
    🔴  s018 'Reports'     2770 / 2770 / 2770  ×1  loading indicator, never settled
    🟠  s019 'Gallery'     1825 / 1825 / 1825  ×1  97.8% janky

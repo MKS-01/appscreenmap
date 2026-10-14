@@ -36,7 +36,6 @@ Changelog = "https://github.com/MKS-01/appscreenmap/releases"
 
 [project.scripts]
 appscreenmap-engine = "appscreenmap.engine.cli:main"
-appscreenmap = "appscreenmap.engine.cli:main"  # until the Bun CLI (apps/cli) takes this name
 
 [project.optional-dependencies]
 mcp = ["mcp>=2.3,<3"]  # `appscreenmap mcp`: the map as an MCP server for agents

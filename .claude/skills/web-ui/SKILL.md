@@ -42,7 +42,7 @@ Don't edit it for UI work. If the UI needs new data, ask for a `map.json` field 
 ```bash
 cd apps/viewer && bun run build                      # tsc + vite; must pass
 # serve real or copied runs (don't write notes into runs you don't own)
-uv run appscreenmap serve --runs <runs-dir> --no-open --port 8795 &
+uv run appscreenmap-engine serve --runs <runs-dir> --no-open --port 8795 &
 bun ../../.claude/skills/web-ui/scripts/shot.ts --base http://127.0.0.1:8795/ --out <scratchpad> \
     "#/" "#/how" "#/r/<project>%2F<run-id>/map" --themes dark   # 1400 + 390 px
 bun ../../.claude/skills/web-ui/scripts/shot.ts ... --reduced-motion --themes dark --widths 1400

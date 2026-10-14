@@ -9,12 +9,12 @@ description: Maintain and scale the AppScreenMap crawler — upgrade Python deps
 
 ```bash
 uv sync && uv run pytest -q && uv run ruff check && uv run ruff format --check
-uv run appscreenmap doctor
+uv run appscreenmap-engine doctor
 ```
 
 Then a short real crawl as a smoke test (budget 40 steps is enough):
-`APP_PASSWORD=playground-demo uv run appscreenmap crawl --apk samples/playground-app/apk/playground-v1.apk --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 40` and
-`uv run appscreenmap report runs/<project>/<run-id>`. Compare with the last good run.
+`APP_PASSWORD=playground-demo uv run appscreenmap-engine crawl --apk samples/playground-app/apk/playground-v1.apk --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 40` and
+`uv run appscreenmap-engine report runs/<project>/<run-id>`. Compare with the last good run.
 
 ## Dependency upgrades
 

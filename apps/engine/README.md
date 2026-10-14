@@ -14,6 +14,7 @@
 Each `cli` module holds its `cmd_*` functions and a `register(sub)` that adds their parsers; `cli/__init__.py`
 only builds the parser from `GROUPS` and runs the command. The CLI parses and prints; logic lives in the packages.
 
-It installs two commands, `appscreenmap-engine` and, until the Bun CLI in `apps/cli` takes the name, `appscreenmap`
-(also `python -m appscreenmap.engine`). From the repo root: `uv sync`, then `uv run appscreenmap --help`.
+It installs the `appscreenmap-engine` command (also `python -m appscreenmap.engine`); the `appscreenmap` command is the
+Bun CLI in `apps/cli`, which hands these commands to it. From the repo root: `uv sync`, then
+`uv run appscreenmap-engine --help`.
 Layout and plan: [docs/MONOREPO.md](../../docs/MONOREPO.md).

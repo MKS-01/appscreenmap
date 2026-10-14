@@ -153,9 +153,9 @@ Ask your agent, or run it yourself:
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
 make setup                                       # Python (uv) and TypeScript (Bun) workspaces
 make viewer                                      # build the dashboard, one time
-uv run appscreenmap doctor                       # checks the prerequisites above, says what is missing
-uv run appscreenmap crawl --apk path/to/app.apk  # Android: install + map
-uv run appscreenmap serve                        # open the dashboard
+uv run appscreenmap-engine doctor                       # checks the prerequisites above, says what is missing
+uv run appscreenmap-engine crawl --apk path/to/app.apk  # Android: install + map
+uv run appscreenmap-engine serve                        # open the dashboard
 ```
 
 `make cli` builds the `appscreenmap` binary (`apps/cli/dist/appscreenmap`): run it with no arguments for a terminal

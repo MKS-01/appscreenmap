@@ -18,7 +18,7 @@ below, and a rule stays `planned` in the catalogue until the command covers it. 
 ## 1. Preflight
 
 ```bash
-uv run appscreenmap doctor            # aapt2 reads the manifest; adb for the device checks
+uv run appscreenmap-engine doctor            # aapt2 reads the manifest; adb for the device checks
 uv tool install frida-tools           # only for the dynamic check
 ```
 
@@ -28,9 +28,9 @@ Pick the **release** build you ship. A debug build will (rightly) trip `debuggab
 
 ```bash
 RUN=runs/<project>/<run-id>                                   # a crawl of the app (crawl-app)
-uv run appscreenmap security $RUN --apk app-release.apk       # manifest + hard-coded secrets, about 0.1 s
-uv run appscreenmap security $RUN --pull --device             # or: pull the installed APK, and read the app's data folder
-uv run appscreenmap security $RUN --frida-log frida.log       # add the dynamic observations (below)
+uv run appscreenmap-engine security $RUN --apk app-release.apk       # manifest + hard-coded secrets, about 0.1 s
+uv run appscreenmap-engine security $RUN --pull --device             # or: pull the installed APK, and read the app's data folder
+uv run appscreenmap-engine security $RUN --frida-log frida.log       # add the dynamic observations (below)
 ```
 
 Each call adds its evidence to the run (`audits/security-evidence.json`) and rebuilds `audits/security.json` from everything
@@ -49,7 +49,7 @@ client keys ship in apps on purpose, so the fix is to restrict it.
 **Dynamic (Frida).** On your own debug build, with a frida server on the emulator:
 
 ```bash
-frida -U -f <package> -l "$(uv run appscreenmap security --frida-script)" > frida.log   # then use or crawl the app
+frida -U -f <package> -l "$(uv run appscreenmap-engine security --frida-script)" > frida.log   # then use or crawl the app
 ```
 
 The script only observes: it logs plain `http://` hosts and whether OkHttp has any certificate pin configured. It doesn't bypass

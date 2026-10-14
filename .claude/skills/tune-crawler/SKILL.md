@@ -9,7 +9,7 @@ Never fix exploration by guessing. Each fix follows this loop:
 
 1. **Evidence.** Get the run's health report and find the steps where it went wrong.
    ```bash
-   uv run appscreenmap report runs/<project>/<run-id>
+   uv run appscreenmap-engine report runs/<project>/<run-id>
    grep -n '"effect": "same_screen"' runs/<project>/<run-id>/trace.jsonl | head     # wasted taps
    ```
    The hierarchy of every screen is in `runs/<project>/<run-id>/screens/<sid>.xml`. To capture the live screen:
