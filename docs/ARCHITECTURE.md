@@ -81,7 +81,7 @@ $ uv run appscreenmap perf runs/playground/<run-id> --budget 1000
 the APK (the manifest through one `aapt2` call, plus high-confidence secret formats found by regex over the raw dex,
 resource and asset bytes, so there is no decompiling and a scan takes about 0.1 s), the app's data folder over adb
 (plain-text secrets in preferences and files), and a log from the observation-only
-[Frida script](../.claude/skills/security-audit/scripts/frida-observe.js) (plain-HTTP hosts, missing certificate pins).
+[Frida hook](../packages/security/src/appscreenmap/security/hooks/frida-observe.js) (plain-HTTP hosts, missing certificate pins).
 Findings use the text and official sources of the [`security-rules`](../.claude/skills/security-rules/SKILL.md)
 catalogue, never contain a secret's value, and are written to `audits/security.json`, so the Security audit in the
 dashboard shows real findings. The [`security-audit` skill](../.claude/skills/security-audit/SKILL.md) tells an agent how
@@ -121,9 +121,10 @@ never mix with the Android runs of the same app). `runs/` is git-ignored: it is 
 ```
 packages/core/      appscreenmap.core: map.json model, analyzer, config, runs, notes, media
 packages/drivers/   appscreenmap.drivers: Android (adb, dumpsys, device facts, apkinfo), iOS Simulator
+packages/security/  appscreenmap.security: scanner, rules.json (also read by the viewer), Frida hook
 packages/testkit/   dev-only test helpers (synthetic hierarchies) and the package-layer check
 apps/engine/        the rest of the Python engine, moving into packages/ (see MONOREPO.md): explorer,
-                    export, visual diff, a11y, security, perf, replay + verify, MCP server, CLI
+                    export, visual diff, a11y, perf, replay + verify, MCP server, CLI
                     (each package keeps its tests in <package>/tests/; no device needed)
 web/                the dashboard (React + Vite, built with Bun)
 design/             tokens.css: colour, type, space and motion for the viewer and reports

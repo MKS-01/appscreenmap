@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from appscreenmap.security_rules import PATH, RuleError, load_rules, rules_for
+from appscreenmap.security.rules import PATH, RuleError, load_rules, rules_for
 from appscreenmap.testkit.helpers import REPO
 
 ROOT = REPO

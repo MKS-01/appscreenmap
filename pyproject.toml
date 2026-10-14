@@ -7,6 +7,7 @@ members = ["apps/engine", "packages/*"]
 appscreenmap-engine = { workspace = true }
 appscreenmap-core = { workspace = true }
 appscreenmap-drivers = { workspace = true }
+appscreenmap-security = { workspace = true }
 appscreenmap-testkit = { workspace = true }
 
 [dependency-groups]

@@ -3,14 +3,14 @@ import { runFile } from "../api";
 import type { AppMapData } from "../types";
 import { a11yReport, coverageReport, notRun, perfReport, stabilityReport, type A11yFile, type BuildContext, type PerfFile } from "./builtin";
 import { adaptiveReport, platformReport, securityReport, storeReport } from "./samples";
-import securityRules from "../../../apps/engine/src/appscreenmap/security_rules.json";
+import securityRules from "../../../packages/security/src/appscreenmap/security/rules.json";
 import { SOURCES } from "./sources";
 import type { AuditDef, AuditReport, PlannedCheck, Platform, Severity } from "./types";
 
 // The audits Insights knows about, in display order. Adding one = a def here plus a builder (or nothing at all,
 // if the crawler writes audits/<id>.json: unknown ids listed in audits/index.json show up automatically).
 
-/** Security rules from the shared catalogue (apps/engine/src/appscreenmap/security_rules.json, documented in the security-rules skill).
+/** Security rules from the shared catalogue (packages/security/src/appscreenmap/security/rules.json, documented in the security-rules skill).
  *  Each is a placeholder until a scanner implements it. */
 const SECURITY_CHECKS: PlannedCheck[] = securityRules.rules
   .filter((r) => r.status === "planned")
