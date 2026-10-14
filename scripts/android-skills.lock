@@ -1,0 +1,10 @@
+# Skills vendored unchanged from the official repo https://github.com/android/skills (Apache-2.0).
+# Format: "repo <url>", "commit <sha it was last synced at>", then "<upstream path>" per skill (installed as .claude/skills/<last path part>).
+# Add a skill: append its path here and run `make skills-sync`. Never edit the copies by hand.
+repo https://github.com/android/skills
+commit 5bda39f154fb859a08d45e2392f3568e049f83fb
+play/play-policy-insights
+security/android-permissions-security
+security/android-intent-security
+system/edge-to-edge
+jetpack-compose/adaptive
