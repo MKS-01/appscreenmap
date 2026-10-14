@@ -1,10 +1,11 @@
-"""Parsers for `dumpsys gfxinfo` and `am start -W` output (pure functions, unit tested)."""
+"""Parsers for `dumpsys gfxinfo` and `am start -W` output, and frame metrics from framestats (pure functions)."""
 
 from __future__ import annotations
 
 import re
 
 TOTAL_FRAMES_RE = re.compile(r"Total frames rendered: (\d+)")
+FROZEN_FRAME_MS = 700  # Android vitals: a frame taking > 700 ms is "frozen"
 
 
 def parse_gfx_summary(text: str) -> dict:
@@ -63,3 +64,28 @@ def parse_am_start(text: str) -> dict:
     if m := re.search(r"LaunchState: (\w+)", text):
         out["LaunchState"] = m.group(1)
     return out
+
+
+def frame_metrics(frames: list[dict]) -> dict:
+    if not frames:
+        return {}
+    durations = sorted((f["end"] - f["start"]) / 1e6 for f in frames)
+    span = (max(f["end"] for f in frames) - min(f["start"] for f in frames)) / 1e6
+    return {
+        "render_ms": round(span),
+        "frames": len(frames),
+        # Android's definition: janky = completed after its deadline (FrameDeadline, Android 12+);
+        # older versions: took longer than one refresh interval.
+        "janky_frames": sum(
+            1
+            for f in frames
+            if (
+                f["end"] > f["deadline"]
+                if f.get("deadline")
+                else f["end"] - f["start"] > f.get("interval", 16_666_666)
+            )
+        ),
+        "frozen_frames": sum(1 for d in durations if d > FROZEN_FRAME_MS),
+        "p90_frame_ms": round(durations[min(len(durations) - 1, int(len(durations) * 0.9))], 1),
+        "max_frame_ms": round(durations[-1], 1),
+    }

@@ -6,16 +6,16 @@ from pathlib import Path
 
 import anyio
 import pytest
-from fakedevice import FakeDriver, crawl, title
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 
-from appscreenmap import explorer as explorer_mod
-from appscreenmap import replay as replay_mod
-from appscreenmap.a11y import audit_run
+from appscreenmap.a11y.checks import audit_run
 from appscreenmap.core.model import load_map
+from appscreenmap.crawler import explorer as explorer_mod
+from appscreenmap.crawler import replay as replay_mod
+from appscreenmap.crawler.replay import Replayer
 from appscreenmap.mcp_server import MapTools, build_server, shortest_path
-from appscreenmap.perf import summarize
-from appscreenmap.replay import Replayer
+from appscreenmap.reports.perf import summarize
+from appscreenmap.testkit.fakedevice import FakeDriver, crawl, title
 from appscreenmap.testkit.helpers import hierarchy
 
 

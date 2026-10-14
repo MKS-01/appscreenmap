@@ -26,7 +26,7 @@ from appscreenmap.core.analyzer import (
 )
 from appscreenmap.core.config import resolve
 
-from .perf import LoadMeter, has_loading_indicator
+from .timing import LoadMeter, has_loading_indicator
 
 MATCH_THRESHOLD = 0.6  # token similarity at which a live screen is a map screen (as in `diff`)
 BEST_MARGIN = 0.02  # the expected screen wins if it is this close to the best match

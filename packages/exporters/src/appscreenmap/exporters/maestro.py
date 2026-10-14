@@ -1,13 +1,11 @@
-"""Exports from map.json: Maestro flows (one per screen) and a Mermaid flowchart."""
+"""Maestro flows from map.json: one flow per screen that replays its recorded path and checks it arrived."""
 
 from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 
 from appscreenmap.core.config import placeholders
-from appscreenmap.core.model import load_map
 
 
 def _q(s: str) -> str:
@@ -102,37 +100,3 @@ def maestro_flow(data: dict, screen: dict) -> str:
         lines.append(a)
     lines.append(f"- takeScreenshot: {screen['id']}")
     return "\n".join(lines) + "\n"
-
-
-def mermaid(data: dict) -> str:
-    out = ["flowchart LR"]
-    for s in data["screens"]:
-        title = (s.get("title") or s["id"]).replace('"', "'")
-        nid = s["id"].replace(":", "_").replace(".", "_")
-        shape = f'{nid}(["{title}"])' if s["kind"] != "app" else f'{nid}["{s["id"]} · {title}"]'
-        out.append(f"  {shape}")
-    for t in data["transitions"]:
-        a = t["from"].replace(":", "_").replace(".", "_")
-        b = t["to"].replace(":", "_").replace(".", "_")
-        label = (t.get("label") or t["action"]).replace('"', "'")[:30]
-        out.append(f'  {a} -->|"{label}"| {b}')
-    return "\n".join(out) + "\n"
-
-
-def export_run(run_dir: str | Path) -> dict:
-    run_dir = Path(run_dir)
-    data = load_map(run_dir)
-    flows = run_dir / "flows"
-    flows.mkdir(exist_ok=True)
-    count, skipped = 0, []
-    for s in data["screens"]:
-        if s["kind"] != "app":
-            continue
-        if s.get("origin") == "unknown":
-            skipped.append(s["id"])  # no recorded path: a flow would only launch the app
-            (flows / f"{s['id']}.yaml").unlink(missing_ok=True)
-            continue
-        (flows / f"{s['id']}.yaml").write_text(maestro_flow(data, s))
-        count += 1
-    (run_dir / "map.mmd").write_text(mermaid(data))
-    return {"flows": count, "skipped": skipped, "mermaid": str(run_dir / "map.mmd")}

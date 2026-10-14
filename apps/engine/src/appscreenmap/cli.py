@@ -15,14 +15,23 @@ import webbrowser
 from datetime import UTC, datetime
 from pathlib import Path
 
+from appscreenmap.a11y.checks import audit_run, format_audit
+from appscreenmap.a11y.report import write_reports
 from appscreenmap.core import __version__, notes
 from appscreenmap.core.config import CrawlConfig
 from appscreenmap.core.model import AppMap, load_map
 from appscreenmap.core.runs import new_run_dir, resolve_run, update_index
+from appscreenmap.crawler.explorer import CrawlAborted, Explorer
 from appscreenmap.drivers.android import AdbDriver
 from appscreenmap.drivers.apkinfo import apk_info, find_aapt2
 from appscreenmap.drivers.base import DriverError
 from appscreenmap.drivers.device import describe
+from appscreenmap.exporters.export import export_run
+from appscreenmap.regression.verify import format_verify, required_secrets, update_baselines, verify_run
+from appscreenmap.regression.visual import diff_runs
+from appscreenmap.reports.health import build_report, format_report
+from appscreenmap.reports.perf import format_perf
+from appscreenmap.reports.perf import summarize as summarize_perf
 from appscreenmap.security import (
     HOOK,
     load_evidence,
@@ -31,16 +40,6 @@ from appscreenmap.security import (
     scan_device_data,
     write_audit,
 )
-
-from .a11y import audit_run, format_audit
-from .a11y_report import write_reports
-from .explorer import CrawlAborted, Explorer
-from .export import export_run
-from .perf import format_perf
-from .perf import summarize as summarize_perf
-from .report import build_report, format_report
-from .verify import format_verify, required_secrets, update_baselines, verify_run
-from .visual import diff_runs
 
 
 def _now() -> str:

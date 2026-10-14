@@ -121,11 +121,14 @@ never mix with the Android runs of the same app). `runs/` is git-ignored: it is 
 ```
 packages/core/      appscreenmap.core: map.json model, analyzer, config, runs, notes, media
 packages/drivers/   appscreenmap.drivers: Android (adb, dumpsys, device facts, apkinfo), iOS Simulator
+packages/crawler/   appscreenmap.crawler: explorer, replay, load timing
+packages/a11y/      appscreenmap.a11y: WCAG 2.2 checks, criteria catalogue, HTML/MD report
 packages/security/  appscreenmap.security: scanner, rules.json (also read by the viewer), Frida hook
-packages/testkit/   dev-only test helpers (synthetic hierarchies) and the package-layer check
-apps/engine/        the rest of the Python engine, moving into packages/ (see MONOREPO.md): explorer,
-                    export, visual diff, a11y, perf, replay + verify, MCP server, CLI
-                    (each package keeps its tests in <package>/tests/; no device needed)
+packages/reports/   appscreenmap.reports: health report, perf summary
+packages/regression/  appscreenmap.regression: verify against baselines, visual diff
+packages/exporters/ appscreenmap.exporters: Maestro flows, Mermaid
+packages/testkit/   dev-only test helpers (synthetic hierarchies, fake device) and the package-layer check
+apps/engine/        the appscreenmap CLI and MCP server (each package keeps its tests in <package>/tests/)
 web/                the dashboard (React + Vite, built with Bun)
 design/             tokens.css: colour, type, space and motion for the viewer and reports
 samples/            Playground and DuskRead APKs, sources, iOS build script and demo.sh

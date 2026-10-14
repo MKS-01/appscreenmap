@@ -1,6 +1,6 @@
 ---
 name: add-a11y-rule
-description: Add or improve an automated WCAG 2.2 accessibility check in AppScreenMap — choose the right layer (crawler a11y.py vs the web viewer's a11y.ts), write the rule spec, guard against false positives, test it with synthetic hierarchies, and document it. Use when a new criterion should be detected automatically or an existing a11y rule is noisy or wrong.
+description: Add or improve an automated WCAG 2.2 accessibility check in AppScreenMap — choose the right layer (crawler a11y/checks.py vs the web viewer's a11y.ts), write the rule spec, guard against false positives, test it with synthetic hierarchies, and document it. Use when a new criterion should be detected automatically or an existing a11y rule is noisy or wrong.
 ---
 
 # Add an accessibility rule
@@ -9,8 +9,8 @@ description: Add or improve an automated WCAG 2.2 accessibility check in AppScre
 
 | The check needs… | Put it in | Owner |
 |---|---|---|
-| Several screens, flows (`reach_path`, `autofill`), crawl events, manifest/device facts | `apps/engine/src/appscreenmap/a11y.py` | crawler (this session) |
-| One screen's hierarchy only | `a11y.py` **if** the viewer doesn't already cover it (see the table in `wcag-mobile-rules`) | crawler |
+| Several screens, flows (`reach_path`, `autofill`), crawl events, manifest/device facts | `packages/a11y/src/appscreenmap/a11y/checks.py` | crawler (this session) |
+| One screen's hierarchy only | `a11y/checks.py` **if** the viewer doesn't already cover it (see the table in `wcag-mobile-rules`) | crawler |
 | Screenshot pixels in the browser (contrast), interactive UI | `web/src/a11y.ts` | **web session**. Don't edit it. Write the spec below and give it to the user to pass on. |
 | Data the crawl doesn't capture yet (e.g. focus traversal, live regions, autofill hints) | First extend the driver/explorer to record it (`extend-crawler`), add it to `map.json` (additive), then write the rule | crawler |
 
@@ -20,7 +20,7 @@ failure), write up the correction for the web session instead.
 ## 2. Write the spec first
 
 ```
-id:           kebab-case, unique across a11y.py and a11y.ts
+id:           kebab-case, unique across a11y/checks.py and a11y.ts
 criterion:    SC number + name + level (WCAG 2.2). One primary SC.
 kind:         automated (detects a likely failure) | review (flags something a person must check)
 severity:     error (likely failure) | warning | info
@@ -34,7 +34,7 @@ native_note:  set when WCAG2ICT doesn't apply the SC to a single app
 Check the criterion's Understanding page (https://www.w3.org/WAI/WCAG22/Understanding/) for
 exceptions. Most false-positive complaints come from a missed exception.
 
-## 3. Implement in `a11y.py`
+## 3. Implement in `a11y/checks.py`
 
 - Add a `Rule(...)` to `RULES`; the key is the rule id.
 - Put the detection in the matching function: `_screen_checks` (per screen, from `parse_hierarchy`
@@ -51,7 +51,7 @@ exceptions. Most false-positive complaints come from a missed exception.
 
 ## 4. Test
 
-In `apps/engine/tests/test_a11y.py`, build a run with `make_run(tmp_path, [(_screen(...), hierarchy(...))])`.
+In `packages/a11y/tests/test_a11y.py`, build a run with `make_run(tmp_path, [(_screen(...), hierarchy(...))])`.
 Use `DPI = 160` so 1 px = 1 dp. Cover:
 1. a clear failure → flagged with the right `sc`, `level`, and `kind`
 2. each WCAG exception → **not** flagged
@@ -59,7 +59,7 @@ Use `DPI = 160` so 1 px = 1 dp. Cover:
 4. key stability: running twice gives identical keys
 
 ```bash
-uv run pytest -q apps/engine/tests/test_a11y.py && uv run ruff check && uv run ruff format
+uv run pytest -q packages/a11y/tests/test_a11y.py && uv run ruff check && uv run ruff format
 ```
 
 ## 5. Check it on a real crawl
@@ -73,7 +73,7 @@ wrong, tighten the rule or downgrade it to `review`/`info` before shipping.
 - `wcag-mobile-rules`: add the rule to the "Who checks what" table and to the criterion's row in
   `reference/criteria.md` (Check column).
 - `docs/MAP_SCHEMA.md` § a11y.json if the output shape changed (additive only).
-- `apps/engine/src/appscreenmap/wcag.py`: the report's criteria catalogue. Crawler coverage is derived from
+- `packages/a11y/src/appscreenmap/a11y/wcag.py`: the report's criteria catalogue. Crawler coverage is derived from
   `RULES` automatically. If the check only means something under a condition (like 1.4.4 needing a
   200% font crawl), add it to `a11y_report._not_run_reason` so the report says *Not tested* instead
   of a false *No issues detected*. If a viewer rule changes its criterion, update `VIEWER_RULES`.

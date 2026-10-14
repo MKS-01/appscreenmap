@@ -3,13 +3,13 @@
 import json
 
 import pytest
-from fakedevice import ACT, FakeDriver
 
-from appscreenmap import explorer as explorer_mod
 from appscreenmap.core.config import CrawlConfig
 from appscreenmap.core.model import AppMap
-from appscreenmap.explorer import Explorer
-from appscreenmap.perf import summarize
+from appscreenmap.crawler import explorer as explorer_mod
+from appscreenmap.crawler.explorer import Explorer
+from appscreenmap.reports.perf import summarize
+from appscreenmap.testkit.fakedevice import ACT, FakeDriver
 from appscreenmap.testkit.helpers import PKG
 
 
@@ -104,7 +104,7 @@ def test_launch_landing_on_a_restored_screen_is_an_entry_point(tmp_path, monkeyp
 
 
 def test_export_skips_screens_without_a_path(tmp_path):
-    from appscreenmap.export import export_run
+    from appscreenmap.exporters.export import export_run
 
     ex, _ = _explorer(tmp_path)
     ex.restart("start")
@@ -116,10 +116,9 @@ def test_export_skips_screens_without_a_path(tmp_path):
     assert not (ex.dir / "flows" / "s002.yaml").exists()
 
 
-from fakedevice import SCREENS, FakeApp
-from fakedevice import btn as _btn
-
 from appscreenmap.drivers.base import Snapshot
+from appscreenmap.testkit.fakedevice import SCREENS, FakeApp
+from appscreenmap.testkit.fakedevice import btn as _btn
 from appscreenmap.testkit.helpers import hierarchy, node
 
 SIGNIN_SCREENS = {

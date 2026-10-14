@@ -5,7 +5,7 @@ description: Accessibility rules for native iOS apps (SwiftUI and UIKit) in AppS
 
 # iOS accessibility: the rules
 
-The Android counterpart is `wcag-mobile-rules` (criteria catalogue in `apps/engine/src/appscreenmap/wcag.py`); this page is what changes on
+The Android counterpart is `wcag-mobile-rules` (criteria catalogue in `packages/a11y/src/appscreenmap/a11y/wcag.py`); this page is what changes on
 iOS. WCAG 2.2 still decides pass/fail; Apple's HIG sets stricter numbers in places. Say which one a finding used.
 
 ## The iOS accessibility tree is the evidence

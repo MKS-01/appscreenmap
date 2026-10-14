@@ -27,7 +27,7 @@ Mockups the system was designed from: the canvas "AppScreenMap redesign"
 | Surface | Status |
 |---|---|
 | Web viewer (`web/`) | **Adopted.** Every value comes from `design/tokens.css`. Old token names still work through aliases. |
-| WCAG report (`a11y-report.html`, `apps/engine/src/appscreenmap/a11y_report.py`) | **Not yet.** It has its own light/dark palette inline (`--bg #f7f7f5`, `--accent #3d5afe`, …). To adopt: read `design/tokens.css` at report time and inline it, and ship the file in the wheel (hatch `force-include` `design/tokens.css` → `appscreenmap/design/tokens.css`). That's crawler-side work, so coordinate with that workstream. |
+| WCAG report (`a11y-report.html`, `packages/a11y/src/appscreenmap/a11y/report.py`) | **Not yet.** It has its own light/dark palette inline (`--bg #f7f7f5`, `--accent #3d5afe`, …). To adopt: read `design/tokens.css` at report time and inline it, and ship the file in the wheel (hatch `force-include` `design/tokens.css` → `appscreenmap/design/tokens.css`). That's crawler-side work, so coordinate with that workstream. |
 | Exported Markdown, Maestro flows, Mermaid | No styling. Nothing to adopt. |
 
 ## The look, in five rules

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from appscreenmap.a11y import RULES, audit_run, format_audit
+from appscreenmap.a11y.checks import RULES, audit_run, format_audit
 from appscreenmap.drivers.apkinfo import parse_manifest_activities
 from appscreenmap.testkit.helpers import PKG, hierarchy, node
 
@@ -232,7 +232,7 @@ def _report_run(tmp_path, notes=None, font_scale=1.0):
 
 
 def test_report_groups_repeated_elements_and_marks_untested(tmp_path):
-    from appscreenmap.a11y_report import build_model
+    from appscreenmap.a11y.report import build_model
 
     m = build_model(_report_run(tmp_path))
     groups = m["findings_by_sc"]["4.1.2"]
@@ -250,7 +250,7 @@ def test_report_groups_repeated_elements_and_marks_untested(tmp_path):
 
 
 def test_report_imports_confirmed_viewer_findings_and_font_scale_pass(tmp_path):
-    from appscreenmap.a11y_report import build_model
+    from appscreenmap.a11y.report import build_model
 
     notes = {
         "s001::contrast::TextView::Fine print::40,600": {"status": "confirmed", "note": "2.9:1"},
@@ -267,7 +267,7 @@ def test_report_imports_confirmed_viewer_findings_and_font_scale_pass(tmp_path):
 
 
 def test_reports_render(tmp_path):
-    from appscreenmap.a11y_report import write_reports
+    from appscreenmap.a11y.report import write_reports
 
     run = _report_run(tmp_path)
     out = write_reports(run)

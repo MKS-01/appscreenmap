@@ -20,12 +20,11 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from appscreenmap.a11y.checks import audit_run
 from appscreenmap.core.model import load_map
 from appscreenmap.core.runs import resolve_run, update_index
-
-from .a11y import audit_run
-from .perf import summarize as summarize_perf
-from .verify import required_secrets
+from appscreenmap.regression.verify import required_secrets
+from appscreenmap.reports.perf import summarize as summarize_perf
 
 INSTRUCTIONS = """\
 AppScreenMap has crawled mobile apps and recorded every screen, element and transition. Use it as
@@ -401,15 +400,14 @@ class MapTools:
 
     # ── device ───────────────────────────────────────────────────────────────
     def _replayer(self, data: dict, serial: str | None):
+        from appscreenmap.crawler.replay import Replayer
         from appscreenmap.drivers.android import AdbDriver
-
-        from .replay import Replayer
 
         return Replayer(AdbDriver(serial or self.serial), data, log=lambda *a: None)
 
     def where_am_i(self, run: str | None = None, serial: str | None = None) -> dict:
         """Match the screen showing on the device right now to the map."""
-        from .replay import identify
+        from appscreenmap.crawler.replay import identify
 
         _, data = self._data(run)
         rp = self._replayer(data, serial)
@@ -433,7 +431,7 @@ class MapTools:
     ) -> dict:
         """Drive the device to a screen: over recorded transitions from where it is now, else by
         relaunching the app and replaying the recorded path. The app is pinned while it moves."""
-        from .replay import ReplayFailed
+        from appscreenmap.crawler.replay import ReplayFailed
 
         _, data = self._data(run)
         target_screen = self._screen(data, screen)

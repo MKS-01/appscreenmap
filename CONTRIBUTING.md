@@ -30,7 +30,7 @@ CI runs the same checks.
 
 | Area | Path | Notes |
 |---|---|---|
-| Crawler (Python) | `apps/engine/src/appscreenmap/` | Drivers (Android, iOS Simulator) → analyzer → explorer → model → export/report → CLI |
+| Crawler (Python) | `packages/*/` + `apps/engine/` | uv workspace, one `appscreenmap.*` namespace: core → drivers → crawler → a11y, security, reports, regression, exporters → CLI + MCP (`apps/engine`). Layout: [`docs/MONOREPO.md`](docs/MONOREPO.md) |
 | Web viewer | `web/` | React + TypeScript + Vite. UI rules: [`web/DESIGN.md`](web/DESIGN.md) |
 | Design tokens | `design/tokens.css` | Colour, type, space and motion shared by the viewer and the HTML reports |
 | Data contract | `docs/MAP_SCHEMA.md` | `map.json` is the interface between crawler and viewer |

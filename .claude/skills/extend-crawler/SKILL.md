@@ -23,10 +23,10 @@ Keep each layer ignorant of the ones after it.
 | **New UI pattern** | `analyzer._patterns()` | Add a test in `packages/core/tests/test_analyzer.py` and list the pattern in `docs/MAP_SCHEMA.md`. |
 | **Element kind / priority** | `analyzer._kind()`, `KIND_PRIORITY` | Kinds drive priority and global inference. |
 | **Config option** | `config.CrawlConfig` (dataclass field + comment) + `examples/appscreenmap.toml` | Unknown keys raise. Expose a CLI flag only if it's commonly changed. |
-| **CLI command** | `cli.py`: `cmd_<name>` + subparser | Keep logic in a module (like `report.py`); the CLI only formats. |
+| **CLI command** | `cli.py`: `cmd_<name>` + subparser | Keep logic in a module (like `reports/health.py`); the CLI only formats. |
 | **map.json field** | `model.*.to_dict()` | Additive only (schema 1). Document it in `docs/MAP_SCHEMA.md` and tell the user the web session can use it. |
 | **Exploration strategy** (LLM-guided, goal-directed) | `Explorer.next_action()` / `pick_frontier()` | Keep the deterministic path as the default. An LLM strategy is optional, plugged in behind a config flag, and must still respect `blocked_text` and `stay_in_app`. |
-| **Run analysis** | `report.py` | New findings should name the symptom and point at the cause. |
+| **Run analysis** | `packages/reports/` (`health.py`, `perf.py`) | New findings should name the symptom and point at the cause. |
 
 ## Checklist for every feature
 

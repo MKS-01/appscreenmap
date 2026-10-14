@@ -1,14 +1,13 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 import pytest
-from PIL import Image
 
 from appscreenmap.core.analyzer import analyze
 from appscreenmap.core.config import CrawlConfig
 from appscreenmap.core.model import AppMap
-from appscreenmap.export import maestro_flow, mermaid
 from appscreenmap.testkit.helpers import PKG, compose_home, hierarchy, node
-from appscreenmap.visual import compare_images
 
 ACT = f"{PKG}.MainActivity"
 
@@ -105,88 +104,6 @@ def test_config_inputs_and_blocking(tmp_path: Path):
     assert cfg.is_blocked("Archive") and cfg.is_blocked("log out")
     with pytest.raises(ValueError):
         CrawlConfig.load(None, nope=1)
-
-
-def _map_dict():
-    return {
-        "run": {"id": "r1", "app": {"package": PKG}, "device": {"width": 1080, "height": 2400}},
-        "screens": [
-            {
-                "id": "s001",
-                "kind": "app",
-                "title": "Sign in",
-                "reach_path": [],
-                "elements": [],
-                "autofill": [{"selector": {"point": [540, 460]}, "value": "qa@x.dev"}],
-            },
-            {
-                "id": "s002",
-                "kind": "app",
-                "title": "Home",
-                "autofill": [],
-                "elements": [{"text": "Home", "rid": "", "kind": "button"}],
-                "reach_path": [
-                    {
-                        "screen": "s001",
-                        "action": "click",
-                        "label": "Sign in",
-                        "selector": {"id": f"{PKG}:id/submit", "text": "Sign in", "point": [540, 900]},
-                        "scroll_depth": 0,
-                    }
-                ],
-            },
-            {
-                "id": "s003",
-                "kind": "app",
-                "title": "Item (1)",
-                "autofill": [],
-                "elements": [],
-                "reach_path": [
-                    {
-                        "screen": "s002",
-                        "action": "click",
-                        "label": "Item (1)",
-                        "selector": {"text": "Item (1)", "point": [540, 1900]},
-                        "scroll_depth": 2,
-                    }
-                ],
-            },
-            {"id": "x:com.android.chrome", "kind": "external", "title": "com.android.chrome"},
-        ],
-        "transitions": [
-            {"from": "s001", "to": "s002", "label": "Sign in", "action": "click"},
-            {"from": "s002", "to": "x:com.android.chrome", "label": 'Open "site"', "action": "click"},
-        ],
-    }
-
-
-def test_maestro_flow_replays_autofill_and_path():
-    d = _map_dict()
-    flow = maestro_flow(d, d["screens"][1])
-    assert f"appId: {PKG}" in flow
-    assert '- inputText: "qa@x.dev"' in flow
-    assert f'- tapOn: {{ id: "{PKG}:id/submit" }}' in flow
-    assert '- assertVisible: "Home"' in flow
-    flow3 = maestro_flow(d, d["screens"][2])
-    assert "scrollUntilVisible" in flow3 and 'text: "Item \\\\(1\\\\)"' in flow3
-
-
-def test_mermaid_escapes_ids_and_quotes():
-    out = mermaid(_map_dict())
-    assert out.startswith("flowchart LR")
-    assert "x_com_android_chrome" in out and '"' not in out.split("-->|")[-1].split("|")[0].strip('"')
-
-
-def test_compare_images_detects_change(tmp_path: Path):
-    a, b, c = tmp_path / "a.png", tmp_path / "b.png", tmp_path / "c.png"
-    Image.new("RGB", (100, 200), "white").save(a)
-    img = Image.new("RGB", (100, 200), "white")
-    img.paste((0, 0, 0), (40, 100, 60, 120))
-    img.save(b)
-    res = compare_images(a, b, tmp_path / "d.png", mask_top=0.05, mask_bottom=0)
-    assert res["changed_ratio"] > 0 and res["bbox"] == [40, 100, 60, 120]
-    Image.new("RGB", (100, 200), "white").save(c)
-    assert compare_images(a, c, tmp_path / "e.png", 0.05, 0)["changed_ratio"] == 0
 
 
 def test_noop_nav_item_is_inferred_as_same_screen(amap):
