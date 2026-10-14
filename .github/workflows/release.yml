@@ -1,0 +1,43 @@
+name: release
+
+# Switched off: nothing here runs until a release is asked for.
+# To turn it on: set the repository variable RELEASE_ENABLED to "true", then run this workflow by hand
+# (Actions > release > Run workflow) with the version tag. It never runs on push or on tags.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v0.1.0 (must match apps/cli/package.json)"
+        required: true
+      draft:
+        description: "Create the release as a draft"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: ${{ vars.RELEASE_ENABLED == 'true' }}
+    runs-on: macos-latest  # macOS first: darwin-arm64 and darwin-x64 binaries
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: astral-sh/setup-uv@v5
+      - run: bun install --frozen-lockfile
+      - run: uv sync
+      - name: Check the tag matches the CLI version
+        run: |
+          v="$(jq -r .version apps/cli/package.json)"
+          [ "v$v" = "${{ inputs.tag }}" ] || { echo "tag ${{ inputs.tag }} does not match apps/cli version $v"; exit 1; }
+      - run: uv run pytest -q
+      - run: make cli-check
+      - run: make release-local  # builds dist/release/: wheels, viewer bundle, binaries, manifest.json, SHA256SUMS, install.sh
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=""
+          [ "${{ inputs.draft }}" = "true" ] && flags="--draft"
+          gh release create "${{ inputs.tag }}" dist/release/* --title "${{ inputs.tag }}" --generate-notes $flags
