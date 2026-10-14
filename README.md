@@ -166,8 +166,8 @@ make setup
 uv run pytest -q && uv run ruff check   # synthetic hierarchies, no device needed
 ```
 
-Try it on the [Playground](samples/README.md) app (known answers). Layout: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
-Roadmap: [docs/PLAN.md](docs/PLAN.md) · Internals: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+Try it on the [Playground](samples/README.md) app (known answers). Architecture and layout:
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Roadmap: [docs/PLAN.md](docs/PLAN.md) · Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" font-family="Geist,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif" role="img" aria-labelledby="t d">
   <title id="t">AppScreenMap architecture</title>
-  <desc id="d">An emulator or device feeds the crawler (driver, analyzer, explorer), which writes a run folder of map.json, screenshots and traces. Exporters, reports, the web viewer and the MCP server all read that folder.</desc>
+  <desc id="d">An emulator or simulator feeds the Python packages (drivers, core, crawler, a11y, security, reports, regression, exporters), which write a run folder of map.json, screenshots and traces. The Bun CLI, the engine commands, the web viewer and the MCP server all read that folder.</desc>
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#8a92a0"/></marker>
     <style>
@@ -15,21 +15,23 @@
   </defs>
   <text class="h" x="30" y="34">CRAWL</text>
   <rect class="box" x="30" y="48" width="170" height="86" rx="12"/>
-  <text class="t" x="48" y="82">Emulator / device</text><text class="s" x="48" y="104">adb: hierarchy,</text><text class="s" x="48" y="121">screenshots, taps</text>
-  <rect class="box" x="250" y="48" width="260" height="262" rx="12"/>
-  <text class="t" x="270" y="82">Crawler (Python)</text>
-  <text class="s" x="270" y="112">driver: talks to the device</text>
-  <text class="s" x="270" y="140">analyzer: elements, screen</text><text class="s" x="270" y="157">fingerprint, UI patterns</text>
-  <text class="s" x="270" y="185">explorer: pick, act, identify,</text><text class="s" x="270" y="202">record; backtrack and replay</text>
-  <text class="s" x="270" y="230">no model calls: same build and</text><text class="s" x="270" y="247">settings give the same map</text>
-  <path class="l" d="M200 91H250"/>
+  <text class="t" x="48" y="82">Device</text><text class="s" x="48" y="104">emulator or simulator</text><text class="s" x="48" y="121">adb · simctl + idb</text>
+  <rect class="box" x="240" y="48" width="270" height="262" rx="12"/>
+  <text class="t" x="260" y="82">Packages (Python)</text>
+  <text class="s" x="260" y="112">drivers: talk to the device</text>
+  <text class="s" x="260" y="136">core: map model, analyzer,</text><text class="s" x="260" y="153">screen identity</text>
+  <text class="s" x="260" y="177">crawler: explore, backtrack, replay</text>
+  <text class="s" x="260" y="201">a11y · security · reports</text>
+  <text class="s" x="260" y="225">regression · exporters</text>
+  <text class="s" x="260" y="258">no model calls: same build and</text><text class="s" x="260" y="275">settings give the same map</text>
+  <path class="l" d="M200 91H240"/>
   <rect class="run" x="535" y="130" width="205" height="100" rx="12"/>
   <text class="t" x="553" y="164">runs/&lt;project&gt;/&lt;run&gt;/</text><text class="s" x="553" y="188">map.json · trace.jsonl</text><text class="s" x="553" y="206">screens/ · flows/ · notes.json</text>
   <path class="l" d="M510 180H535"/>
   <text class="h" x="780" y="34">USE</text>
-  <rect class="box" x="780" y="48" width="150" height="56" rx="12"/><text class="t" x="796" y="72">Web viewer</text><text class="s" x="796" y="90">map, review, diff</text>
-  <rect class="box" x="780" y="116" width="150" height="56" rx="12"/><text class="t" x="796" y="140">Exporters</text><text class="s" x="796" y="158">Maestro, Mermaid</text>
-  <rect class="box" x="780" y="184" width="150" height="56" rx="12"/><text class="t" x="796" y="208">Reports + CI</text><text class="s" x="796" y="226">a11y, perf, verify</text>
+  <rect class="box" x="780" y="48" width="150" height="56" rx="12"/><text class="t" x="796" y="72">CLI (Bun + Ink)</text><text class="s" x="796" y="90">terminal home</text>
+  <rect class="box" x="780" y="116" width="150" height="56" rx="12"/><text class="t" x="796" y="140">Engine</text><text class="s" x="796" y="158">crawl, report, export</text>
+  <rect class="box" x="780" y="184" width="150" height="56" rx="12"/><text class="t" x="796" y="208">Web viewer</text><text class="s" x="796" y="226">map, review, diff</text>
   <rect class="box" x="780" y="252" width="150" height="56" rx="12"/><text class="t" x="796" y="276">MCP server</text><text class="s" x="796" y="294">agents ask the map</text>
   <path class="l" d="M740 180C760 180 760 76 780 76"/><path class="l" d="M740 180C760 180 760 144 780 144"/><path class="l" d="M740 180C760 180 760 212 780 212"/><path class="l" d="M740 180C760 180 760 280 780 280"/>
 </svg>
