@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import plistlib
 import zipfile
 from argparse import Namespace
 
@@ -40,6 +41,7 @@ def args(run, **kw):
     base = {
         "run": str(run),
         "apk": None,
+        "app": None,
         "pull": False,
         "device": False,
         "frida_log": None,
@@ -71,8 +73,26 @@ def test_command_merges_evidence_from_separate_runs_of_the_scanner(tmp_path, cap
 
 def test_command_refuses_without_input_and_for_ios(tmp_path, capsys):
     assert cmd_security(args(make_run(tmp_path))) == 2
-    assert cmd_security(args(make_run(tmp_path / "ios", "ios"), apk="x.apk")) == 2
+    assert cmd_security(args(make_run(tmp_path / "ios", "ios"), apk="x.apk")) == 2  # iOS needs --app
+    assert cmd_security(args(make_run(tmp_path / "ios2", "ios"))) == 2
+    assert cmd_security(args(make_run(tmp_path / "droid"), app="x.app")) == 2  # --app is iOS only
     assert cmd_security(args(tmp_path / "missing")) == 2
+
+
+def test_ios_run_is_audited_from_the_app_bundle(tmp_path, capsys):
+    app = tmp_path / "X.app"
+    app.mkdir()
+    (app / "Info.plist").write_bytes(
+        plistlib.dumps(
+            {"CFBundleIdentifier": "com.x", "NSAppTransportSecurity": {"NSAllowsArbitraryLoads": True}}
+        )
+    )
+    run = make_run(tmp_path / "ios", "ios")
+    assert cmd_security(args(run, app=str(app))) == 0
+    audit = json.loads((run / "audits" / "security.json").read_text())
+    got = {f["id"] for f in audit["findings"]}
+    assert got == {"ats-exceptions:arbitrary-loads", "privacy-manifest-missing"}
+    assert {f["platform"] for f in audit["findings"]} == {"ios"}
 
 
 def test_frida_script_prints_the_bundled_hook(capsys):

@@ -1,6 +1,6 @@
 ---
 name: security-audit
-description: Run a security audit of an Android or iOS build with AppScreenMap — `appscreenmap security <run>` scans an APK (manifest, hard-coded secrets), the app's data folder and a Frida observation log and writes audits/security.json; judge the findings against the security rules, do the checks it doesn't cover by hand, and report. Use when asked to security-check, scan or review an app build, to fill the Security audit, or to check a release before shipping. Only for apps you own or are authorised to test.
+description: Run a security audit of an Android or iOS build with AppScreenMap — `appscreenmap security <run>` scans an APK (manifest, risky API use in the code, hard-coded secrets) or an iOS .app/.ipa with --app (Info.plist, privacy manifest, secrets), the app's data folder and a Frida observation log and writes audits/security.json; judge the findings against the security rules, do the checks it doesn't cover by hand, and report. Use when asked to security-check, scan or review an app build, to fill the Security audit, or to check a release before shipping. Only for apps you own or are authorised to test.
 ---
 
 # Security audit
@@ -10,10 +10,11 @@ description: Run a security audit of an Android or iOS build with AppScreenMap �
 > evading detection or exploiting anyone else's app. Don't paste secrets you find into chat, tickets or the report:
 > record *where*, not the value.
 
-**Status:** `appscreenmap security <run>` is built for **Android**: manifest rules, hard-coded secrets in the APK, secrets left in the
-app's data folder, and an observation-only Frida log. It writes `audits/security.json` itself, so the Insights Security page shows
-real findings. What it does *not* check yet (code-level rules such as `weak-crypto`, and everything on iOS) is still done by hand
-below, and a rule stays `planned` in the catalogue until the command covers it. Rules, severities and fixes live in `security-rules`.
+**Status:** `appscreenmap security <run>` covers **Android** (manifest rules, risky API references in the dex, hard-coded
+secrets in the APK, secrets left in the app's data folder, an observation-only Frida log) and **iOS** with `--app` (Info.plist
+App Transport Security, privacy manifest, secrets in the bundle). It writes `audits/security.json` itself, so the Insights Security
+page shows real findings. What it does *not* check (`sensitive-logging`, custom trust managers, the iOS data container) is still
+done by hand below, and a rule stays `planned` in the catalogue until the command covers it. Rules, severities and fixes live in `security-rules`.
 
 ## 1. Preflight
 
@@ -56,13 +57,14 @@ The script only observes: it logs plain `http://` hosts and whether OkHttp has a
 pinning or change traffic. It was written without a device to test on, so check that its hooks attach (a `hook-failed` line, or
 a "Frida hook … did not attach" note in the audit) before trusting an empty result.
 
-### By hand: what the scanner doesn't cover yet
+### By hand: what the scanner doesn't cover
+
+The scanner matches strings in the dex files, so its code findings are candidates. It does not read the code: a custom `X509TrustManager`, a `Log.*` call with a token, or a call that passes `false` need a human (or jadx) look.
 
 | Evidence | Android | iOS (simulator `.app`) | Rules |
 |---|---|---|---|
-| Plist | | `plutil -p App.app/Info.plist`; look for `PrivacyInfo.xcprivacy` | `ats-exceptions`, `privacy-manifest-missing` |
 | Data left behind | | `xcrun simctl get_app_container <udid> <bundle> data`, then `plutil -p` the preferences | `secrets-at-rest` |
-| Code | `jadx -d out app.apk`, then grep `out/sources` | `strings` on the binary, grep the bundle | `webview-js-interface`, `insecure-trust-manager`, `weak-crypto`, `sensitive-logging` |
+| Code | `jadx -d out app.apk`, then grep `out/sources` (custom trust managers, the value a candidate passes) | `strings` on the binary, grep the bundle | `insecure-trust-manager`, `sensitive-logging`, and every dex candidate |
 
 Detection hints for every rule are in `security-rules/reference/rules.md`. Say which categories you did **not** run: an audit that
 skipped a category must not read as a pass (the command never returns `pass` while rules remain unchecked).
@@ -103,7 +105,7 @@ Never include a secret's value.
 
 ## Extending the scanner
 
-`packages/security/` (stdlib only: `manifest.py`, `secrets.py`, `apk.py`, `device_data.py`, `frida.py`, `audit.py`; tests in `packages/security/tests/` use real `aapt2` output saved in `packages/security/tests/fixtures/`).
+`packages/security/` (stdlib only: `manifest.py`, `code.py` (dex string matches), `secrets.py`, `apk.py`, `ios.py`, `device_data.py`, `frida.py`, `audit.py`; tests in `packages/security/tests/` use real `aapt2` output saved in `packages/security/tests/fixtures/`).
 Add a check by returning `{"rule": <id>, "key": ..., "detail": ...}` from a collector, add a fixture test, and flip the rule's
-`status` to `ready` in `rules.json`. Next in line: the `jadx`-backed code rules, and iOS (plist and data container).
+`status` to `ready` in `rules.json`. Next in line: `sensitive-logging`, custom `X509TrustManager` detection (needs bytecode reading, not string matching), and the iOS data container.
 Use `extend-crawler` for CLI wiring.

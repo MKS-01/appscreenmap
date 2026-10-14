@@ -1,4 +1,4 @@
-"""`security`: the security audit of an Android build (see appscreenmap.security)."""
+"""`security`: the security audit of an Android or iOS build (see appscreenmap.security)."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from appscreenmap.security import (
     parse_frida_log,
     scan_apk,
     scan_device_data,
+    scan_ios_app,
     write_audit,
 )
 
@@ -26,7 +27,7 @@ def cmd_security(args) -> int:
         return 0
     if not args.run:
         print(
-            "Which run? appscreenmap security <run> --apk FILE (or --pull, --device, --frida-log).",
+            "Which run? appscreenmap security <run> --apk FILE (Android: or --pull, --device, --frida-log) or --app FILE (iOS).",
             file=sys.stderr,
         )
         return 2
@@ -37,10 +38,17 @@ def cmd_security(args) -> int:
     data = load_map(run)
     app = data["run"]["app"]
     if (app.get("platform") or data["run"]["device"].get("platform")) == "ios":
-        print(
-            "The security scanner covers Android builds for now (iOS: see the security-audit skill).",
-            file=sys.stderr,
-        )
+        if not args.app:
+            print("iOS run: pass --app FILE (the .app folder or the .ipa).", file=sys.stderr)
+            return 2
+        if args.apk or args.pull or args.device or args.frida_log:
+            print("--apk, --pull, --device and --frida-log are Android only.", file=sys.stderr)
+            return 2
+        sources = load_evidence(run)
+        sources["ios-app"] = {**scan_ios_app(args.app), "at": datetime.now(UTC).isoformat(timespec="seconds")}
+        return _report(run, app, write_audit(run, sources, "ios"), args.json)
+    if args.app:
+        print("--app is for iOS runs; use --apk for Android.", file=sys.stderr)
         return 2
     if not (args.apk or args.pull or args.device or args.frida_log):
         print("Nothing to scan: pass --apk FILE, --pull, --device and/or --frida-log FILE.", file=sys.stderr)
@@ -69,8 +77,11 @@ def cmd_security(args) -> int:
             **parse_frida_log(Path(args.frida_log).read_text(errors="replace")),
             "at": datetime.now(UTC).isoformat(timespec="seconds"),
         }
-    audit = write_audit(run, sources)
-    if args.json:
+    return _report(run, app, write_audit(run, sources), args.json)
+
+
+def _report(run: Path, app: dict, audit: dict, as_json: bool) -> int:
+    if as_json:
         print(json.dumps(audit, indent=1))
         return 0
     print(
@@ -88,11 +99,14 @@ def cmd_security(args) -> int:
 def register(sub) -> None:
     s = sub.add_parser(
         "security",
-        help="security audit of an Android build (manifest, secrets, data at rest, Frida log), written to audits/security.json",
+        help="security audit of an Android or iOS build (manifest, code, secrets, data at rest, Frida log), written to audits/security.json",
     )
     s.add_argument("run", nargs="?")
     s.add_argument(
-        "--apk", help="APK to scan statically (manifest flags, exported components, hard-coded secrets)"
+        "--apk", help="APK to scan statically (manifest flags, components, risky API use, hard-coded secrets)"
+    )
+    s.add_argument(
+        "--app", help="iOS .app folder or .ipa to scan statically (Info.plist, privacy manifest, secrets)"
     )
     s.add_argument(
         "--pull", action="store_true", help="scan the installed build: pull its APK from the device"

@@ -18,6 +18,7 @@ class Component:
     actions: list[str] = field(default_factory=list)
     main: bool = False
     launcher: bool = False
+    reparenting: bool = False
 
     @property
     def is_launcher(self) -> bool:
@@ -33,12 +34,14 @@ class Component:
 class Manifest:
     package: str = ""
     target_sdk: int | None = None
+    min_sdk: int | None = None
     debuggable: bool | None = None
     allow_backup: bool | None = None
     backup_rules: bool = False
     cleartext: bool | None = None
     network_config: str | None = None
     components: list[Component] = field(default_factory=list)
+    permissions: list[tuple[str, int]] = field(default_factory=list)  # declared: (name, protectionLevel)
 
 
 _ELEM = re.compile(r"^(\s*)E: (\S+)")
@@ -67,7 +70,9 @@ def parse_manifest(tree: str) -> Manifest:
             while stack and stack[-1][0] >= indent:
                 stack.pop()
             stack.append((indent, tag))
-            if tag in COMPONENT_TAGS:
+            if tag == "permission":
+                m.permissions.append(("", 0))
+            elif tag in COMPONENT_TAGS:
                 comp = Component(tag)
                 m.components.append(comp)
             elif tag == "intent-filter" and comp:
@@ -81,6 +86,15 @@ def parse_manifest(tree: str) -> Manifest:
             m.package = v
         elif tag == "uses-sdk" and key == "targetSdkVersion":
             m.target_sdk = int(v, 0) if re.fullmatch(r"(0x[0-9a-f]+|\d+)", v) else None
+        elif tag == "uses-sdk" and key == "minSdkVersion":
+            m.min_sdk = int(v, 0) if re.fullmatch(r"(0x[0-9a-f]+|\d+)", v) else None
+        elif tag == "permission" and m.permissions:
+            name, level = m.permissions[-1]
+            if key == "name":
+                name = v
+            elif key == "protectionLevel" and re.fullmatch(r"(0x[0-9a-f]+|\d+)", v):
+                level = int(v, 0)
+            m.permissions[-1] = (name, level)
         elif tag == "application":
             if key == "debuggable":
                 m.debuggable = _bool(v)
@@ -99,6 +113,8 @@ def parse_manifest(tree: str) -> Manifest:
                 comp.exported = _bool(v)
             elif key == "permission":
                 comp.permission = v
+            elif key == "allowTaskReparenting":
+                comp.reparenting = _bool(v) is True
         elif tag == "action" and comp and key == "name":
             comp.actions.append(v)
             comp.main = comp.main or v == "android.intent.action.MAIN"
@@ -172,6 +188,27 @@ def manifest_findings(m: Manifest, nsc: dict | None = None) -> list[dict]:
                 "detail": f"The network security config permits cleartext HTTP for: {doms}.",
             }
         )
+    for name, level in m.permissions:
+        if level & 0xF in (0, 1):  # the base protection level: 0 normal, 1 dangerous
+            kind = "normal" if level & 0xF == 0 else "dangerous"
+            out.append(
+                {
+                    "rule": "custom-permission-weak",
+                    "key": name,
+                    "subject": name.rsplit(".", 1)[-1],
+                    "detail": f"The app declares the custom permission {name} with protectionLevel {kind}.",
+                }
+            )
+    for c in m.components:
+        if c.reparenting:
+            out.append(
+                {
+                    "rule": "task-hijacking",
+                    "key": c.name,
+                    "subject": c.name.rsplit(".", 1)[-1],
+                    "detail": f'{c.kind.capitalize()} {c.name} sets android:allowTaskReparenting="true".',
+                }
+            )
     for c in m.components:
         if c.exposed and not c.is_launcher and not c.permission:
             how = (

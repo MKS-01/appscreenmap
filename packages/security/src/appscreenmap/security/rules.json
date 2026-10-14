@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "updated": "2026-10-14",
-  "note": "The security audit's rule catalogue. Documented in .claude/skills/security-rules; read by the viewer (placeholders until a rule is implemented) and by the scanner when it exists. Every ref is an official Android, Apple or Google Play page.",
+  "updated": "2026-10-15",
+  "note": "The security audit's rule catalogue. Documented in .claude/skills/security-rules; read by the viewer (placeholders until a rule is implemented) and by the scanner (`appscreenmap security`). Every ref is an official Android, Apple or Google Play page.",
   "categories": {
     "manifest": "Manifest and Info.plist",
     "static": "Static scan of the compiled code",
@@ -15,12 +15,18 @@
       "platform": "android",
       "category": "manifest",
       "severity": "warning",
-      "needs": ["aapt2"],
+      "needs": [
+        "aapt2"
+      ],
       "status": "ready",
       "why": "An activity, service, receiver or provider that is exported can be started by any app. Without a permission, other apps can drive it or read its data.",
       "fix": "Set android:exported=\"false\" unless another app must reach it; otherwise guard it with a signature-level android:permission.",
       "refs": [
-        { "title": "android:exported", "url": "https://developer.android.com/privacy-and-security/risks/android-exported", "publisher": "Android Developers" }
+        {
+          "title": "android:exported",
+          "url": "https://developer.android.com/privacy-and-security/risks/android-exported",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -29,14 +35,28 @@
       "platform": "android",
       "category": "manifest",
       "severity": "warning",
-      "needs": ["aapt2"],
+      "needs": [
+        "aapt2"
+      ],
       "status": "ready",
       "why": "android:usesCleartextTraffic=\"true\", or a network security config that permits cleartext, lets the app send data over HTTP, where it can be read and changed on the network. Android 17 starts deprecating the attribute.",
       "fix": "Remove the attribute and use HTTPS. If one domain truly needs HTTP, allow it per domain in network_security_config.xml.",
       "refs": [
-        { "title": "Cleartext communications", "url": "https://developer.android.com/privacy-and-security/risks/cleartext-communications", "publisher": "Android Developers" },
-        { "title": "Network security configuration", "url": "https://developer.android.com/privacy-and-security/security-config", "publisher": "Android Developers" },
-        { "title": "Android 17 behavior changes: all apps", "url": "https://developer.android.com/about/versions/17/behavior-changes-all", "publisher": "Android Developers" }
+        {
+          "title": "Cleartext communications",
+          "url": "https://developer.android.com/privacy-and-security/risks/cleartext-communications",
+          "publisher": "Android Developers"
+        },
+        {
+          "title": "Network security configuration",
+          "url": "https://developer.android.com/privacy-and-security/security-config",
+          "publisher": "Android Developers"
+        },
+        {
+          "title": "Android 17 behavior changes: all apps",
+          "url": "https://developer.android.com/about/versions/17/behavior-changes-all",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -45,12 +65,18 @@
       "platform": "android",
       "category": "manifest",
       "severity": "error",
-      "needs": ["aapt2"],
+      "needs": [
+        "aapt2"
+      ],
       "status": "ready",
       "why": "A build with android:debuggable=\"true\" lets anyone attach a debugger, read the app's data and run code inside its process. It must never ship.",
       "fix": "Build release variants with debuggable false (Gradle's release build type does this by default) and remove the manifest attribute.",
       "refs": [
-        { "title": "android:debuggable", "url": "https://developer.android.com/privacy-and-security/risks/android-debuggable", "publisher": "Android Developers" }
+        {
+          "title": "android:debuggable",
+          "url": "https://developer.android.com/privacy-and-security/risks/android-debuggable",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -59,12 +85,18 @@
       "platform": "android",
       "category": "manifest",
       "severity": "warning",
-      "needs": ["aapt2"],
+      "needs": [
+        "aapt2"
+      ],
       "status": "ready",
       "why": "With android:allowBackup on (the default), backups can copy the app's data, tokens included, off the device.",
       "fix": "Set allowBackup=\"false\", or add dataExtractionRules / fullBackupContent that exclude tokens and databases.",
       "refs": [
-        { "title": "Security recommendations for backups", "url": "https://developer.android.com/privacy-and-security/risks/backup-best-practices", "publisher": "Android Developers" }
+        {
+          "title": "Security recommendations for backups",
+          "url": "https://developer.android.com/privacy-and-security/risks/backup-best-practices",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -73,12 +105,18 @@
       "platform": "both",
       "category": "static",
       "severity": "error",
-      "needs": ["apk"],
+      "needs": [
+        "apk"
+      ],
       "status": "ready",
       "why": "API keys, tokens, private keys or passwords compiled into the app can be read by anyone who unpacks it.",
       "fix": "Keep secrets on a server. For client keys use per-user tokens, or restrict the key (package name, signing certificate, quota). Rotate any key that shipped.",
       "refs": [
-        { "title": "Hardcoded Cryptographic Secrets", "url": "https://developer.android.com/privacy-and-security/risks/hardcoded-cryptographic-secrets", "publisher": "Android Developers" }
+        {
+          "title": "Hardcoded Cryptographic Secrets",
+          "url": "https://developer.android.com/privacy-and-security/risks/hardcoded-cryptographic-secrets",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -87,12 +125,16 @@
       "platform": "android",
       "category": "static",
       "severity": "warning",
-      "needs": ["jadx"],
-      "status": "planned",
+      "needs": [],
+      "status": "ready",
       "why": "addJavascriptInterface exposes app methods to JavaScript in the page. If the WebView loads remote or user-supplied content, that page can call them.",
       "fix": "Load only trusted origins, expose as little as possible, annotate with @JavascriptInterface, or use WebMessagePort instead of a bridge.",
       "refs": [
-        { "title": "WebView – Native bridges", "url": "https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges", "publisher": "Android Developers" }
+        {
+          "title": "WebView – Native bridges",
+          "url": "https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -101,13 +143,21 @@
       "platform": "android",
       "category": "static",
       "severity": "error",
-      "needs": ["jadx"],
-      "status": "planned",
+      "needs": [],
+      "status": "ready",
       "why": "A custom X509TrustManager that accepts every certificate, or a HostnameVerifier that always returns true, disables TLS checks: anyone on the network can read and change the traffic.",
       "fix": "Delete the custom checks and use the platform defaults. To trust a private certificate authority, use a network security config.",
       "refs": [
-        { "title": "Unsafe X509TrustManager", "url": "https://developer.android.com/privacy-and-security/risks/unsafe-trustmanager", "publisher": "Android Developers" },
-        { "title": "Unsafe HostnameVerifier", "url": "https://developer.android.com/privacy-and-security/risks/unsafe-hostname", "publisher": "Android Developers" }
+        {
+          "title": "Unsafe X509TrustManager",
+          "url": "https://developer.android.com/privacy-and-security/risks/unsafe-trustmanager",
+          "publisher": "Android Developers"
+        },
+        {
+          "title": "Unsafe HostnameVerifier",
+          "url": "https://developer.android.com/privacy-and-security/risks/unsafe-hostname",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -116,12 +166,16 @@
       "platform": "android",
       "category": "static",
       "severity": "warning",
-      "needs": ["jadx"],
-      "status": "planned",
-      "why": "Algorithms such as DES, RC4, ECB mode, and MD5 or SHA-1 used for security, or a fixed IV, don't protect data.",
-      "fix": "Use AES-GCM or ChaCha20-Poly1305 with a fresh random nonce, SHA-256 or stronger, and keep keys in the Android Keystore.",
+      "needs": [],
+      "status": "ready",
+      "why": "DES and RC4 encryption, and MD5 or SHA-1 hashing, are weak or broken, so data protected with them can be recovered or forged.",
+      "fix": "Use AES-128 or AES-256 with GCM, or ChaCha20, SHA-2 or SHA-3 for hashing and bcrypt or Argon2 for passwords; the Tink library has safe defaults.",
       "refs": [
-        { "title": "Broken or risky cryptographic algorithm", "url": "https://developer.android.com/privacy-and-security/risks/broken-cryptographic-algorithm", "publisher": "Android Developers" }
+        {
+          "title": "Broken or risky cryptographic algorithm",
+          "url": "https://developer.android.com/privacy-and-security/risks/broken-cryptographic-algorithm",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -130,12 +184,18 @@
       "platform": "android",
       "category": "static",
       "severity": "info",
-      "needs": ["jadx"],
+      "needs": [
+        "jadx"
+      ],
       "status": "planned",
       "why": "Tokens, passwords or personal data written to Logcat can be read by other tools and end up in bug reports.",
       "fix": "Remove the log calls, or strip them from release builds (R8 -assumenosideeffects). Never log credentials.",
       "refs": [
-        { "title": "Log Info Disclosure", "url": "https://developer.android.com/privacy-and-security/risks/log-info-disclosure", "publisher": "Android Developers" }
+        {
+          "title": "Log Info Disclosure",
+          "url": "https://developer.android.com/privacy-and-security/risks/log-info-disclosure",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -144,12 +204,18 @@
       "platform": "both",
       "category": "dynamic",
       "severity": "info",
-      "needs": ["frida"],
+      "needs": [
+        "frida"
+      ],
       "status": "ready",
       "why": "While the app runs it accepts a certificate from a user-installed authority, so a proxy can read its traffic. Pinning is optional, but worth a deliberate decision for sensitive APIs.",
       "fix": "Pin your API hosts' public keys: <pin-set> in the network security config on Android; the URLSession delegate or NSPinnedDomains in Info.plist on iOS.",
       "refs": [
-        { "title": "Network security configuration", "url": "https://developer.android.com/privacy-and-security/security-config", "publisher": "Android Developers" }
+        {
+          "title": "Network security configuration",
+          "url": "https://developer.android.com/privacy-and-security/security-config",
+          "publisher": "Android Developers"
+        }
       ]
     },
     {
@@ -158,13 +224,23 @@
       "platform": "both",
       "category": "dynamic",
       "severity": "error",
-      "needs": ["frida"],
+      "needs": [
+        "frida"
+      ],
       "status": "ready",
       "why": "A request to an http:// URL was sent while the app ran, so its data crossed the network unencrypted.",
       "fix": "Serve the endpoint over HTTPS, update the client, and remove the cleartext exception that allowed it.",
       "refs": [
-        { "title": "Cleartext communications", "url": "https://developer.android.com/privacy-and-security/risks/cleartext-communications", "publisher": "Android Developers" },
-        { "title": "Preventing insecure network connections", "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections", "publisher": "Apple Developer" }
+        {
+          "title": "Cleartext communications",
+          "url": "https://developer.android.com/privacy-and-security/risks/cleartext-communications",
+          "publisher": "Android Developers"
+        },
+        {
+          "title": "Preventing insecure network connections",
+          "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections",
+          "publisher": "Apple Developer"
+        }
       ]
     },
     {
@@ -173,13 +249,23 @@
       "platform": "both",
       "category": "data",
       "severity": "warning",
-      "needs": ["adb or simctl"],
+      "needs": [
+        "adb or simctl"
+      ],
       "status": "ready",
       "why": "After a crawl, the app's data folder holds tokens or credentials in plain files, SharedPreferences or UserDefaults. Backups and rooted or jailbroken devices can read them.",
       "fix": "Keep secrets in the Android Keystore (for example EncryptedSharedPreferences) or the iOS Keychain, not in preferences or files.",
       "refs": [
-        { "title": "Security checklist", "url": "https://developer.android.com/privacy-and-security/security-tips", "publisher": "Android Developers" },
-        { "title": "Keychain services", "url": "https://developer.apple.com/documentation/security/keychain-services", "publisher": "Apple Developer" }
+        {
+          "title": "Security checklist",
+          "url": "https://developer.android.com/privacy-and-security/security-tips",
+          "publisher": "Android Developers"
+        },
+        {
+          "title": "Keychain services",
+          "url": "https://developer.apple.com/documentation/security/keychain-services",
+          "publisher": "Apple Developer"
+        }
       ]
     },
     {
@@ -188,12 +274,18 @@
       "platform": "ios",
       "category": "manifest",
       "severity": "warning",
-      "needs": ["the .app's Info.plist"],
-      "status": "planned",
+      "needs": [
+        "the .app's Info.plist"
+      ],
+      "status": "ready",
       "why": "NSAppTransportSecurity exceptions (NSAllowsArbitraryLoads, per-domain exceptions) allow insecure HTTP connections.",
       "fix": "Remove the exceptions and use HTTPS endpoints. Keep a per-domain exception only with a written reason.",
       "refs": [
-        { "title": "Preventing insecure network connections", "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections", "publisher": "Apple Developer" }
+        {
+          "title": "Preventing insecure network connections",
+          "url": "https://developer.apple.com/documentation/security/preventing-insecure-network-connections",
+          "publisher": "Apple Developer"
+        }
       ]
     },
     {
@@ -202,12 +294,112 @@
       "platform": "ios",
       "category": "manifest",
       "severity": "warning",
-      "needs": ["the .app bundle"],
-      "status": "planned",
+      "needs": [
+        "the .app bundle"
+      ],
+      "status": "ready",
       "why": "An app that uses required-reason APIs, or ships SDKs on Apple's list, needs a privacy manifest (PrivacyInfo.xcprivacy) declaring the data it collects and why.",
       "fix": "Add PrivacyInfo.xcprivacy to the app target and update any SDK that ships its own.",
       "refs": [
-        { "title": "Privacy manifest files", "url": "https://developer.apple.com/documentation/bundleresources/privacy-manifest-files", "publisher": "Apple Developer" }
+        {
+          "title": "Privacy manifest files",
+          "url": "https://developer.apple.com/documentation/bundleresources/privacy-manifest-files",
+          "publisher": "Apple Developer"
+        }
+      ]
+    },
+    {
+      "id": "sticky-broadcast",
+      "title": "Sticky broadcast sent",
+      "platform": "android",
+      "category": "static",
+      "severity": "warning",
+      "needs": [],
+      "status": "ready",
+      "why": "A sticky broadcast stays in the system after it is sent, so any app can read it, send its own or overwrite its extras, and it cannot be limited with a permission. The API has been deprecated since Android 5.0 (API 21).",
+      "fix": "Send a normal broadcast guarded by a permission or setPackage, use LiveData inside the app, and read the current value from a database or similar when it is needed.",
+      "refs": [
+        {
+          "title": "Sticky Broadcasts",
+          "url": "https://developer.android.com/privacy-and-security/risks/sticky-broadcast",
+          "publisher": "Android Developers"
+        }
+      ]
+    },
+    {
+      "id": "webview-file-access",
+      "title": "WebView file access",
+      "platform": "android",
+      "category": "static",
+      "severity": "warning",
+      "needs": [],
+      "status": "ready",
+      "why": "setAllowFileAccessFromFileURLs, setAllowUniversalAccessFromFileURLs and setAllowFileAccess let scripts in a WebView read local files, including the app's own /data/ folder, through file:// URLs. They were deprecated in API 30.",
+      "fix": "Serve local content with WebViewAssetLoader over https, and set these WebSettings to false explicitly, especially when targeting API 29 or lower.",
+      "refs": [
+        {
+          "title": "WebViews – Unsafe File Inclusion",
+          "url": "https://developer.android.com/privacy-and-security/risks/webview-unsafe-file-inclusion",
+          "publisher": "Android Developers"
+        }
+      ]
+    },
+    {
+      "id": "dynamic-code-loading",
+      "title": "Code loaded at runtime",
+      "platform": "android",
+      "category": "static",
+      "severity": "info",
+      "needs": [],
+      "status": "ready",
+      "why": "Code loaded at runtime can be tampered with or swapped by an attacker, which can expose data or run harmful code, and loading remote code can break Google Play policy.",
+      "fix": "Avoid dynamic code loading. If it is needed, keep the code in internal or scoped storage, check its hash or signature before loading, and take it only from infrastructure you control.",
+      "refs": [
+        {
+          "title": "Dynamic code loading",
+          "url": "https://developer.android.com/privacy-and-security/risks/dynamic-code-loading",
+          "publisher": "Android Developers"
+        }
+      ]
+    },
+    {
+      "id": "task-hijacking",
+      "title": "Task hijacking (StrandHogg)",
+      "platform": "android",
+      "category": "manifest",
+      "severity": "warning",
+      "needs": [
+        "aapt2"
+      ],
+      "status": "ready",
+      "why": "Task affinity and task reparenting let a malicious app put its own screen on top of yours and phish your users. The full fix is the OS patch that arrives with Android 11 (API 30).",
+      "fix": "Remove android:allowTaskReparenting=\"true\" from activities that do not need it, and raise minSdkVersion to 30 where you can: only the Android 11 patch stops every variant of the attack.",
+      "refs": [
+        {
+          "title": "StrandHogg Attack / Task Affinity Vulnerability",
+          "url": "https://developer.android.com/privacy-and-security/risks/strandhogg",
+          "publisher": "Android Developers"
+        }
+      ]
+    },
+    {
+      "id": "custom-permission-weak",
+      "title": "Custom permission with a weak protection level",
+      "platform": "android",
+      "category": "manifest",
+      "severity": "warning",
+      "needs": [
+        "aapt2"
+      ],
+      "status": "ready",
+      "why": "A custom permission with a normal or dangerous protection level can be requested by most apps, so it gives little protection to the components it guards.",
+      "fix": "Declare the permission with android:protectionLevel=\"signature\", using a dedicated signing certificate stored securely in a keystore.",
+      "refs": [
+        {
+          "title": "Custom Permissions",
+          "url": "https://developer.android.com/privacy-and-security/risks/custom-permissions",
+          "publisher": "Android Developers"
+        }
       ]
     }
   ]
