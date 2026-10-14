@@ -1,5 +1,5 @@
 # Day-to-day commands for the whole monorepo (Python via uv, TypeScript via Bun). See docs/MONOREPO.md.
-.PHONY: setup test lint fmt check viewer viewer-dev cli cli-check demo
+.PHONY: setup test lint fmt check viewer viewer-dev cli cli-check release-local demo
 
 setup:        ## install everything: Python workspace (uv) + TypeScript workspace (Bun)
 	uv sync
@@ -29,6 +29,9 @@ cli:          ## build the appscreenmap binary (apps/cli/dist/appscreenmap), wir
 
 cli-check:    ## CLI tests and type check
 	cd apps/cli && bun test && bun run typecheck
+
+release-local: ## build dist/release/: what a release holds, to test setup, update and install.sh (nothing is published)
+	bun apps/cli/scripts/build-release.ts
 
 demo:         ## crawl every sample scenario (needs an emulator; see samples/README.md)
 	samples/demo.sh
