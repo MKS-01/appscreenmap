@@ -104,8 +104,14 @@ export function ReadinessPanel({ run, r, width }: { run: RunSummary; r: Readines
           />
           <Judged
             label="security"
-            value={r.security ? `score ${r.security.score} · ${r.security.errors} errors · ${r.security.warnings} warnings` : "no audit (Android builds)"}
-            verdict={securityVerdict(r)}
+            value={
+              r.security
+                ? `score ${r.security.score} · ${r.security.errors} errors · ${r.security.warnings} warnings`
+                : run.platform === "ios"
+                  ? "the scanner covers Android builds for now"
+                  : "not audited"
+            }
+            verdict={!r.security && run.platform === "ios" ? null : securityVerdict(r)}
             width={width}
           />
         </>
