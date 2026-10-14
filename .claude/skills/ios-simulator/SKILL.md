@@ -78,7 +78,7 @@ supported yet. `--package <bundle id>` re-crawls an already installed app.
 |---|---|---|
 | "nothing left to explore" after a few screens | The navigation (tab bar, close button) isn't in the accessibility tree | `idb ui describe-all` on that screen; if the control is absent, it's an app finding. Check for `.accessibilityLabel` / traits in the Swift view. |
 | Lots of `x:com.apple.mobilesafari` or `ios.external` screens | Links open Safari / an in-app browser | Expected; they are recorded as external and the app restarts. Block the link label in `blocked_text` to stop tapping it. |
-| Same screen mapped many times | Live content (timers, clocks, "1h ago") in the signature | Check `apps/engine/tests/` for the normalisation rules; digits are masked, words are not. Add a test, then tune like `tune-crawler`. |
+| Same screen mapped many times | Live content (timers, clocks, "1h ago") in the signature | Check `packages/core/tests/test_analyzer.py` for the normalisation rules; digits are masked, words are not. Add a test, then tune like `tune-crawler`. |
 | Blank elements list | Tree returned only the Application node | A system sheet is in front, or the app hasn't drawn yet: take `simctl io screenshot`, raise `--settle`. |
 | `idb describe-all returned no tree` | Companion not running / simulator not booted / wrong UDID | `doctor`; `idb list-targets`; kill stray `idb_companion` and retry. |
 | Tap does nothing | Off-screen or covered element, or coordinates in pixels | Taps are points. `idb ui describe-point x y` shows what is there. |

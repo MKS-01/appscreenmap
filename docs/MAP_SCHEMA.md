@@ -1,6 +1,6 @@
 # `map.json` schema (v1)
 
-The contract between the crawler (`apps/engine/src/appscreenmap`) and the web viewer (`web/`).
+The contract between the crawler (written by `packages/core/src/appscreenmap/core/model.py`) and the web viewer (`web/`).
 The crawler only **adds** fields within schema 1. Renaming or removing a field bumps `schema`.
 
 ## Files a run produces

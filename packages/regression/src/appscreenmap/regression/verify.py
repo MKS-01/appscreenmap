@@ -24,9 +24,9 @@ from appscreenmap.core.analyzer import analyze
 from appscreenmap.core.config import placeholders
 from appscreenmap.core.media import save_thumbnail
 from appscreenmap.core.model import load_map, write_json_atomic
+from appscreenmap.crawler.replay import MATCH_THRESHOLD, Replayer, ReplayFailed
 from appscreenmap.drivers.base import DriverError
 
-from .replay import MATCH_THRESHOLD, Replayer, ReplayFailed
 from .visual import compare_images, screen_text_diff, text_changed
 
 CHANGED_ABOVE = 0.002  # changed pixel ratio above which a screen counts as visually changed (as in diff)

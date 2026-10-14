@@ -10,11 +10,16 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   package: never add `src/appscreenmap/__init__.py`). A package imports only what its `pyproject.toml` depends on
   (`packages/testkit/tests/test_layers.py` checks).
   - `packages/core/`: `appscreenmap.core`: map.json model, analyzer, config, runs, notes, media; imports nothing else
-  - `packages/drivers/`: `appscreenmap.drivers`: Android (adb, dumpsys, device facts, apkinfo) and iOS Simulator; stdlib only
-  - `packages/security/`: `appscreenmap.security`: all security tooling (scanner modules, `rules.json` catalogue also
-    read by the viewer, `hooks/frida-observe.js`); stdlib only
-  - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`)
-  - `apps/engine/`: the rest of the engine, until it moves into packages (explorer → export/visual/report → cli)
+  - `packages/drivers/`: Android (adb, dumpsys, device facts, apkinfo) and iOS Simulator; stdlib only
+  - `packages/crawler/`: explorer, replay, load timing
+  - `packages/a11y/`: WCAG checks (`checks.py`), criteria (`wcag.py`), HTML/MD report
+  - `packages/security/`: all security tooling (scanner modules, `rules.json` catalogue also read by the viewer,
+    `hooks/frida-observe.js`); stdlib only
+  - `packages/reports/`: health report, perf summary · `packages/regression/`: verify, visual diff ·
+    `packages/exporters/`: Maestro, Mermaid
+  - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`;
+    `appscreenmap.testkit.fakedevice`: a scriptable fake app/driver)
+  - `apps/engine/`: the `appscreenmap` CLI (`cli.py`) and the MCP server, on top of every package
   - tests live next to their code (`<package>/tests/`), on synthetic hierarchies; no device needed
 - `web/`: React viewer, **owned by a separate session**. Don't edit it from crawler work.
 - `design/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode blue, Geist), for
@@ -34,7 +39,8 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   and list it in `samples/README.md`.
 - The crawl must stay inside the target app (`stay_in_app`, lock task pinning). Never ship a change
   that presses BACK or opens other apps to recover.
-- Every exploration fix gets a synthetic regression test in `apps/engine/tests/` before re-crawling.
+- Every exploration fix gets a synthetic regression test (`packages/crawler/tests/`, or `packages/core/tests/` for
+  screen identity) before re-crawling.
 - No git tags or releases until asked.
 
 ## Commands
@@ -60,5 +66,5 @@ uv run appscreenmap perf runs/sample-app/<run-id>     # load time per screen, ja
 - `maintain-crawler`: dependency/Android upgrades, compatibility checks, schema migrations
 - `wcag-mobile-rules`: WCAG 2.2 → Android reference (thresholds, what's new, who checks what)
 - `a11y-audit`: full WCAG 2.2 audit (automated + 200% font crawl + device tests + manual + triage + report)
-- `add-a11y-rule`: add or fix an automated a11y check (crawler `a11y.py`; viewer rules belong to the web session)
+- `add-a11y-rule`: add or fix an automated a11y check (crawler `a11y/checks.py`; viewer rules belong to the web session)
 - `add-exporter`: generate tests for an E2E tool (Maestro, Appium, Espresso, …) and build the pluggable exporter interface

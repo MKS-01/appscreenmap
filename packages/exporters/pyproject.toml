@@ -1,0 +1,15 @@
+[project]
+name = "appscreenmap-exporters"
+version = "0.1.0"
+description = "AppScreenMap exporters: tests and diagrams generated from map.json (Maestro flows, Mermaid)."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = ["appscreenmap-core"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/appscreenmap"]

@@ -8,6 +8,11 @@ appscreenmap-engine = { workspace = true }
 appscreenmap-core = { workspace = true }
 appscreenmap-drivers = { workspace = true }
 appscreenmap-security = { workspace = true }
+appscreenmap-crawler = { workspace = true }
+appscreenmap-a11y = { workspace = true }
+appscreenmap-reports = { workspace = true }
+appscreenmap-regression = { workspace = true }
+appscreenmap-exporters = { workspace = true }
 appscreenmap-testkit = { workspace = true }
 
 [dependency-groups]
