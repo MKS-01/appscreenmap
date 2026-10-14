@@ -12,7 +12,7 @@
 
 <p align="center">
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml/badge.svg" alt="Crawler CI"></a>
-  <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/web.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/web.yml/badge.svg" alt="Web viewer CI"></a>
+  <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/viewer.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/viewer.yml/badge.svg" alt="Viewer CI"></a>
   <img src="https://img.shields.io/badge/Android-0a0a0a?style=flat-square&logo=android&logoColor=white" alt="Android">
   <img src="https://img.shields.io/badge/iOS_Simulator_(beta)-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="iOS Simulator, beta">
   <img src="https://img.shields.io/badge/Python_3.11+-0a0a0a?style=flat-square&logo=python&logoColor=white" alt="Python 3.11 and up">
@@ -25,7 +25,8 @@
   <a href="#the-dashboard">Dashboard</a> &nbsp;·&nbsp;
   <a href="#export-and-share">Export</a> &nbsp;·&nbsp;
   <a href="#prerequisites">Prerequisites</a> &nbsp;·&nbsp;
-  <a href="#quick-start">Run it</a>
+  <a href="#quick-start">Run it</a> &nbsp;·&nbsp;
+  <a href="#inside-the-repo">Inside</a>
 </p>
 
 <p align="center"><sub>Deterministic crawler, no model calls. Plain files out.</sub></p>
@@ -138,8 +139,8 @@ needs a person or a device as *Not tested*, never as a pass. It is evidence, not
 
 | You need | For | Notes |
 |---|---|---|
-| Python 3.11+ and [uv](https://docs.astral.sh/uv/) | everything | `uv sync` installs the crawler |
-| [Bun](https://bun.sh) | the dashboard | builds the viewer once from a source checkout; `serve` won't start without it |
+| Python 3.11+ and [uv](https://docs.astral.sh/uv/) | everything | `make setup` installs the engine (a uv workspace) |
+| [Bun](https://bun.sh) | the dashboard | `make setup` installs it, `make viewer` builds it once; `serve` won't start without it |
 | Android: `adb` (platform-tools) and an emulator or USB device | Android crawls | Android Studio's SDK has both |
 | Android build-tools (`aapt2`) | app details, activity coverage, the security manifest checks | recommended; `doctor` finds it in your SDK |
 | iOS: macOS, Xcode, a booted Simulator, and [idb](https://fbidb.io) | iOS crawls (beta) | `brew install facebook/fb/idb-companion` and `uv tool install fb-idb`; the app must be a simulator `.app`, not an `.ipa` |
@@ -152,8 +153,8 @@ Ask your agent, or run it yourself:
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
-uv sync
-bun install && make viewer                       # the dashboard, one time
+make setup                                       # Python (uv) and TypeScript (Bun) workspaces
+make viewer                                      # build the dashboard, one time
 uv run appscreenmap doctor                       # checks the prerequisites above, says what is missing
 uv run appscreenmap crawl --apk path/to/app.apk  # Android: install + map
 uv run appscreenmap serve                        # open the dashboard
@@ -164,6 +165,30 @@ On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. T
 
 More: [setup and every command](docs/SETUP.md), [how the crawl and audits work](docs/ARCHITECTURE.md), the
 [`map.json` format](docs/MAP_SCHEMA.md) and the [roadmap](docs/PLAN.md); the sample apps are in [`samples/`](samples/README.md).
+
+## Inside the repo
+
+One product, built as a monorepo: `apps/` are what you run, `packages/` are the building blocks. Python is a
+[uv](https://docs.astral.sh/uv/) workspace and TypeScript a [Bun](https://bun.sh) workspace; `make` covers both
+(`make setup`, `make check`, `make viewer`, `make demo`).
+
+| Folder | What it is |
+|---|---|
+| [`apps/engine`](apps/engine/) | The `appscreenmap` command line and the MCP server |
+| [`apps/viewer`](apps/viewer/) | The dashboard (React + Vite) |
+| [`packages/core`](packages/core/) | The `map.json` model, screen identity, crawl config and run folders |
+| [`packages/drivers`](packages/drivers/) | Android over `adb`, the iOS Simulator over `simctl` and `idb` |
+| [`packages/crawler`](packages/crawler/) | The crawl loop, path replay and load timing |
+| [`packages/a11y`](packages/a11y/) | The WCAG 2.2 checks and the WCAG report |
+| [`packages/security`](packages/security/) | The security scanner, its rule catalogue and the Frida hook |
+| [`packages/reports`](packages/reports/) | Crawl health and performance reports |
+| [`packages/regression`](packages/regression/) | `verify` and the visual diff between builds |
+| [`packages/exporters`](packages/exporters/) | Maestro flows and the Mermaid graph |
+| [`packages/design-tokens`](packages/design-tokens/) | Colour, type and motion for the dashboard and the reports |
+| [`samples`](samples/) | The Playground and DuskRead sample apps, and `demo.sh` |
+
+Each package has its own README and tests (shared test helpers live in `packages/testkit`). How the pieces fit
+and depend on each other: [`docs/MONOREPO.md`](docs/MONOREPO.md).
 
 ## License
 

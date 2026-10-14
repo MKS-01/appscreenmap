@@ -17,8 +17,8 @@ command, configuration, end-to-end tests, CI and MCP. For how the crawler works 
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
-uv sync
-bun install && make viewer     # the dashboard, one time
+make setup                     # uv sync + bun install (Python and TypeScript workspaces)
+make viewer                    # build the dashboard, one time
 uv run appscreenmap doctor     # checks adb, devices, simulators, idb, aapt2, viewer build
 ```
 

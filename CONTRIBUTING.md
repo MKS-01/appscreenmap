@@ -6,8 +6,7 @@ Thanks for helping. AppScreenMap is MIT-licensed and early alpha, so small, focu
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
-uv sync                                   # Python 3.11+, crawler and tests
-cd apps/viewer && bun install && cd ..            # web viewer (Bun, not npm)
+make setup                                # uv sync (Python 3.11+ workspace) + bun install (viewer, tokens; Bun, not npm)
 ```
 
 You don't need a device to develop: the crawler's tests run on synthetic hierarchies and a fake device.
