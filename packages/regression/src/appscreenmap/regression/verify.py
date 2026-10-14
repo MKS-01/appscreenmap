@@ -175,7 +175,9 @@ def verify_run(
                 results[target] = _behind(target, screens, [st["screen"] for st in path], *blocker)
                 continue
             expected = [st["screen"] for st in path] + [target]
-            log(f"▶ {target} {screens[target].get('title')!r} ({len(path)} step{'s' * (len(path) != 1)})")
+            log(
+                f"replay {target} {screens[target].get('title')!r} ({len(path)} step{'s' * (len(path) != 1)})"
+            )
 
             def on_arrival(a, expected=expected, path=path):
                 if a.screen in results:
@@ -195,7 +197,7 @@ def verify_run(
                     "hierarchy": f"screens/{safe}.xml",
                     "_obs": a.obs,
                 }
-                log(f"  ✔ {a.screen} {screens[a.screen].get('title')!r} ({a.similarity:.0%})")
+                log(f"  ok   {a.screen} {screens[a.screen].get('title')!r} ({a.similarity:.0%})")
 
             try:
                 rp.replay(target, clear_data=clear, on_arrival=on_arrival)
@@ -217,7 +219,7 @@ def verify_run(
     except (DriverError, KeyboardInterrupt) as e:
         report["status"] = "aborted"
         report["error"] = str(e) or "stopped by user"
-        log(f"✘ verify aborted: {report['error']}")
+        log(f"verify aborted: {report['error']}")
     finally:
         try:
             driver.unpin()
@@ -326,7 +328,7 @@ def _record_failure(
     if state_dep:
         log(f"  ~ {failed}: skipped, its path depends on app state ({e.detail} after {what})")
     else:
-        log(f"  ✘ {failed}: {e.detail} (after {what})")
+        log(f"  fail {failed}: {e.detail} (after {what})")
 
 
 def update_baselines(base_dir: str | Path, report: dict) -> list[str]:
@@ -356,7 +358,7 @@ def update_baselines(base_dir: str | Path, report: dict) -> list[str]:
 def format_verify(rep: dict) -> str:
     s = rep["summary"]
     head = (
-        f"{'✔' if rep['ok'] else '✘'} {s['passed']} passed, {s['failed']} failed, {s['blocked']} blocked, "
+        f"{'ok' if rep['ok'] else 'FAILED'}: {s['passed']} passed, {s['failed']} failed, {s['blocked']} blocked, "
         f"{s['skipped']} skipped · {s['changed']} visually changed   ({rep['app'].get('version') or '?'} "
         f"vs base {rep['base_app'].get('version') or '?'})"
     )
@@ -364,7 +366,7 @@ def format_verify(rep: dict) -> str:
     for r in rep["screens"]:
         if r["status"] == "failed":
             f = r["failure"]
-            lines.append(f"  ✘ {r['screen']} {r['title']!r}: {f['detail']}")
+            lines.append(f"  fail {r['screen']} {r['title']!r}: {f['detail']}")
             if f.get("screenshot"):
                 lines.append(f"      evidence: {Path(rep['dir']) / f['screenshot']}")
         elif r["status"] == "blocked":
@@ -379,5 +381,5 @@ def format_verify(rep: dict) -> str:
                 f"  ≠ {r['screen']} {r['title']!r}: {v['changed_ratio']:.2%} pixels"
                 + (f"; text {text}" if text else "")
             )
-    lines.append(f"  → {Path(rep['dir']) / 'verify.json'}")
+    lines.append(f"  report: {Path(rep['dir']) / 'verify.json'}")
     return "\n".join(lines)

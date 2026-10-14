@@ -112,7 +112,7 @@ def cmd_serve(args) -> int:
         (args.host, args.port), functools.partial(handler, directory=str(dist))
     )
     url = f"http://{args.host}:{args.port}/"
-    print(f"🗺  AppScreenMap viewer → {url}   (runs: {runs_root})  Ctrl+C to stop")
+    print(f"AppScreenMap viewer at {url}   (runs: {runs_root})  Ctrl+C to stop")
     if not args.no_open:
         webbrowser.open(url)
     try:

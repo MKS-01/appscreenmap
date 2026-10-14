@@ -63,7 +63,7 @@ def cmd_doctor(args) -> int:
     def row(good: bool, label: str, detail: str = "") -> None:
         nonlocal ok
         ok &= good
-        print(f"  {'✔' if good else '✘'} {label}{'  — ' + detail if detail else ''}")
+        print(f"  {'ok' if good else 'fail':<5} {label}{' · ' + detail if detail else ''}")
 
     print(f"AppScreenMap {__version__}")
     adb = shutil.which("adb")
@@ -104,7 +104,7 @@ def _setup_android(args, cfg: CrawlConfig):
                 file=sys.stderr,
             )
             return 2
-        print(f"📦 installing {apk.name} ({package}) …")
+        print(f"installing {apk.name} ({package})")
         d.install(apk, grant=cfg.grant_permissions)
     else:
         package = args.package
@@ -155,7 +155,7 @@ def _setup_ios(args, cfg: CrawlConfig):
             "label": info.get("CFBundleDisplayName") or info.get("CFBundleName"),
             "min_os": info.get("MinimumOSVersion"),
         }
-        print(f"📦 installing {bundle.name} ({package}) …")
+        print(f"installing {bundle.name} ({package})")
         d.install(bundle)
     else:
         package = args.package
@@ -220,7 +220,7 @@ def cmd_crawl(args) -> int:
     amap.save(run_dir / "map.json")
     update_index(runs_root)
     print(
-        f"🗺  mapping {app.get('label')} {app.get('version') or ''} on {run['device']['name']} ({run['device']['type']}) → {run_dir}"
+        f"mapping {app.get('label')} {app.get('version') or ''} on {run['device']['name']} ({run['device']['type']}) into {run_dir}"
     )
     print(
         f"   budget: {cfg.max_steps} steps / {cfg.max_minutes:g} min   "
@@ -251,16 +251,16 @@ def cmd_crawl(args) -> int:
     except KeyboardInterrupt:
         run["status"] = "stopped"
         explorer.stop_reason = "stopped by user"
-        print("\n⏸ stopped — saving what we have")
+        print("\nstopped: saving what we have")
     except CrawlAborted as e:
         run["status"] = "failed"
         run["error"] = str(e)
-        print(f"✘ {e}", file=sys.stderr)
+        print(f"error: {e}", file=sys.stderr)
         code = 1
     except DriverError as e:
         run["status"] = "failed"
         run["error"] = str(e)
-        print(f"✘ device error: {e}", file=sys.stderr)
+        print(f"device error: {e}", file=sys.stderr)
         code = 1
     finally:
         if cfg.stay_in_app:
@@ -287,19 +287,19 @@ def cmd_crawl(args) -> int:
         update_index(runs_root)
     st = amap.stats()
     print(
-        f"\n✔ {st['screens']} screens, {st['transitions']} transitions, {st['crashes']} crashes, "
+        f"\ndone: {st['screens']} screens, {st['transitions']} transitions, {st['crashes']} crashes, "
         f"{run['steps']} steps in {run['elapsed_s']:.0f}s"
     )
     if st["activity_coverage"] is not None:
         print(f"  activity coverage: {st['activity_coverage']:.0%} of {st['activities_declared']} declared")
-    print(f"  {export['flows']} Maestro flows → {run_dir / 'flows'}")
+    print(f"  {export['flows']} Maestro flows in {run_dir / 'flows'}")
     if perf["screens"]:
         slowest = perf["screens"][0]
         print(
             f"  slowest screen: {slowest['screen']} '{slowest['title']}' {slowest['median_ms']} ms "
-            f"(median); {len(perf['findings'])} perf finding(s) → appscreenmap perf {run_dir}"
+            f"(median); {len(perf['findings'])} perf finding(s): appscreenmap perf {run_dir}"
         )
-    print(f"  {audit['summary']['issues']} WCAG 2.2 findings → {run_dir / 'a11y-report.html'}")
+    print(f"  {audit['summary']['issues']} WCAG 2.2 findings: {run_dir / 'a11y-report.html'}")
     print(f"  view it: appscreenmap serve --runs {runs_root}")
     return code
 

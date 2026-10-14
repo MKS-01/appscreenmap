@@ -11,7 +11,7 @@ description: Run an AppScreenMap crawl of an Android app on an emulator and revi
 uv run appscreenmap-engine doctor
 ```
 
-Everything except the web viewer build must show ✔. If several devices are connected, pass
+Everything except the web viewer build must show `ok`. If several devices are connected, pass
 `--serial`.
 
 **Target app:** use the **Playground** sample (`dev.appscreenmap.playground`) unless the user names another app.
@@ -35,7 +35,7 @@ APP_PASSWORD=playground-demo uv run appscreenmap-engine crawl --apk samples/play
 Watch for discoveries and every way the run can end, not just success:
 
 ```bash
-tail -n 0 -f <scratchpad>/crawl.log | grep -E --line-buffered "★|⏹|✔|✘|💥|Traceback|Error|could not|stopped"
+tail -n 0 -f <scratchpad>/crawl.log | grep -E --line-buffered "new screen|end:|^done:|app crashed|could not|stopped|error|Traceback"
 ```
 
 The crawl stops itself when one of these happens:

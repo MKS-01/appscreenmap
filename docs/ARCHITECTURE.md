@@ -72,9 +72,9 @@ went away. Cold start is recorded on every relaunch. Animations are off during a
 ```
 $ uv run appscreenmap-engine perf runs/playground/<run-id> --budget 1000
   cold start: 151 ms median, 161 ms max over 11 launch(es)
-   🔴  s018 'Reports'     2770 / 2770 / 2770  ×1  loading indicator, never settled
-   🟠  s019 'Gallery'     1825 / 1825 / 1825  ×1  97.8% janky
-   🟢  s005 'Article'      214 /  225 /  228  ×8
+   SLOW        s018 'Reports'     2770 / 2770 / 2770  ×1  loading indicator, never settled
+   NEEDS WORK  s019 'Gallery'     1825 / 1825 / 1825  ×1  97.8% janky
+   ok          s005 'Article'      214 /  225 /  228  ×8
 ```
 
 **Security** (Android). `appscreenmap security <run>` is a small stdlib-only scanner that takes three kinds of evidence:

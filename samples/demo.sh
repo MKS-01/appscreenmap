@@ -10,7 +10,7 @@ PG_CFG=samples/playground-app/appscreenmap.toml
 # The Playground's password comes from the environment (scenario 16: secrets never land in run files).
 export APP_PASSWORD="${APP_PASSWORD:-playground-demo}"
 
-step() { printf '\n\033[1m▶ %s\033[0m\n' "$*"; }
+step() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 latest() { ls -td "runs/$1/$2"-2* 2>/dev/null | head -1; }
 
 # A sample APK signed with a different key than what's installed can't update it in place.
@@ -59,7 +59,7 @@ if [[ "$WHAT" == all || "$WHAT" == playground ]]; then
   "${ASM[@]}" verify "$V1" --apk samples/playground-app/apk/playground-v2.apk || echo "  (verify reported broken paths: expected, v2 removed 'Rate us')"
 
   step "16: secrets: the password never reaches the run files"
-  if grep -rq "$APP_PASSWORD" "$V1" "$V2"; then echo "  ✘ password found in run files"; exit 1; else echo "  ✔ only \${APP_PASSWORD} is stored"; fi
+  if grep -rq "$APP_PASSWORD" "$V1" "$V2"; then echo "  fail: password found in run files"; exit 1; else echo "  ok: only \${APP_PASSWORD} is stored"; fi
 fi
 
 step "Done. Open the viewer:"

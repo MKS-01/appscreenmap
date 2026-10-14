@@ -35,7 +35,9 @@ memory of the app instead of exploring again:
 Screen ids (s001, s002, …) belong to one run; most tools default to the latest run.
 """
 LEVELS = {"A": 1, "AA": 2, "AAA": 3}
-_RUN_DIR_RE = re.compile(r"mapping .* → (\S+)\s*$", re.MULTILINE)  # the crawl's first line
+_RUN_DIR_RE = re.compile(
+    r"mapping .* (?:into|→) (\S+)\s*$", re.MULTILINE
+)  # the crawl's first line (→: older engines)
 
 
 def _selector(el: dict) -> dict:

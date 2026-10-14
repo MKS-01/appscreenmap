@@ -28,5 +28,5 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return args.fn(args)
     except DriverError as e:
-        print(f"✘ {e}", file=sys.stderr)
+        print(f"error: {e}", file=sys.stderr)
         return 1
