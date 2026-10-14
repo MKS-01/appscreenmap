@@ -1,5 +1,11 @@
 # Day-to-day commands for the whole monorepo (Python via uv, TypeScript via Bun). See docs/MONOREPO.md.
-.PHONY: setup test lint fmt check viewer viewer-dev cli cli-check release-local demo
+BIN_DIR ?= $(HOME)/.local/bin
+.PHONY: install setup test lint fmt check viewer viewer-dev cli cli-check release-local demo
+
+install: setup viewer cli   ## from a checkout: everything, plus the `appscreenmap` command in ~/.local/bin (BIN_DIR=…)
+	mkdir -p $(BIN_DIR)
+	install -m 755 apps/cli/dist/appscreenmap $(BIN_DIR)/appscreenmap
+	@echo "installed $(BIN_DIR)/appscreenmap (it uses this checkout's engine). Next: appscreenmap setup"
 
 setup:        ## install everything: Python workspace (uv) + TypeScript workspace (Bun)
 	uv sync
