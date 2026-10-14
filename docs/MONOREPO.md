@@ -53,7 +53,8 @@ every package's `pyproject.toml` and fails when a package imports an `appscreenm
 
 ## The CLI
 
-`apps/cli` is a Bun + Ink binary (darwin arm64/x64, linux x64/arm64), the same stack as readback's CLI.
+`apps/cli` is a Bun + Ink binary, the same stack as readback's CLI. macOS first (built and tested there; CI runs on
+`macos-latest`); Linux code paths exist but aren't tested.
 
 ```
 appscreenmap [start]              TUI + dashboard (opens the browser)
@@ -67,8 +68,10 @@ appscreenmap mcp                  → the engine's MCP server over stdio
 - **Install:** `curl -fsSL …/install.sh | sh` puts the binary on PATH. The first run installs `uv` if
   missing (asks first), runs `uv tool install appscreenmap-engine==<pinned>` (uv brings its own Python),
   downloads the matching viewer, and checks adb, the emulator and idb.
-- **start:** serves the viewer, `runs/` and the notes endpoint with `Bun.serve`, opens the browser, and shows
-  tabs: Home (devices, recent runs), Crawl (start one, live progress from the engine's JSON-lines events),
+- **start:** runs the engine's `serve` (viewer, `runs/`, notes endpoint) in the background and opens the browser. (The
+  plan said `Bun.serve`; reading the server showed that would re-implement run-id resolution, the `runs/index.json`
+  rebuild and notes validation in TypeScript, two copies of one contract, so the CLI supervises the engine's server
+  instead, like readback does.) Then it shows tabs: Home (devices, recent runs), Crawl (start one, live progress from the engine's JSON-lines events),
   Runs (open, report, perf, a11y, security), Agent (commands to start an agent session in a new terminal
   tab). It watches `runs/index.json`, so a run an agent records elsewhere appears in the TUI and the
   dashboard reloads.
@@ -79,8 +82,8 @@ appscreenmap mcp                  → the engine's MCP server over stdio
   `viewer.json` (`version`, `map_schema`, `min_cli`), downloads are checked against SHA-256 sums, and the
   update check runs at most daily, never updates on its own, and is off in CI or with
   `APPSCREENMAP_NO_UPDATE_CHECK=1`.
-- **Dev mode** (source checkout): the engine runs through `uv run`, the viewer through its Vite dev server,
-  and `update` prints `git pull && make setup` instead.
+- **Dev mode** (source checkout): the engine runs through `uv run --project <checkout>` (`make cli` bakes the
+  checkout path into the binary), and `update` will print `git pull && make setup` instead.
 
 No releases until asked: the release workflow is written but switched off, and installs are tested against
 a local release folder (`APPSCREENMAP_RELEASE_URL=file://…`).
@@ -97,7 +100,7 @@ a local release folder (`APPSCREENMAP_RELEASE_URL=file://…`).
 | 5 | Split `cli.py` into `appscreenmap.engine.cli.*`; MCP server → `appscreenmap.engine.mcp_server` |
 | 6 | Bun workspace: `design/` → `packages/design-tokens/`, `web/` → `apps/viewer/`, `packages/security/package.json` (`@appscreenmap/security-rules`) (coordinated with the web session) |
 | 7 | CI, CLAUDE.md files, docs and skill paths; `samples/demo.sh playground` end to end |
-| 8 | `apps/cli` skeleton: `start` TUI, `Bun.serve`, pass-through to the engine |
+| 8 | `apps/cli`: `start` terminal home (supervises the engine's `serve`), pass-through to the engine, `version` |
 | 9 | Crawl tab with live progress, run watcher |
 | 10 | `setup`, `update`, `paths`, `clean`, install script |
 | 11 | Release workflow (switched off) |
@@ -122,4 +125,5 @@ session owns (`web/`, `design/`), so they can review exactly what was touched.
 | 5 | `08b2d3c` | `cli.py` → `appscreenmap/engine/cli/`: `crawl` (doctor, crawl), `verify` (export, diff, verify), `analyse` (report, perf, a11y), `security`, `serve` (serve, mcp); each module registers its own subcommands, `cli/__init__.py` keeps `main()`. `mcp_server.py` → `engine/mcp_server.py`. Entry points → `appscreenmap.engine.cli:main`; new `python -m appscreenmap.engine` (the MCP `crawl` tool spawned `-m appscreenmap.cli`, now `-m appscreenmap.engine`); install hint `appscreenmap[mcp]` → `appscreenmap-engine[mcp]` (stale since step 1) | — |
 | 6 | `b5890e9` | `web/` → `apps/viewer/` (`@appscreenmap/viewer`); `design/tokens.css` → `packages/design-tokens/` (`@appscreenmap/design-tokens`); `packages/security/package.json` exposes `rules.json` as `@appscreenmap/security-rules`; root `package.json` Bun workspace + root `bun.lock` (seeded from `web/bun.lock`: all 140 locked versions identical); uv excludes `packages/design-tokens`; `.github/workflows/web.yml` → `viewer.yml`; `serve`/`doctor` look for `apps/viewer/dist`; Makefile `setup`/`viewer` follow | Folder move `web/` → `apps/viewer/` (no code change), plus in the viewer: `src/tokens.css` `@import "@appscreenmap/design-tokens/tokens.css"`; `src/insights/registry.ts` imports `@appscreenmap/security-rules/rules.json` and one UI string path; `vite.config.ts` runs default `../../runs`, `fs.allow ["../.."]`; `package.json` name + two `workspace:*` deps; path text in `DESIGN.md`, `README.md`, `index.html` comment, `src/views/DesignSystem.tsx` (two UI strings, one comment). `packages/design-tokens/tokens.css`: header comment only, no value changed. Built CSS is byte-identical (`index-CPhrjlfC.css`) |
 | README | `652a66f` | README: CI badge → `viewer.yml`; Quick start and Prerequisites use `make setup` / `make viewer`; new "Inside the repo" section (what each `apps/` and `packages/` folder is, linked from the nav). CONTRIBUTING and SETUP setup blocks use `make setup` (fixes a `cd apps/viewer && bun install && cd ..` left by the step 6 rewrite) | — |
-| Samples | (this) | Playground is the only sample: `samples/duskread/` removed (APK, build scripts, config; still in git history), `demo.sh` keeps only the Playground scenarios, samples README rewritten around it (scenario 20, iOS, waits for Playground iOS, step 12). iOS fixture `duskread-ios-home.json` → `ios-reader-home.json` with the app name, bundle id and a personal greeting neutralised (same tree otherwise). Skills, CLAUDE.md, docs and test examples use the Playground; README dashboard screenshot and `docs/media/dashboard.*` removed until a Playground one exists; DuskRead licence notice removed | — |
+| Samples | `6fe1531` | Playground is the only sample: `samples/duskread/` removed (APK, build scripts, config; still in git history), `demo.sh` keeps only the Playground scenarios, samples README rewritten around it (scenario 20, iOS, waits for Playground iOS, step 12). iOS fixture `duskread-ios-home.json` → `ios-reader-home.json` with the app name, bundle id and a personal greeting neutralised (same tree otherwise). Skills, CLAUDE.md, docs and test examples use the Playground; README dashboard screenshot and `docs/media/dashboard.*` removed until a Playground one exists; DuskRead licence notice removed | — |
+| 8 | (this) | New `apps/cli` (`@appscreenmap/cli`, Bun + Ink 5 / React 18.3.1, the viewer's React, so the workspace has one React and one `@types/react`): `appscreenmap` / `start` opens a terminal home (dashboard via the engine's `serve`, Android/iOS status, Home · Crawl · Runs · Agent tabs, copy / open run / new terminal keys), `version`, every other command passed to the engine with its exit code. Colours from `@appscreenmap/design-tokens`. 12 Bun tests (fake engine for the dashboard), typecheck, compiled binary; `.github/workflows/cli.yml` on macOS; `make cli` / `make cli-check`. Bun workspace adds `apps/cli` (43 packages added to `bun.lock`, existing 140 versions unchanged; viewer CSS byte-identical). README: Tested on macOS badge, CLI CI badge, `apps/cli` row | — |
