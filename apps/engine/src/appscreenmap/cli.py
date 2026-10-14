@@ -486,8 +486,8 @@ def _web_dist() -> Path | None:
     candidates = [
         os.environ.get("APPSCREENMAP_WEB"),
         Path(__file__).parent / "web",  # bundled in the wheel
-        Path(__file__).resolve().parents[2] / "web" / "dist",  # source checkout
     ]
+    candidates += [d / "web" / "dist" for d in Path(__file__).resolve().parents]  # source checkout
     for c in candidates:
         if c and (Path(c) / "index.html").is_file():
             return Path(c)

@@ -12,7 +12,7 @@ AppScreenMap drives a simulator with two tools, because neither does the whole j
 | `xcrun simctl` | boot/shutdown, install, launch/terminate, screenshots, permissions (`privacy`), Dynamic Type / appearance / contrast (`ui`), status bar, keychain, push, openurl | tap, swipe, type, read the UI tree |
 | `idb` (`idb_companion` + `fb-idb` client) | accessibility tree (`ui describe-all`), tap / swipe / text / key, `ui quiet` (idle + no animations), scroll, rotate, hinge, crash list, video, xctrace | build or install simulators |
 
-Code: `src/appscreenmap/driver_ios.py` (the driver the explorer calls) and `ios_hierarchy.py` (iOS tree → the
+Code: `apps/engine/src/appscreenmap/driver_ios.py` (the driver the explorer calls) and `ios_hierarchy.py` (iOS tree → the
 uiautomator-style XML the analyzer reads). Design and status: `docs/PLAN.md` §8.3.
 
 ## 1. Preflight
@@ -78,7 +78,7 @@ supported yet. `--package <bundle id>` re-crawls an already installed app.
 |---|---|---|
 | "nothing left to explore" after a few screens | The navigation (tab bar, close button) isn't in the accessibility tree | `idb ui describe-all` on that screen; if the control is absent, it's an app finding. Check for `.accessibilityLabel` / traits in the Swift view. |
 | Lots of `x:com.apple.mobilesafari` or `ios.external` screens | Links open Safari / an in-app browser | Expected; they are recorded as external and the app restarts. Block the link label in `blocked_text` to stop tapping it. |
-| Same screen mapped many times | Live content (timers, clocks, "1h ago") in the signature | Check `tests/` for the normalisation rules; digits are masked, words are not. Add a test, then tune like `tune-crawler`. |
+| Same screen mapped many times | Live content (timers, clocks, "1h ago") in the signature | Check `apps/engine/tests/` for the normalisation rules; digits are masked, words are not. Add a test, then tune like `tune-crawler`. |
 | Blank elements list | Tree returned only the Application node | A system sheet is in front, or the app hasn't drawn yet: take `simctl io screenshot`, raise `--settle`. |
 | `idb describe-all returned no tree` | Companion not running / simulator not booted / wrong UDID | `doctor`; `idb list-targets`; kill stray `idb_companion` and retry. |
 | Tap does nothing | Off-screen or covered element, or coordinates in pixels | Taps are points. `idb ui describe-point x y` shows what is there. |
@@ -89,11 +89,11 @@ supported yet. `--package <bundle id>` re-crawls an already installed app.
 Tests never need a device. To capture a tree:
 
 ```bash
-idb ui describe-all --udid <UDID> | python3 -c "import sys,json; d=json.load(sys.stdin); json.dump(d[:30], open('tests/fixtures/<name>.json','w'), indent=1)"
+idb ui describe-all --udid <UDID> | python3 -c "import sys,json; d=json.load(sys.stdin); json.dump(d[:30], open('apps/engine/tests/fixtures/<name>.json','w'), indent=1)"
 ```
 
 Shorten long text (no personal content), keep the Application node first, and test the translation in
-`tests/test_ios_hierarchy.py` (`idb_to_xml` → `analyze`). The driver takes an injectable runner (`run=`), so command output can
+`apps/engine/tests/test_ios_hierarchy.py` (`idb_to_xml` → `analyze`). The driver takes an injectable runner (`run=`), so command output can
 be faked without a simulator.
 
 ## 7. Not used yet (worth a look)

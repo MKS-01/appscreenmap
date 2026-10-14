@@ -103,7 +103,7 @@ Never include a secret's value.
 
 ## Extending the scanner
 
-`src/appscreenmap/security.py` (stdlib only; tests in `tests/test_security.py` use real `aapt2` output saved in `tests/fixtures/`).
+`apps/engine/src/appscreenmap/security.py` (stdlib only; tests in `apps/engine/tests/test_security.py` use real `aapt2` output saved in `apps/engine/tests/fixtures/`).
 Add a check by returning `{"rule": <id>, "key": ..., "detail": ...}` from a collector, add a fixture test, and flip the rule's
 `status` to `ready` in `security_rules.json`. Next in line: the `jadx`-backed code rules, and iOS (plist and data container).
 Use `extend-crawler` for CLI wiring.

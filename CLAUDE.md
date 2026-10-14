@@ -5,8 +5,10 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 
 ## Layout
 
-- `src/appscreenmap/`: Python crawler (driver → analyzer → explorer → model → export/visual/report → cli)
-- `tests/`: unit tests on synthetic hierarchies (`tests/helpers.py`); no device needed
+- The repo is becoming a monorepo (`apps/` + `packages/`); target layout and migration steps in `docs/MONOREPO.md`.
+- `apps/engine/`: the Python engine, a uv workspace member (the root `pyproject.toml` is the virtual workspace)
+  - `src/appscreenmap/`: crawler (driver → analyzer → explorer → model → export/visual/report → cli)
+  - `tests/`: unit tests on synthetic hierarchies (`tests/helpers.py`); no device needed
 - `web/`: React viewer, **owned by a separate session**. Don't edit it from crawler work.
 - `design/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode blue, Geist), for
   the viewer and the HTML reports. Change it only through the `design-system` skill.
@@ -25,13 +27,13 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   and list it in `samples/README.md`.
 - The crawl must stay inside the target app (`stay_in_app`, lock task pinning). Never ship a change
   that presses BACK or opens other apps to recover.
-- Every exploration fix gets a synthetic regression test in `tests/` before re-crawling.
+- Every exploration fix gets a synthetic regression test in `apps/engine/tests/` before re-crawling.
 - No git tags or releases until asked.
 
 ## Commands
 
 ```bash
-uv sync && uv run pytest -q && uv run ruff check src tests && uv run ruff format src
+uv sync && uv run pytest -q && uv run ruff check && uv run ruff format
 uv run appscreenmap doctor
 uv run appscreenmap crawl --package dev.mks.duskread --clear-data --max-steps 200
 uv run appscreenmap report runs/duskread/<run-id>   # health: wasted steps, identity issues, nav failures
