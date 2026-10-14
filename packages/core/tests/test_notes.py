@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from appscreenmap import notes
+from appscreenmap.core import notes
 
 
 @pytest.fixture

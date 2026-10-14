@@ -1,9 +1,7 @@
 import json
 import time
 
-from helpers import hierarchy, node
-
-from appscreenmap.analyzer import parse_hierarchy
+from appscreenmap.core.analyzer import parse_hierarchy
 from appscreenmap.perf import (
     LoadMeter,
     format_perf,
@@ -14,6 +12,7 @@ from appscreenmap.perf import (
     parse_gfx_summary,
     summarize,
 )
+from appscreenmap.testkit.helpers import hierarchy, node
 
 GFX = """Applications Graphics Acceleration Info:
 Uptime: 1234567 Realtime: 1234567

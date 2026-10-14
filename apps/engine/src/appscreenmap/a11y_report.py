@@ -17,11 +17,12 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from . import __version__
+from appscreenmap.core import __version__
+from appscreenmap.core.model import load_map
+
 from .a11y import RULES, audit_run
 from .device import describe
 from .device import rows as device_rows
-from .model import load_map
 from .wcag import BY_SC, DEVICE_TESTS, LEVEL_ORDER, VIEWER_RULES, criteria_up_to, sc_key
 
 MAX_EVIDENCE = 8  # screenshot crops per criterion

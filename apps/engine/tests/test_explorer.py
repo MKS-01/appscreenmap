@@ -4,13 +4,13 @@ import json
 
 import pytest
 from fakedevice import ACT, FakeDriver
-from helpers import PKG
 
 from appscreenmap import explorer as explorer_mod
-from appscreenmap.config import CrawlConfig
+from appscreenmap.core.config import CrawlConfig
+from appscreenmap.core.model import AppMap
 from appscreenmap.explorer import Explorer
-from appscreenmap.model import AppMap
 from appscreenmap.perf import summarize
+from appscreenmap.testkit.helpers import PKG
 
 
 @pytest.fixture(autouse=True)
@@ -118,9 +118,9 @@ def test_export_skips_screens_without_a_path(tmp_path):
 
 from fakedevice import SCREENS, FakeApp
 from fakedevice import btn as _btn
-from helpers import hierarchy, node
 
 from appscreenmap.driver import Snapshot
+from appscreenmap.testkit.helpers import hierarchy, node
 
 SIGNIN_SCREENS = {
     "signin": hierarchy(

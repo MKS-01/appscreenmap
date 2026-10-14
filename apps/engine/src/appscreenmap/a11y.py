@@ -18,8 +18,8 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from .analyzer import Node, normalize_text, parse_hierarchy
-from .model import load_map, write_json_atomic
+from appscreenmap.core.analyzer import Node, normalize_text, parse_hierarchy
+from appscreenmap.core.model import load_map, write_json_atomic
 
 A11Y_SCHEMA = 1
 

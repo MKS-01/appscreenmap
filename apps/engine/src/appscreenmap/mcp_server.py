@@ -20,10 +20,11 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from appscreenmap.core.model import load_map
+from appscreenmap.core.runs import resolve_run, update_index
+
 from .a11y import audit_run
-from .model import load_map
 from .perf import summarize as summarize_perf
-from .runs import resolve_run, update_index
 from .verify import required_secrets
 
 INSTRUCTIONS = """\
@@ -550,8 +551,9 @@ def build_server(tools: MapTools):
     from mcp.server.mcpserver.exceptions import ToolError
     from mcp_types import ToolAnnotations
 
-    from . import __version__
-    from .config import MissingSecret
+    from appscreenmap.core import __version__
+    from appscreenmap.core.config import MissingSecret
+
     from .driver import DriverError
 
     def expected(fn):

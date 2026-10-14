@@ -49,4 +49,4 @@ density is estimated from screen width. They're hints for a person to triage, no
 **UI changes:** follow [`DESIGN.md`](DESIGN.md) (tokens in `src/tokens.css`, live reference at `#/design`) and the
 project skill `.claude/skills/web-ui`.
 
-Contributing and the full project README are in the [repo root](../README.md). Types in `src/types.ts` mirror `map.json` schema 1 (`src/appscreenmap/model.py`); update both together.
+Contributing and the full project README are in the [repo root](../README.md). Types in `src/types.ts` mirror `map.json` schema 1 (`packages/core/src/appscreenmap/core/model.py`); update both together.

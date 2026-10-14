@@ -9,7 +9,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .analyzer import (
+from appscreenmap.core.analyzer import (
     PERMISSION_ALLOW_IDS,
     ElementInfo,
     Observation,
@@ -18,10 +18,11 @@ from .analyzer import (
     is_permission_dialog,
     jaccard,
 )
-from .config import CrawlConfig, placeholders, resolve
+from appscreenmap.core.config import CrawlConfig, placeholders, resolve
+from appscreenmap.core.media import save_thumbnail
+from appscreenmap.core.model import AppMap, Element, Screen, Step, Transition, selector_for
+
 from .driver import AdbDriver, DriverError
-from .media import save_thumbnail
-from .model import AppMap, Element, Screen, Step, Transition, selector_for
 from .perf import LoadMeter, Timing, has_loading_indicator
 
 SCROLL_SAME_SCREEN = 0.4  # token similarity above which a scrolled view is still the same screen

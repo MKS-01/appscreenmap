@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from appscreenmap.analyzer import analyze, parse_hierarchy
+from appscreenmap.core.analyzer import analyze, parse_hierarchy
 from appscreenmap.driver import DriverError
 from appscreenmap.driver_ios import IosSimulatorDriver
 from appscreenmap.ios_hierarchy import idb_to_xml, is_out_of_process

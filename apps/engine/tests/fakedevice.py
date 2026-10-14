@@ -5,10 +5,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from helpers import PKG, hierarchy, node
 from PIL import Image
 
 from appscreenmap.driver import Snapshot
+from appscreenmap.testkit.helpers import PKG, hierarchy, node
 
 ACT = f"{PKG}.MainActivity"
 
@@ -174,9 +174,9 @@ class FakeDriver:
 
 def crawl(tmp: Path, driver: FakeDriver, run_id: str = "proj-1", **cfg_overrides):
     """Crawl the fake app into tmp/proj/<run_id>; returns (run_dir, explorer)."""
-    from appscreenmap.config import CrawlConfig
+    from appscreenmap.core.config import CrawlConfig
+    from appscreenmap.core.model import AppMap
     from appscreenmap.explorer import Explorer
-    from appscreenmap.model import AppMap
 
     cfg = CrawlConfig(
         **{

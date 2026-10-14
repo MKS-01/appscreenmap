@@ -7,16 +7,16 @@ from pathlib import Path
 import anyio
 import pytest
 from fakedevice import FakeDriver, crawl, title
-from helpers import hierarchy
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
 
 from appscreenmap import explorer as explorer_mod
 from appscreenmap import replay as replay_mod
 from appscreenmap.a11y import audit_run
+from appscreenmap.core.model import load_map
 from appscreenmap.mcp_server import MapTools, build_server, shortest_path
-from appscreenmap.model import load_map
 from appscreenmap.perf import summarize
 from appscreenmap.replay import Replayer
+from appscreenmap.testkit.helpers import hierarchy
 
 
 @pytest.fixture(autouse=True)

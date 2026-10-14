@@ -6,9 +6,13 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 ## Layout
 
 - The repo is becoming a monorepo (`apps/` + `packages/`); target layout and migration steps in `docs/MONOREPO.md`.
-- `apps/engine/`: the Python engine, a uv workspace member (the root `pyproject.toml` is the virtual workspace)
-  - `src/appscreenmap/`: crawler (driver → analyzer → explorer → model → export/visual/report → cli)
-  - `tests/`: unit tests on synthetic hierarchies (`tests/helpers.py`); no device needed
+- Python is a uv workspace (the root `pyproject.toml` is virtual). Everything imports as `appscreenmap.*` (a namespace
+  package: never add `src/appscreenmap/__init__.py`). A package imports only what its `pyproject.toml` depends on
+  (`packages/testkit/tests/test_layers.py` checks).
+  - `packages/core/`: `appscreenmap.core`: map.json model, analyzer, config, runs, notes, media; imports nothing else
+  - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`)
+  - `apps/engine/`: the rest of the engine, until it moves into packages (driver → explorer → export/visual/report → cli)
+  - tests live next to their code (`<package>/tests/`), on synthetic hierarchies; no device needed
 - `web/`: React viewer, **owned by a separate session**. Don't edit it from crawler work.
 - `design/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode blue, Geist), for
   the viewer and the HTML reports. Change it only through the `design-system` skill.

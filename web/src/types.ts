@@ -1,4 +1,4 @@
-// Mirrors map.json schema 1 written by src/appscreenmap/model.py.
+// Mirrors map.json schema 1 written by packages/core/src/appscreenmap/core/model.py.
 
 export type ElementStatus = "pending" | "done" | "blocked" | "skipped" | "failed" | "unreachable";
 export type Effect = "new_screen" | "known_screen" | "same_screen" | "left_app" | "crash" | "not_found";

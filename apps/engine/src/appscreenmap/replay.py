@@ -15,7 +15,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass, field
 
-from .analyzer import (
+from appscreenmap.core.analyzer import (
     PERMISSION_ALLOW_IDS,
     ElementInfo,
     Observation,
@@ -24,7 +24,8 @@ from .analyzer import (
     is_permission_dialog,
     jaccard,
 )
-from .config import resolve
+from appscreenmap.core.config import resolve
+
 from .perf import LoadMeter, has_loading_indicator
 
 MATCH_THRESHOLD = 0.6  # token similarity at which a live screen is a map screen (as in `diff`)

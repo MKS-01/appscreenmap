@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from appscreenmap.notes import run_dir_for
-from appscreenmap.runs import new_run_dir, resolve_run, update_index
+from appscreenmap.core.notes import run_dir_for
+from appscreenmap.core.runs import new_run_dir, resolve_run, update_index
 
 
 def _fake_run(d: Path, package="dev.example.reader", started="2026-10-13T01:00:00+00:00") -> Path:

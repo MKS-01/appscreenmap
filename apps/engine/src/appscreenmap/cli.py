@@ -15,20 +15,21 @@ import webbrowser
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import __version__, notes
+from appscreenmap.core import __version__, notes
+from appscreenmap.core.config import CrawlConfig
+from appscreenmap.core.model import AppMap, load_map
+from appscreenmap.core.runs import new_run_dir, resolve_run, update_index
+
 from .a11y import audit_run, format_audit
 from .a11y_report import write_reports
 from .apkinfo import apk_info, find_aapt2
-from .config import CrawlConfig
 from .device import describe
 from .driver import AdbDriver, DriverError
 from .explorer import CrawlAborted, Explorer
 from .export import export_run
-from .model import AppMap, load_map
 from .perf import format_perf
 from .perf import summarize as summarize_perf
 from .report import build_report, format_report
-from .runs import new_run_dir, resolve_run, update_index
 from .security import (
     load_evidence,
     parse_frida_log,
