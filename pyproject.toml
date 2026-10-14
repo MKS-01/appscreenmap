@@ -1,13 +1,15 @@
 # Workspace root (virtual: not a package itself). The product is apps/engine plus packages/*; see docs/MONOREPO.md.
 
 [tool.uv.workspace]
-members = ["apps/engine"]
+members = ["apps/engine", "packages/*"]
 
 [tool.uv.sources]
 appscreenmap-engine = { workspace = true }
+appscreenmap-core = { workspace = true }
+appscreenmap-testkit = { workspace = true }
 
 [dependency-groups]
-dev = ["appscreenmap-engine[mcp]", "pytest>=8.0", "ruff>=0.6"]
+dev = ["appscreenmap-engine[mcp]", "appscreenmap-testkit", "pytest>=8.0", "ruff>=0.6"]
 
 [tool.ruff]
 line-length = 110
@@ -15,4 +17,5 @@ target-version = "py311"
 src = ["apps/*/src", "packages/*/src"]  # first-party code, for import sorting
 
 [tool.pytest.ini_options]
-testpaths = ["apps/engine/tests"]
+testpaths = ["apps/*/tests", "packages/*/tests"]
+addopts = "--import-mode=importlib"  # test files in different packages share names

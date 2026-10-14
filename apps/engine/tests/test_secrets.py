@@ -4,11 +4,11 @@ import json
 
 import pytest
 from fakedevice import FakeApp, FakeDriver, btn, crawl, title
-from helpers import PKG, hierarchy, node
 
 from appscreenmap import explorer as explorer_mod
-from appscreenmap.config import CrawlConfig, MissingSecret, placeholders, resolve
+from appscreenmap.core.config import CrawlConfig, MissingSecret, placeholders, resolve
 from appscreenmap.export import export_run
+from appscreenmap.testkit.helpers import PKG, hierarchy, node
 
 SECRET = "s3cr3t-Hunter2"
 

@@ -24,7 +24,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .model import load_map, write_json_atomic
+from appscreenmap.core.model import load_map, write_json_atomic
 
 _TOTAL_RE = re.compile(r"Total frames rendered: (\d+)")
 _LOADING_RE = re.compile(r"\b(loading|please wait|fetching|syncing)\b", re.IGNORECASE)

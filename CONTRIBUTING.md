@@ -42,7 +42,7 @@ CI runs the same checks.
 
 - **`map.json` schema 1 is additive.** Add fields; don't rename or remove them. Update `docs/MAP_SCHEMA.md`
   and `web/src/types.ts` in the same change.
-- **Exploration fixes need a regression test** built from a synthetic hierarchy (`apps/engine/tests/helpers.py`) before you
+- **Exploration fixes need a regression test** built from a synthetic hierarchy (`packages/testkit/src/appscreenmap/testkit/helpers.py`) before you
   re-crawl a real app.
 - **The crawl must stay inside the target app.** Don't add recovery that presses BACK out of the app or opens
   other apps.

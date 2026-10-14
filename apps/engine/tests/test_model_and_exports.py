@@ -1,13 +1,13 @@
 from pathlib import Path
 
 import pytest
-from helpers import PKG, compose_home, hierarchy, node
 from PIL import Image
 
-from appscreenmap.analyzer import analyze
-from appscreenmap.config import CrawlConfig
+from appscreenmap.core.analyzer import analyze
+from appscreenmap.core.config import CrawlConfig
+from appscreenmap.core.model import AppMap
 from appscreenmap.export import maestro_flow, mermaid
-from appscreenmap.model import AppMap
+from appscreenmap.testkit.helpers import PKG, compose_home, hierarchy, node
 from appscreenmap.visual import compare_images
 
 ACT = f"{PKG}.MainActivity"

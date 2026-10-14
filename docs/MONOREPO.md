@@ -24,7 +24,7 @@ packages/
 └── testkit/      dev only: synthetic hierarchies, fake device
 samples/          playground-app, duskread, demo.sh
 docs/             product-level docs
-pyproject.toml    uv workspace root (virtual): members, dev tools, ruff, pytest, import-linter
+pyproject.toml    uv workspace root (virtual): members, dev tools, ruff, pytest
 package.json      Bun workspace root
 Makefile          setup · test · lint · build · viewer · demo
 ```
@@ -48,8 +48,8 @@ everything ← apps/engine
 ```
 
 Each `pyproject.toml` declares what its package may import. uv installs the whole workspace into one
-environment, so an undeclared import would still work locally; the import-linter `layers` contract in the
-root `pyproject.toml` enforces the rule in CI.
+environment, so an undeclared import would still work locally; `packages/testkit/tests/test_layers.py` reads
+every package's `pyproject.toml` and fails when a package imports an `appscreenmap.*` area it doesn't depend on.
 
 ## The CLI
 
@@ -112,4 +112,5 @@ session owns (`web/`, `design/`), so they can review exactly what was touched.
 | Step | Commit | What moved | Outside crawler code |
 |---|---|---|---|
 | 1 | `c74ebac` | `src/` + `tests/` → `apps/engine/`; virtual workspace root; Makefile; repo-wide ruff | — |
-| 1 | (this) | — | `web/src/insights/registry.ts`: rules import → `apps/engine/src/appscreenmap/security_rules.json` (import path + comment only) |
+| 1 | `8a7ef00` | — | `web/src/insights/registry.ts`: rules import → `apps/engine/src/appscreenmap/security_rules.json` (import path + comment only) |
+| 2 | (this) | `model`, `analyzer`, `config`, `runs`, `notes`, `media` → `packages/core` (`appscreenmap.core.*`); `tests/helpers.py` → `packages/testkit` (`appscreenmap.testkit.helpers`); `appscreenmap` becomes a namespace package (version from `appscreenmap.core.__version__`); package-layer test | Comments only, pointing at the moved files: `web/src/types.ts:1`, `web/src/views/HowItWorks.tsx:9`, `web/vite.config.ts:21`, `web/README.md:52` |

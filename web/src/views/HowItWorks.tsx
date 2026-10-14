@@ -6,7 +6,7 @@ import { href } from "../router";
 import type { AppMapData, Screen, UIElement } from "../types";
 import { shortActivity } from "../util";
 
-// ── helpers mirroring the crawler (src/appscreenmap/analyzer.py) ───────────────
+// ── helpers mirroring the crawler (packages/core/src/appscreenmap/core/analyzer.py) ───────────────
 
 /** Same as analyzer.normalize_text: lower-case, digits → #, collapse spaces, 40 chars. */
 const normalizeText = (s: string) => s.trim().toLowerCase().replace(/\d/g, "#").replace(/\s+/g, " ").slice(0, 40);

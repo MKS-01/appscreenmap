@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 
 import pytest
-from helpers import REPO
 
 from appscreenmap.security_rules import PATH, RuleError, load_rules, rules_for
+from appscreenmap.testkit.helpers import REPO
 
 ROOT = REPO
 DOC = ROOT / ".claude" / "skills" / "security-rules" / "reference" / "rules.md"

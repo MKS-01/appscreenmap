@@ -119,10 +119,12 @@ never mix with the Android runs of the same app). `runs/` is git-ignored: it is 
 ## Project layout
 
 ```
-apps/engine/        the Python engine (being split into packages/, see MONOREPO.md)
-  src/appscreenmap/ drivers (Android, iOS Simulator), analyzer, explorer, model, export, visual diff,
-                    a11y, security, perf, replay + verify, MCP server, CLI
-  tests/            unit tests on synthetic hierarchies (no device needed)
+packages/core/      appscreenmap.core: map.json model, analyzer, config, runs, notes, media
+packages/testkit/   dev-only test helpers (synthetic hierarchies) and the package-layer check
+apps/engine/        the rest of the Python engine, moving into packages/ (see MONOREPO.md): drivers
+                    (Android, iOS Simulator), explorer, export, visual diff, a11y, security, perf,
+                    replay + verify, MCP server, CLI
+                    (each package keeps its tests in <package>/tests/; no device needed)
 web/                the dashboard (React + Vite, built with Bun)
 design/             tokens.css: colour, type, space and motion for the viewer and reports
 samples/            Playground and DuskRead APKs, sources, iOS build script and demo.sh

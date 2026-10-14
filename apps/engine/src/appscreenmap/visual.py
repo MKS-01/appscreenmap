@@ -13,8 +13,8 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageStat
 
-from .analyzer import jaccard, normalize_text, parse_hierarchy
-from .model import load_map, write_json_atomic
+from appscreenmap.core.analyzer import jaccard, normalize_text, parse_hierarchy
+from appscreenmap.core.model import load_map, write_json_atomic
 
 PIXEL_TOLERANCE = 24  # per-channel difference ignored as rendering noise
 MOVE_TOLERANCE = 0.01  # text that shifted less than this fraction of the screen hasn't moved

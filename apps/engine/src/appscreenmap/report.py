@@ -9,9 +9,10 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .analyzer import jaccard
+from appscreenmap.core.analyzer import jaccard
+from appscreenmap.core.model import load_map
+
 from .device import caveats, describe
-from .model import load_map
 
 NEAR_DUPLICATE = 0.6  # screens this similar (same activity) may be one screen split in two
 CROWDED = 60  # a screen with more elements than this may be several screens merged

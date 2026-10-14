@@ -6,8 +6,8 @@ import json
 import re
 from pathlib import Path
 
-from .config import placeholders
-from .model import load_map
+from appscreenmap.core.config import placeholders
+from appscreenmap.core.model import load_map
 
 
 def _q(s: str) -> str:

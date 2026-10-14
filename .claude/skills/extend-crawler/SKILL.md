@@ -20,7 +20,7 @@ Keep each layer ignorant of the ones after it.
 |---|---|---|
 | **New driver** (uiautomator2 for ~5× speed, iOS via WebDriverAgent/idb) | new `driver_<name>.py` with the same public methods as `AdbDriver`: `snapshot()`, `screenshot()`, `tap/long_press/swipe/back/key/input_text/hide_keyboard`, `screen_size()`, `info()`, app management (`install/launch/force_stop/clear_data/grant_all`), `pin/unpin`, crash log | `snapshot()` must return a uiautomator-format XML so the analyzer is unchanged. For iOS, convert the XCUI tree to that format and keep the mapping in the driver. Add a `--driver` flag in `cli.cmd_crawl`. |
 | **New export** (E2E tool: Appium, Espresso, Playwright-style, …) | Use the **`add-exporter`** skill | It covers the pluggable exporter interface, selectors, secrets, tests and licensing. |
-| **New UI pattern** | `analyzer._patterns()` | Add a test in `apps/engine/tests/test_analyzer.py` and list the pattern in `docs/MAP_SCHEMA.md`. |
+| **New UI pattern** | `analyzer._patterns()` | Add a test in `packages/core/tests/test_analyzer.py` and list the pattern in `docs/MAP_SCHEMA.md`. |
 | **Element kind / priority** | `analyzer._kind()`, `KIND_PRIORITY` | Kinds drive priority and global inference. |
 | **Config option** | `config.CrawlConfig` (dataclass field + comment) + `examples/appscreenmap.toml` | Unknown keys raise. Expose a CLI flag only if it's commonly changed. |
 | **CLI command** | `cli.py`: `cmd_<name>` + subparser | Keep logic in a module (like `report.py`); the CLI only formats. |
@@ -30,7 +30,7 @@ Keep each layer ignorant of the ones after it.
 
 ## Checklist for every feature
 
-1. Tests first where possible, with synthetic hierarchies in `apps/engine/tests/helpers.py`. No device in unit tests.
+1. Tests first where possible, with synthetic hierarchies in `packages/testkit/src/appscreenmap/testkit/helpers.py`. No device in unit tests.
 2. `uv run pytest -q && uv run ruff check && uv run ruff format`.
 3. If behavior on a device changed, run a real crawl of duskread (`crawl-app` skill) and compare
    `appscreenmap report` with the previous run.

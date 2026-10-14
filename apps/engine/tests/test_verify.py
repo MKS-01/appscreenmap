@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 from fakedevice import NAV, SCREENS, FakeApp, FakeDriver, btn, crawl, title
-from helpers import hierarchy, node
 
 from appscreenmap import explorer as explorer_mod
 from appscreenmap import replay as replay_mod
-from appscreenmap.model import load_map
+from appscreenmap.core.model import load_map
+from appscreenmap.testkit.helpers import hierarchy, node
 from appscreenmap.verify import plan, update_baselines, verify_run
 
 # Three levels deep, so a broken first step blocks a screen behind it.

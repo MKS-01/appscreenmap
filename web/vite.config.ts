@@ -18,7 +18,7 @@ const TYPES: Record<string, string> = {
   ".txt": "text/plain; charset=utf-8",
 };
 
-// Mirrors `PUT /runs/<run>/notes.json` in `appscreenmap serve` (src/appscreenmap/notes.py).
+// Mirrors `PUT /runs/<run>/notes.json` in `appscreenmap serve` (packages/core/src/appscreenmap/core/notes.py).
 // Runs live at runs/<project>/<run-id>/ (or legacy runs/<run-id>/).
 const NOTES_RE = /^\/((?:[A-Za-z0-9][A-Za-z0-9_.-]*\/)?[A-Za-z0-9][A-Za-z0-9_.-]*)\/notes\.json$/;
 const MAX_NOTES_BYTES = 1_000_000;

@@ -1,6 +1,5 @@
-from helpers import PKG, compose_home, hierarchy, node
-
-from appscreenmap.analyzer import analyze, is_crash_dialog, is_permission_dialog, jaccard
+from appscreenmap.core.analyzer import analyze, is_crash_dialog, is_permission_dialog, jaccard
+from appscreenmap.testkit.helpers import PKG, compose_home, hierarchy, node
 
 ACT = f"{PKG}.MainActivity"
 

@@ -2,9 +2,9 @@
 
 import json
 
-from helpers import PKG, hierarchy, node
 from PIL import Image
 
+from appscreenmap.testkit.helpers import PKG, hierarchy, node
 from appscreenmap.visual import changed_regions, diff_runs, text_changed, text_diff, text_nodes
 
 
