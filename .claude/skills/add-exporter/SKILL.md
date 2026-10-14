@@ -13,7 +13,7 @@ for the data.
 
 Export is one hard-coded function: `export.maestro_flow(data, screen)` plus `mermaid(data)`, both called from
 `export.export_run()`. **There is no exporter interface, registry or `--format` flag yet.** Check
-`packages/exporters/` and `cli.py` first; if that changed, follow the code, not this paragraph.
+`packages/exporters/` and `apps/engine/src/appscreenmap/engine/cli/verify.py` (`cmd_export`) first; if that changed, follow the code, not this paragraph.
 
 ## Step 0: build the interface (once, then reuse it)
 
@@ -25,7 +25,7 @@ export tests must still pass byte-for-byte).
 2. **Registry:** built-ins registered by name, plus third-party plugins through the `appscreenmap.exporters`
    entry-point group (so `pip install appscreenmap-<tool>` adds a format).
 3. **CLI:** `appscreenmap export <run> --format maestro,appium-python` (default: maestro, so nothing breaks) and
-   a crawl-time default in config. Keep logic in the module; `cli.py` only parses and prints.
+   a crawl-time default in config. Keep logic in the module; the CLI (`apps/engine/src/appscreenmap/engine/cli/`) only parses and prints.
 4. **Neutral steps:** `--format json` writes the resolved path per screen (launch → steps → assertion) so any tool
    in any language can generate its own tests. Treat this shape as public API: additive changes only.
 5. **Templates:** `--template file` renders the neutral steps through a user-supplied template, for people who

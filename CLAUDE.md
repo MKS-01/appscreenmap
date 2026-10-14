@@ -19,7 +19,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
     `packages/exporters/`: Maestro, Mermaid
   - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`;
     `appscreenmap.testkit.fakedevice`: a scriptable fake app/driver)
-  - `apps/engine/`: the `appscreenmap` CLI (`cli.py`) and the MCP server, on top of every package
+  - `apps/engine/`: `appscreenmap.engine`: the CLI (`engine/cli/`, one module per command group) and the MCP server (`engine/mcp_server.py`), on top of every package
   - tests live next to their code (`<package>/tests/`), on synthetic hierarchies; no device needed
 - `web/`: React viewer, **owned by a separate session**. Don't edit it from crawler work.
 - `design/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode blue, Geist), for

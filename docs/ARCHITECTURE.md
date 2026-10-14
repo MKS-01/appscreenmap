@@ -128,7 +128,8 @@ packages/reports/   appscreenmap.reports: health report, perf summary
 packages/regression/  appscreenmap.regression: verify against baselines, visual diff
 packages/exporters/ appscreenmap.exporters: Maestro flows, Mermaid
 packages/testkit/   dev-only test helpers (synthetic hierarchies, fake device) and the package-layer check
-apps/engine/        the appscreenmap CLI and MCP server (each package keeps its tests in <package>/tests/)
+apps/engine/        appscreenmap.engine: the CLI (cli/, one module per command group) and the MCP server
+                    (each package keeps its tests in <package>/tests/)
 web/                the dashboard (React + Vite, built with Bun)
 design/             tokens.css: colour, type, space and motion for the viewer and reports
 samples/            Playground and sample-app APKs, sources, iOS build script and demo.sh
