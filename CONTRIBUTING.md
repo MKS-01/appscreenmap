@@ -11,7 +11,7 @@ make setup                                # uv sync (Python 3.11+ workspace) + b
 
 You don't need a device to develop: the crawler's tests run on synthetic hierarchies and a fake device.
 To try a real crawl you need `adb` and an Android emulator, or on macOS a booted iOS Simulator with `idb`
-(`uv run appscreenmap doctor` checks both). The [sample apps](samples/README.md) are the easiest targets.
+(`uv run appscreenmap-engine doctor` checks both). The [sample apps](samples/README.md) are the easiest targets.
 
 ## Before you open a PR
 

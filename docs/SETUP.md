@@ -19,15 +19,15 @@ command, configuration, end-to-end tests, CI and MCP. For how the crawler works 
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
 make setup                     # uv sync + bun install (Python and TypeScript workspaces)
 make viewer                    # build the dashboard, one time
-uv run appscreenmap doctor     # checks adb, devices, simulators, idb, aapt2, viewer build
+uv run appscreenmap-engine doctor     # checks adb, devices, simulators, idb, aapt2, viewer build
 ```
 
 ## Crawl an Android app
 
 ```bash
-uv run appscreenmap crawl --apk path/to/app.apk                        # install + map
-uv run appscreenmap crawl --package com.example.app --clear-data       # already installed, from a clean first-run state
-uv run appscreenmap serve                                              # open the dashboard
+uv run appscreenmap-engine crawl --apk path/to/app.apk                        # install + map
+uv run appscreenmap-engine crawl --package com.example.app --clear-data       # already installed, from a clean first-run state
+uv run appscreenmap-engine serve                                              # open the dashboard
 ```
 
 ## Crawl an iOS app (Simulator, beta)
@@ -36,7 +36,7 @@ Build the app for the simulator (`xcodebuild -sdk iphonesimulator`; an `.ipa` is
 there), boot a simulator, then:
 
 ```bash
-uv run appscreenmap crawl --platform ios --app path/to/YourApp.app --clear-data   # runs go to runs/<app>-ios/
+uv run appscreenmap-engine crawl --platform ios --app path/to/YourApp.app --clear-data   # runs go to runs/<app>-ios/
 ```
 
 On iOS the crawler sees what VoiceOver sees: a control with no accessibility label isn't in the tree, so it can't be
@@ -65,7 +65,7 @@ git-ignored), so run `samples/demo.sh` to map it and give `appscreenmap serve` s
 
 ## Commands
 
-All run as `uv run appscreenmap <command>`; `<run>` is a run folder such as `runs/playground/<run-id>`.
+All run as `uv run appscreenmap-engine <command>`; `<run>` is a run folder such as `runs/playground/<run-id>`.
 
 | Command | What it does |
 |---|---|
@@ -130,7 +130,7 @@ already has everything a generator needs.
 ## CI: verify a new build
 
 ```bash
-uv run appscreenmap verify runs/playground/<run-id> --apk app-release.apk
+uv run appscreenmap-engine verify runs/playground/<run-id> --apk app-release.apk
 ```
 
 `verify` replays every screen's path from a fresh launch on the new build (longest paths first). A path fails when
