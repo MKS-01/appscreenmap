@@ -12,7 +12,9 @@
 
 <p align="center">
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml/badge.svg" alt="Crawler CI"></a>
-  <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/web.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/web.yml/badge.svg" alt="Web viewer CI"></a>
+  <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/viewer.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/viewer.yml/badge.svg" alt="Viewer CI"></a>
+  <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/cli.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/cli.yml/badge.svg" alt="CLI CI"></a>
+  <img src="https://img.shields.io/badge/Tested_on-macOS-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="Tested on macOS">
   <img src="https://img.shields.io/badge/Android-0a0a0a?style=flat-square&logo=android&logoColor=white" alt="Android">
   <img src="https://img.shields.io/badge/iOS_Simulator_(beta)-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="iOS Simulator, beta">
   <img src="https://img.shields.io/badge/Python_3.11+-0a0a0a?style=flat-square&logo=python&logoColor=white" alt="Python 3.11 and up">
@@ -22,10 +24,10 @@
 <p align="center">
   <a href="#why-appscreenmap">Why</a> &nbsp;·&nbsp;
   <a href="#how-it-works-for-you">How it works</a> &nbsp;·&nbsp;
+  <a href="#get-started">Get started</a> &nbsp;·&nbsp;
+  <a href="#continue-with-your-agent">Your agent</a> &nbsp;·&nbsp;
   <a href="#the-dashboard">Dashboard</a> &nbsp;·&nbsp;
-  <a href="#export-and-share">Export</a> &nbsp;·&nbsp;
-  <a href="#prerequisites">Prerequisites</a> &nbsp;·&nbsp;
-  <a href="#quick-start">Run it</a>
+  <a href="#export-and-share">Export</a>
 </p>
 
 <p align="center"><sub>Deterministic crawler, no model calls. Plain files out.</sub></p>
@@ -42,12 +44,6 @@ in this build. Today that lives in someone's head, an out-of-date diagram or a h
 AppScreenMap has your coding agent crawl the app and write that map for you. Everything else is built on it:
 generated test flows, regression checks between builds, accessibility and performance audits, exports, and
 answers for the agent itself ("how do I reach Settings?"). The map is the product; the audits are one use of it.
-
-<p align="center">
-  <img src="docs/media/dashboard.png" alt="The dashboard's Insights page for the sample-app sample app: three phone screens from the app, totals for screens mapped, transitions, errors and warnings, and one scored row per audit with error, warning and info counts and a status for each: crawl coverage, stability, accessibility and performance from the crawl, then adaptive UI, platform changes, store readiness and security under release readiness">
-  <br>
-  <sub>The Insights page of the built-in dashboard, for the sample-app sample app. The first four rows come from an Android crawl (v1.2.0); the Security row is <code>appscreenmap security</code> run on the sample-app 1.3.0 APK.</sub>
-</p>
 
 ## Why AppScreenMap
 
@@ -75,18 +71,70 @@ answers for the agent itself ("how do I reach Settings?"). The map is the produc
    > *Map my app on the emulator and review the map.*
    > *Audit accessibility on the latest run at WCAG 2.2 AA.*
    > *Crawl the new build and compare it with the last run.*
-   > *Map sample-app on the iOS Simulator.*
+   > *Map my app on the iOS Simulator.*
 
 2. **The agent does the work.** It checks the device, runs the crawl, reads the health report, and when something
    looks off (two screens merged, wasted taps, a failed route) it tunes the config and crawls again. Then it
    generates the test flows and runs whatever else you asked for: audits, a comparison with the last build, a
    check that a new build still reaches every screen.
-3. **You review in the dashboard.** Run `appscreenmap serve` and everything is there: the map, every screen, the
+3. **You review in the dashboard.** Run `appscreenmap` and everything is there: the map, every screen, the
    test flows, the audits and their findings, the diff against the last build. No digging through run folders or opening
    reports one by one. Triage findings, then export a report to share.
 
 The agent is Claude Code or any MCP client. The repo ships [skills](.claude/skills/) that teach it each job, and
 an [MCP server](docs/SETUP.md#agents-mcp) so it can query the map instead of exploring the app again.
+
+## Get started
+
+Built and tested on **macOS** (Apple silicon). To crawl you need an Android emulator or device (`adb`, from Android
+Studio), or for iOS (beta) Xcode with a booted Simulator; `appscreenmap setup` checks the rest and says what's missing.
+
+**1. Install**
+
+```bash
+git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
+make install           # the engine, the dashboard and the `appscreenmap` command (needs uv and Bun)
+```
+
+After the first release this becomes one line, no clone needed:
+`curl -fsSL https://github.com/MKS-01/appscreenmap/releases/latest/download/install.sh | sh`.
+
+**2. Set up**
+
+```bash
+appscreenmap setup     # installs what's missing, then checks adb, devices, simulators and idb
+```
+
+**3. Start**
+
+```bash
+appscreenmap           # the terminal home, with the dashboard open in your browser
+```
+
+The terminal home shows what's connected, whether the latest run is ready to ship (crashes, accessibility,
+performance, security) and the one next step worth taking: `x` runs it. With no runs yet, `x` maps the Playground
+sample app and the crawl fills in live. Every command also works on its own (`appscreenmap crawl --apk app.apk`,
+`appscreenmap a11y <run> --report`, `appscreenmap --help`). `appscreenmap update` keeps a release install current; from a checkout, `git pull && make install`.
+
+## Continue with your agent
+
+The terminal home tells you where things stand; the work itself is meant to be handed to an agent.
+
+1. **Open a session next to it.** Press `t` in the terminal home for a new terminal window in the same folder, then
+   start Claude Code with `claude`. The repo's [skills](.claude/skills/) teach it every job below, and `CLAUDE.md`
+   holds the project rules.
+2. **Ask in plain language**, or hand it the next step the terminal home suggests:
+
+   > *Map the Playground and review the map.*
+   > *Audit accessibility on the latest run at WCAG 2.2 AA and triage the findings.*
+   > *Crawl the new build and compare it with the last run.*
+   > *The last crawl merged two screens. Fix it and crawl again.*
+
+3. **Watch it land.** The agent's crawl shows up live on the terminal home's crawl tab and in the dashboard, and its
+   audits update the readiness panel as soon as they're written. Review, triage and export in the dashboard.
+
+Any other MCP client can use the maps too: `claude mcp add appscreenmap -- appscreenmap mcp` registers the
+[MCP server](docs/SETUP.md#agents-mcp) (find a screen, get the route to it, go there on the device, read findings).
 
 ### What the agent handles
 
@@ -101,9 +149,12 @@ an [MCP server](docs/SETUP.md#agents-mcp) so it can query the map instead of exp
 | **iOS setup** | Builds the app, boots the simulator, diagnoses a crawl that maps too little | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
 | **Tests** | Generates a [Maestro](https://maestro.mobile.dev) flow per screen; more E2E tools can be added | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
 
+More: [setup and every command](docs/SETUP.md), [how the crawl and audits work](docs/ARCHITECTURE.md), the
+[`map.json` format](docs/MAP_SCHEMA.md) and the [roadmap](docs/PLAN.md); the sample app is in [`samples/`](samples/README.md).
+
 ## The dashboard
 
-`appscreenmap serve` opens a viewer on your `runs/` folder. It has no backend and updates live while a crawl runs.
+`appscreenmap` opens it on your `runs/` folder (`appscreenmap serve` does just that). It has no backend and updates live while a crawl runs.
 
 - **Insights**: the overview. One scored audit per row (accessibility, performance, stability, coverage and
   release readiness), sorted by what needs you first, each with charts and findings, the fix and its official source.
@@ -118,7 +169,7 @@ an [MCP server](docs/SETUP.md#agents-mcp) so it can query the map instead of exp
 - **Crawl replay**: step through the crawl to see what was tapped and why.
 - **How it works**: the crawl loop, walked through on your own latest run.
 
-To work on the viewer, see [`web/README.md`](web/README.md).
+To work on the viewer, see [`apps/viewer/README.md`](apps/viewer/README.md).
 
 ## Export and share
 
@@ -133,37 +184,6 @@ To work on the viewer, see [`web/README.md`](web/README.md).
 
 The WCAG report is written after every crawl, is one file you can attach to a ticket, and treats anything that
 needs a person or a device as *Not tested*, never as a pass. It is evidence, not a conformance claim.
-
-## Prerequisites
-
-| You need | For | Notes |
-|---|---|---|
-| Python 3.11+ and [uv](https://docs.astral.sh/uv/) | everything | `uv sync` installs the crawler |
-| [Bun](https://bun.sh) | the dashboard | builds the viewer once from a source checkout; `serve` won't start without it |
-| Android: `adb` (platform-tools) and an emulator or USB device | Android crawls | Android Studio's SDK has both |
-| Android build-tools (`aapt2`) | app details, activity coverage, the security manifest checks | recommended; `doctor` finds it in your SDK |
-| iOS: macOS, Xcode, a booted Simulator, and [idb](https://fbidb.io) | iOS crawls (beta) | `brew install facebook/fb/idb-companion` and `uv tool install fb-idb`; the app must be a simulator `.app`, not an `.ipa` |
-| An AI agent: Claude Code or any MCP client | the hands-off flow | optional: every command also runs by hand |
-| [Maestro](https://maestro.mobile.dev), [Frida](https://frida.re) | running the generated flows; the dynamic security check | optional |
-
-## Quick start
-
-Ask your agent, or run it yourself:
-
-```bash
-git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
-uv sync
-(cd web && bun install && bun run build)         # the dashboard, one time
-uv run appscreenmap doctor                       # checks the prerequisites above, says what is missing
-uv run appscreenmap crawl --apk path/to/app.apk  # Android: install + map
-uv run appscreenmap serve                        # open the dashboard
-```
-
-On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. Two sample apps ship in
-[`samples/`](samples/); `samples/demo.sh` crawls them so the dashboard has something to show.
-
-More: [setup and every command](docs/SETUP.md), [how the crawl and audits work](docs/ARCHITECTURE.md), the
-[`map.json` format](docs/MAP_SCHEMA.md) and the [roadmap](docs/PLAN.md); the sample apps are in [`samples/`](samples/README.md).
 
 ## License
 

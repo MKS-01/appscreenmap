@@ -18,7 +18,7 @@ below, and a rule stays `planned` in the catalogue until the command covers it. 
 ## 1. Preflight
 
 ```bash
-uv run appscreenmap doctor            # aapt2 reads the manifest; adb for the device checks
+uv run appscreenmap-engine doctor            # aapt2 reads the manifest; adb for the device checks
 uv tool install frida-tools           # only for the dynamic check
 ```
 
@@ -28,9 +28,9 @@ Pick the **release** build you ship. A debug build will (rightly) trip `debuggab
 
 ```bash
 RUN=runs/<project>/<run-id>                                   # a crawl of the app (crawl-app)
-uv run appscreenmap security $RUN --apk app-release.apk       # manifest + hard-coded secrets, about 0.1 s
-uv run appscreenmap security $RUN --pull --device             # or: pull the installed APK, and read the app's data folder
-uv run appscreenmap security $RUN --frida-log frida.log       # add the dynamic observations (below)
+uv run appscreenmap-engine security $RUN --apk app-release.apk       # manifest + hard-coded secrets, about 0.1 s
+uv run appscreenmap-engine security $RUN --pull --device             # or: pull the installed APK, and read the app's data folder
+uv run appscreenmap-engine security $RUN --frida-log frida.log       # add the dynamic observations (below)
 ```
 
 Each call adds its evidence to the run (`audits/security-evidence.json`) and rebuilds `audits/security.json` from everything
@@ -40,7 +40,7 @@ collected so far, so you can run the three steps in any order. Add `--json` to r
 |---|---|---|
 | `--apk FILE` / `--pull` | Manifest (`aapt2`), network security config, secret formats in dex, resources and assets | `exported-component`, `cleartext-traffic`, `debuggable`, `allow-backup`, `hardcoded-secret` |
 | `--device` | Plain-text secrets in `shared_prefs/` and `files/`; needs a debuggable build (`run-as`) or a rooted emulator (`su`), else it says it didn't run | `secrets-at-rest` |
-| `--frida-log FILE` | JSON lines from `scripts/frida-observe.js` | `cleartext-observed`, `no-cert-pinning` |
+| `--frida-log FILE` | JSON lines from the Frida hook (`appscreenmap security --frida-script` prints its path) | `cleartext-observed`, `no-cert-pinning` |
 
 The secret scan only matches high-confidence formats (AWS, Stripe live, Slack, GitHub, private keys, database URLs with
 credentials, Google API keys) and records where and a short fingerprint, never the value. A Google API key is reported as info:
@@ -49,7 +49,7 @@ client keys ship in apps on purpose, so the fix is to restrict it.
 **Dynamic (Frida).** On your own debug build, with a frida server on the emulator:
 
 ```bash
-frida -U -f <package> -l .claude/skills/security-audit/scripts/frida-observe.js > frida.log   # then use or crawl the app
+frida -U -f <package> -l "$(uv run appscreenmap-engine security --frida-script)" > frida.log   # then use or crawl the app
 ```
 
 The script only observes: it logs plain `http://` hosts and whether OkHttp has any certificate pin configured. It doesn't bypass
@@ -103,7 +103,7 @@ Never include a secret's value.
 
 ## Extending the scanner
 
-`src/appscreenmap/security.py` (stdlib only; tests in `tests/test_security.py` use real `aapt2` output saved in `tests/fixtures/`).
+`packages/security/` (stdlib only: `manifest.py`, `secrets.py`, `apk.py`, `device_data.py`, `frida.py`, `audit.py`; tests in `packages/security/tests/` use real `aapt2` output saved in `packages/security/tests/fixtures/`).
 Add a check by returning `{"rule": <id>, "key": ..., "detail": ...}` from a collector, add a fixture test, and flip the rule's
-`status` to `ready` in `security_rules.json`. Next in line: the `jadx`-backed code rules, and iOS (plist and data container).
+`status` to `ready` in `rules.json`. Next in line: the `jadx`-backed code rules, and iOS (plist and data container).
 Use `extend-crawler` for CLI wiring.

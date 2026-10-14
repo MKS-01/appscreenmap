@@ -8,9 +8,9 @@ dist/
 build/
 *.egg-info/
 
-# Node
-web/node_modules/
-web/dist/
+# Node (Bun workspace)
+node_modules/
+apps/viewer/dist/
 
 # Crawl output: runs/ is generated on your machine (screenshots of whatever the app shows), never committed
 runs/

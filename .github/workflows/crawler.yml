@@ -2,9 +2,9 @@ name: crawler
 
 on:
   push:
-    paths: ["src/**", "tests/**", "pyproject.toml", "uv.lock", ".github/workflows/crawler.yml"]
+    paths: ["apps/engine/**", "packages/**", "pyproject.toml", "uv.lock", ".github/workflows/crawler.yml"]
   pull_request:
-    paths: ["src/**", "tests/**", "pyproject.toml", "uv.lock", ".github/workflows/crawler.yml"]
+    paths: ["apps/engine/**", "packages/**", "pyproject.toml", "uv.lock", ".github/workflows/crawler.yml"]
 
 jobs:
   test:
@@ -18,6 +18,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: uv sync --locked
-      - run: uv run ruff check src tests
-      - run: uv run ruff format --check src
+      - run: uv run ruff check
+      - run: uv run ruff format --check
       - run: uv run pytest -q

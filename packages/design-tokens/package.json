@@ -1,0 +1,7 @@
+{
+  "name": "@appscreenmap/design-tokens",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AppScreenMap design tokens (Ghost dark × Xcode blue, Geist): colour, type, space and motion.",
+  "exports": { "./tokens.css": "./tokens.css" }
+}

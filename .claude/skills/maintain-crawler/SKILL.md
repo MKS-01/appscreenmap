@@ -8,13 +8,13 @@ description: Maintain and scale the AppScreenMap crawler — upgrade Python deps
 ## Health check (run first)
 
 ```bash
-uv sync && uv run pytest -q && uv run ruff check src tests && uv run ruff format --check src
-uv run appscreenmap doctor
+uv sync && uv run pytest -q && uv run ruff check && uv run ruff format --check
+uv run appscreenmap-engine doctor
 ```
 
 Then a short real crawl as a smoke test (budget 40 steps is enough):
-`uv run appscreenmap crawl --package dev.mks.sample-app --clear-data --max-steps 40` and
-`uv run appscreenmap report runs/<project>/<run-id>`. Compare with the last good run.
+`APP_PASSWORD=playground-demo uv run appscreenmap-engine crawl --apk samples/playground-app/apk/playground-v1.apk --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 40` and
+`uv run appscreenmap-engine report runs/<project>/<run-id>`. Compare with the last good run.
 
 ## Dependency upgrades
 
@@ -28,7 +28,7 @@ than adding ignores.
 
 ## New Android / emulator version: compatibility points
 
-All device-format parsing lives in `driver.py`. When a new Android version breaks something,
+All device-format parsing lives in `packages/drivers/` (`android.py`, `dumpsys.py`, `device.py`). When a new Android version breaks something,
 check these one by one on the device:
 
 | What | Command | Parsed by |
@@ -41,7 +41,7 @@ check these one by one on the device:
 | Launcher activity | `adb shell cmd package resolve-activity --brief -c android.intent.category.LAUNCHER <pkg>` | `resolve_launch_activity()` |
 | Permission dialog ids | dump while a dialog shows | `analyzer.PERMISSION_ALLOW_IDS`, `PERMISSION_PACKAGES` |
 | Crash dialog | dump while "keeps stopping" shows | `analyzer.is_crash_dialog()` |
-| APK facts | `aapt2 dump badging` / `xmltree` | `apkinfo.py` (latest build-tools picked automatically) |
+| APK facts | `aapt2 dump badging` / `xmltree` | `drivers/apkinfo.py` (latest build-tools picked automatically) |
 
 When a format changes, keep the old parse path working (users run old emulators too) and add
 the new one. Add a unit test with both formats as literal strings.
@@ -69,7 +69,7 @@ the new one. Add a unit test with both formats as literal strings.
 ## Open-source hygiene
 
 - `runs/` is **git-ignored** (generated locally, one folder per project: `runs/<project>/<run-id>/`); `samples/demo.sh` makes sample ones.
-  Keep it curated: one or two good runs per sample app (sample-app), no broken, `running`, or
+  Keep it curated: one or two good runs per sample app (Playground), no broken, `running`, or
   throwaway runs, and no third-party apps. Watch repo size (PNG screenshots are ~100–300 KB each);
   if it grows, prune old runs or move samples to Git LFS. Tests still use synthetic XML only.
 - Keep README commands working: when a CLI flag changes, update README and

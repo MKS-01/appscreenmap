@@ -9,25 +9,25 @@ Never fix exploration by guessing. Each fix follows this loop:
 
 1. **Evidence.** Get the run's health report and find the steps where it went wrong.
    ```bash
-   uv run appscreenmap report runs/<project>/<run-id>
+   uv run appscreenmap-engine report runs/<project>/<run-id>
    grep -n '"effect": "same_screen"' runs/<project>/<run-id>/trace.jsonl | head     # wasted taps
    ```
    The hierarchy of every screen is in `runs/<project>/<run-id>/screens/<sid>.xml`. To capture the live screen:
    ```bash
    uv run python -c "
-   from appscreenmap.driver import AdbDriver; from appscreenmap.analyzer import analyze
+   from appscreenmap.drivers.android import AdbDriver; from appscreenmap.core.analyzer import analyze
    d=AdbDriver(); s=d.snapshot(); w,h=d.screen_size(); o=analyze(s.xml,None,s.activity,w,h)
    print(o.title, o.patterns, o.signature)
    for e in o.elements: print(e.kind, e.action, repr(e.label), e.group, e.key)"
    ```
    To print the tree with groups, walk `parse_hierarchy()` + `_mark_repeats()`; see how
-   `tests/helpers.py` models Compose output.
-2. **Failing test.** Reproduce the structure in `tests/` with the `node()` / `hierarchy()` helpers.
+   `packages/testkit/src/appscreenmap/testkit/helpers.py` models Compose output.
+2. **Failing test.** Reproduce the structure in `packages/core/tests/` (screen identity) or `packages/crawler/tests/` (exploration) with the `node()` / `hierarchy()` helpers.
    Use synthetic data only; never commit real app dumps, since they contain user content.
 3. **Fix** in the right layer (map below). Keep the change minimal and explain *why* in a comment
    only where it's non-obvious.
-4. **Verify.** Run `uv run pytest -q && uv run ruff check src tests && uv run ruff format src`, then
-   re-crawl sample-app with `--clear-data` and compare `report` numbers before and after
+4. **Verify.** Run `uv run pytest -q && uv run ruff check && uv run ruff format`, then
+   re-crawl the Playground with `--clear-data` and compare `report` numbers before and after
    (steps/screen, no-ops, near-duplicates, nav failures).
 
 > **iOS crawl?** Start with the `ios-simulator` skill: its table of symptoms (missing tab bar, in-app browser,

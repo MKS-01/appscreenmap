@@ -1,11 +1,11 @@
 ---
 name: web-ui
-description: Design and build UI in the AppScreenMap web viewer (web/) — new views, components, layout or styling changes, motion, icons, polish passes — following the design-system skill (tokens in design/tokens.css: Ghost dark × Xcode blue, Geist), web/DESIGN.md, the live reference at #/design, and Emil Kowalski's design-engineering approach. Use for any visual or interaction change in web/, "make it look better", "add icons", "make it interactive", or a UI review of the viewer.
+description: Design and build UI in the AppScreenMap web viewer (apps/viewer/) — new views, components, layout or styling changes, motion, icons, polish passes — following the design-system skill (tokens in packages/design-tokens/tokens.css: Ghost dark × Xcode blue, Geist), apps/viewer/DESIGN.md, the live reference at #/design, and Emil Kowalski's design-engineering approach. Use for any visual or interaction change in apps/viewer/, "make it look better", "add icons", "make it interactive", or a UI review of the viewer.
 ---
 
 # Viewer UI work
 
-The viewer is React + TypeScript + Vite in `web/`, run with **Bun** (never npm). It has no backend: it reads
+The viewer is React + TypeScript + Vite in `apps/viewer/`, run with **Bun** (never npm). It has no backend: it reads
 `runs/` as static files, plus a single `PUT` for `notes.json`. The crawler (`src/`) belongs to another workstream.
 Don't edit it for UI work. If the UI needs new data, ask for a `map.json` field (see `docs/MAP_SCHEMA.md`).
 
@@ -15,18 +15,18 @@ Don't edit it for UI work. If the UI needs new data, ask for a `map.json` field 
    actions, status never alone, built around the phone), type, icons, and what was rejected.
 2. Invoke the **`emil-design-eng`** skill: motion decision framework, easing, press feedback, review table
    format. Also use **`animate`** to build a specific animation, or **`improve-animations`** to audit existing motion.
-3. Read **`web/DESIGN.md`**: principles, components, motion and accessibility rules, checklist.
+3. Read **`apps/viewer/DESIGN.md`**: principles, components, motion and accessibility rules, checklist.
 4. Open **`#/design`** in the running viewer to see the current tokens and components rendered.
 
 ## 2. Build with the system
 
-- **Tokens only.** Colours, radii, curves, durations come from `design/tokens.css` (`var(--…)`), never a hex in a
+- **Tokens only.** Colours, radii, curves, durations come from `packages/design-tokens/tokens.css` (`var(--…)`), never a hex in a
   view or in `styles.css`. Use the semantic names (`--line`, `--dim`, `--accent-14`, `--font-mono`), not the legacy
-  aliases in `web/src/tokens.css`. Adding or changing a token follows the `design-system` skill (contrast check
+  aliases in `apps/viewer/src/tokens.css`. Adding or changing a token follows the `design-system` skill (contrast check
   included), then `DESIGN.md` and `#/design` (`src/views/DesignSystem.tsx`).
 - **Reuse components** (`.panel`, `.btn`, `.chip`, `.seg`, `Stat`, `StatusBadge`, `.tbl`, `.effect`, `Icon`,
   `.sec-title`, `.stage-swap`, `.stagger`) before inventing. A pattern used twice goes into the system.
-- **Icons:** `web/src/components/Icon.tsx` only (Lucide-style inline SVG; paste new shapes into `PATHS`).
+- **Icons:** `apps/viewer/src/components/Icon.tsx` only (Lucide-style inline SVG; paste new shapes into `PATHS`).
   No icon fonts, no new icon dependencies.
 - **Motion:** answer "should this animate?" first. Frequent views (map, tables, filters) get colour/opacity
   only; press feedback `scale(0.97)`; explanatory pages may use `.stage-swap` and `.stagger`. Custom curves
@@ -40,12 +40,12 @@ Don't edit it for UI work. If the UI needs new data, ask for a `map.json` field 
 ## 3. Verify like a user
 
 ```bash
-cd web && bun run build                      # tsc + vite; must pass
+cd apps/viewer && bun run build                      # tsc + vite; must pass
 # serve real or copied runs (don't write notes into runs you don't own)
-uv run appscreenmap serve --runs <runs-dir> --no-open --port 8795 &
-bun ../.claude/skills/web-ui/scripts/shot.ts --base http://127.0.0.1:8795/ --out <scratchpad> \
+uv run appscreenmap-engine serve --runs <runs-dir> --no-open --port 8795 &
+bun ../../.claude/skills/web-ui/scripts/shot.ts --base http://127.0.0.1:8795/ --out <scratchpad> \
     "#/" "#/how" "#/r/<project>%2F<run-id>/map" --themes dark   # 1400 + 390 px
-bun ../.claude/skills/web-ui/scripts/shot.ts ... --reduced-motion --themes dark --widths 1400
+bun ../../.claude/skills/web-ui/scripts/shot.ts ... --reduced-motion --themes dark --widths 1400
 ```
 
 Then **look at every screenshot** (Read the PNGs). Check: nothing clipped or overflowing at 390px, empty and
@@ -54,7 +54,7 @@ loading states, real data with long titles. The viewer is dark only, so pass `--
 Also run the **scroll check** after any layout change. The app scrolls inside `.main`, so the *document* must never scroll:
 
 ```bash
-bun ../.claude/skills/web-ui/scripts/scroll-check.ts --base http://127.0.0.1:8795/     # exit 1 + the page, if one is flagged
+bun ../../.claude/skills/web-ui/scripts/scroll-check.ts --base http://127.0.0.1:8795/     # exit 1 + the page, if one is flagged
 ```
 
 It flags a page whose document is taller than the window (an absolutely positioned element escaped the scroll container, which

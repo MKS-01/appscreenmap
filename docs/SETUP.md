@@ -1,6 +1,6 @@
 # Setup and usage
 
-Everything beyond the [README](../README.md) quick start: requirements, running a crawl on Android and iOS, every
+Everything beyond the [README](../README.md)'s Get started: requirements, running a crawl on Android and iOS, every
 command, configuration, end-to-end tests, CI and MCP. For how the crawler works inside, see
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -11,23 +11,22 @@ command, configuration, end-to-end tests, CI and MCP. For how the crawler works 
 | **Python** | 3.11 or newer, with [uv](https://docs.astral.sh/uv/) |
 | **Android** | Platform-tools (`adb`) and a running emulator or USB device |
 | **iOS** | macOS with Xcode, a booted simulator, and [idb](https://fbidb.io): `brew install facebook/fb/idb-companion` and `uv tool install fb-idb` |
-| **Dashboard** | [Bun](https://bun.sh), to build the viewer once from a source checkout (`web/dist` is not committed, so `serve` won't start until it exists) |
+| **From a checkout** | [Bun](https://bun.sh) as well: `make install` builds the dashboard and the `appscreenmap` command with it |
 | **Recommended** | `aapt2` (Android build-tools): app details, activity coverage and the security manifest checks |
 | **Optional** | An AI agent (Claude Code or any MCP client) for the hands-off flow; [Maestro](https://maestro.mobile.dev) to run the generated flows; [Frida](https://frida.re) (`uv tool install frida-tools`) for the dynamic security check |
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
-uv sync
-(cd web && bun install && bun run build)   # the dashboard, one time
-uv run appscreenmap doctor     # checks adb, devices, simulators, idb, aapt2, viewer build
+make install        # the engine, the dashboard and the `appscreenmap` command in ~/.local/bin
+appscreenmap setup  # installs what's missing, then checks adb, devices, simulators, idb, aapt2
 ```
 
 ## Crawl an Android app
 
 ```bash
-uv run appscreenmap crawl --apk path/to/app.apk                        # install + map
-uv run appscreenmap crawl --package com.example.app --clear-data       # already installed, from a clean first-run state
-uv run appscreenmap serve                                              # open the dashboard
+appscreenmap crawl --apk path/to/app.apk                   # install + map
+appscreenmap crawl --package com.example.app --clear-data  # already installed, from a clean first-run state
+appscreenmap serve                                         # open the dashboard
 ```
 
 ## Crawl an iOS app (Simulator, beta)
@@ -36,7 +35,7 @@ Build the app for the simulator (`xcodebuild -sdk iphonesimulator`; an `.ipa` is
 there), boot a simulator, then:
 
 ```bash
-uv run appscreenmap crawl --platform ios --app path/to/YourApp.app --clear-data   # runs go to runs/<app>-ios/
+appscreenmap crawl --platform ios --app path/to/YourApp.app --clear-data  # runs go to runs/<app>-ios/
 ```
 
 On iOS the crawler sees what VoiceOver sees: a control with no accessibility label isn't in the tree, so it can't be
@@ -58,18 +57,14 @@ tapped, and that is itself a finding. Setup and debugging: the
 
 ## Sample apps
 
-Two sample apps ship in [`samples/`](../samples/). Crawl results are not committed (`runs/` is git-ignored), so run
-`samples/demo.sh` to map them and give `appscreenmap serve` something to show:
-
-- **Playground**: built so every screen triggers a known feature, with v1 and v2 builds for release comparisons.
-- **sample-app**: a real Kotlin Multiplatform app, crawled on Android (Compose) and on the iOS Simulator (SwiftUI).
-
-`samples/demo.sh` re-runs every scenario (`samples/demo.sh ios` for only the iOS one); see
+The **Playground** sample app ships in [`samples/`](../samples/): built so every screen triggers a known feature, with
+v1 and v2 builds for release comparisons (an iOS version is planned). Crawl results are not committed (`runs/` is
+git-ignored), so run `samples/demo.sh` to map it and give `appscreenmap serve` something to show; see
 [`samples/README.md`](../samples/README.md).
 
 ## Commands
 
-All run as `uv run appscreenmap <command>`; `<run>` is a run folder such as `runs/sample-app/<run-id>`.
+All run as `appscreenmap <command>`; `<run>` is a run folder such as `runs/playground/<run-id>`.
 
 | Command | What it does |
 |---|---|
@@ -118,13 +113,13 @@ appId: dev.appscreenmap.playground
     stopApp: true
 - tapOn: { id: "email" }
 - inputText: "demo@playground.dev"
-- tapOn: { id: "sign_in" }       # on s001
-- tapOn: { id: "tab_search" }    # on s002
+- tapOn: { id: "sign_in" }     # on s001
+- tapOn: { id: "tab_search" }  # on s002
 - assertVisible: { id: "tab_home" }
 ```
 
 ```bash
-maestro test runs/<project>/<run-id>/flows/   # prove every screen is still reachable
+maestro test runs/<project>/<run-id>/flows/  # prove every screen is still reachable
 ```
 
 AppScreenMap writes the files; it doesn't bundle or run Maestro (Apache-2.0, not affiliated). Maestro is the only
@@ -134,7 +129,7 @@ already has everything a generator needs.
 ## CI: verify a new build
 
 ```bash
-uv run appscreenmap verify runs/sample-app/<run-id> --apk app-release.apk
+appscreenmap verify runs/playground/<run-id> --apk app-release.apk
 ```
 
 `verify` replays every screen's path from a fresh launch on the new build (longest paths first). A path fails when
@@ -142,8 +137,8 @@ a step's element is gone, or it leads to the wrong screen, out of the app, or to
 reported as blocked, and every screen it reaches is diffed against the base run.
 
 ```
-✘ 9 passed, 1 failed, 1 blocked, 0 skipped · 2 visually changed   (1.3.0 vs base 1.2.0)
-  ✘ s005 'Settings': 'Settings' is not on s002
+FAILED: 9 passed, 1 failed, 1 blocked, 0 skipped · 2 visually changed   (1.3.0 vs base 1.2.0)
+  fail s005 'Settings': 'Settings' is not on s002
   ⊘ s009 'Connect Notion': blocked by s005
   ≠ s002 'Hello, test': 0.84% pixels; text 1 changed
 ```

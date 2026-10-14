@@ -6,15 +6,16 @@ description: Run a WCAG 2.2 accessibility audit of an Android app with AppScreen
 # WCAG 2.2 accessibility audit
 
 Read `wcag-mobile-rules` first. It defines terms, thresholds, and how to word findings.
-Target app: sample-app (`dev.mks.sample-app`) unless the user names another. Default level: **AA**.
+Target app: the Playground sample (`dev.appscreenmap.playground`; it has deliberate `A11Y BUG` screens) unless the user
+names another. Default level: **AA**.
 
 ## 1. Automated pass on a normal crawl
 
 Use the newest good run, or crawl first (`crawl-app` skill):
 
 ```bash
-uv run appscreenmap a11y runs/<project>/<run-id>                 # level ≤ AA, open + confirmed issues
-uv run appscreenmap a11y runs/<project>/<run-id> --level AAA --json > <scratchpad>/a11y.json
+uv run appscreenmap-engine a11y runs/<project>/<run-id>                 # level ≤ AA, open + confirmed issues
+uv run appscreenmap-engine a11y runs/<project>/<run-id> --level AAA --json > <scratchpad>/a11y.json
 ```
 
 Every crawl also writes `<run>/a11y.json`. The web viewer's **Accessibility** tab adds the
@@ -27,9 +28,10 @@ for exact numbers.
 ## 2. Resize text: crawl at 200%
 
 ```bash
-uv run appscreenmap crawl --package dev.mks.sample-app --clear-data --font-scale 2.0 --name font200
-uv run appscreenmap a11y runs/sample-app/font200-<stamp>
-uv run appscreenmap diff runs/sample-app/<normal-run> runs/sample-app/font200-<stamp>
+APP_PASSWORD=playground-demo uv run appscreenmap-engine crawl --package dev.appscreenmap.playground \
+  --config samples/playground-app/appscreenmap.toml --clear-data --font-scale 2.0 --name font200
+uv run appscreenmap-engine a11y runs/playground/font200-<stamp>
+uv run appscreenmap-engine diff runs/playground/<normal-run> runs/playground/font200-<stamp>
 ```
 
 The font scale is restored afterwards. Look for `text-truncated` (1.4.4), screens missing compared
@@ -61,7 +63,7 @@ Walk the screen list (`map.json`) and screenshots, guided by each screen's `patt
 | media, timers, carousels | 1.2.x captions/transcripts, 2.2.1 time limits (a focus timer is user-started, so it's fine), 2.2.2 pause for auto-moving content |
 | everything | 1.4.1 colour-only signals, 1.4.11 icon/border contrast, 1.3.3 sensory instructions, 2.5.1 gesture alternatives, 4.1.3 status messages (snackbars/toasts announced?) |
 
-When the app's source is available (sample-app: `../sample-app`), grep it to confirm or rule out
+When the app's source is available (Playground: `samples/playground-app/app/`), grep it to confirm or rule out
 findings: `contentDescription`, `semantics`, `Role.`, `paneTitle`, `liveRegion`, `autofillHints`,
 `screenOrientation`, `maxLines`.
 
@@ -70,7 +72,7 @@ findings: `contentDescription`, `semantics`, `Role.`, `paneTitle`, `liveRegion`,
 Each issue's status lives in `<run>/notes.json` under `a11y`: `{ "<issue key>": { "status":
 "confirmed" | "wontfix" | "false_positive", "note": "…", "updated": "<iso>" } }`. The viewer edits
 the same file. To write it from the CLI, load the existing file, merge your decisions, and validate
-with `appscreenmap.notes.validate` before saving (format owned by the web session; don't change it).
+with `appscreenmap.core.notes.validate` before saving (format owned by the web session; don't change it).
 `appscreenmap a11y` then hides false positives and won't-fixes.
 
 ## 6. Report
@@ -78,8 +80,8 @@ with `appscreenmap.notes.validate` before saving (format owned by the web sessio
 Generate the report after triage, so confirmed viewer findings and your decisions are included:
 
 ```bash
-uv run appscreenmap a11y runs/<project>/<run-id> --report            # AA (default)
-uv run appscreenmap a11y runs/<project>/<run-id> --report --level AAA
+uv run appscreenmap-engine a11y runs/<project>/<run-id> --report            # AA (default)
+uv run appscreenmap-engine a11y runs/<project>/<run-id> --report --level AAA
 ```
 
 This writes `a11y-report.html` (self-contained, shareable) and `a11y-report.md` (+ `a11y/crops/`).

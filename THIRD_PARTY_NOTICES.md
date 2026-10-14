@@ -6,7 +6,7 @@ AppScreenMap is MIT-licensed (see [LICENSE](LICENSE)). It includes or depends on
 
 ### Lucide icons (web viewer)
 
-The inline SVG icon shapes in `web/src/components/Icon.tsx` are taken from or modelled on [Lucide](https://lucide.dev),
+The inline SVG icon shapes in `apps/viewer/src/components/Icon.tsx` are taken from or modelled on [Lucide](https://lucide.dev),
 used under the ISC license. Lucide in turn includes portions derived from [Feather](https://feathericons.com) (MIT).
 Both licenses follow:
 
@@ -59,7 +59,7 @@ Check the upstream notice at <https://github.com/lucide-icons/lucide/blob/main/L
 
 The viewer's UI font (Geist) and monospace font (Geist Mono) come from the `@fontsource-variable/geist` and
 `@fontsource-variable/geist-mono` packages (npm dependencies, not in the source tree) and are bundled into the built
-viewer (`web/dist`) as `.woff2` files. They are licensed under the SIL Open Font License 1.1, which requires this notice and license to accompany any copy:
+viewer (`apps/viewer/dist`) as `.woff2` files. They are licensed under the SIL Open Font License 1.1, which requires this notice and license to accompany any copy:
 
 ```
 Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font)
@@ -164,7 +164,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 | [@dagrejs/dagre](https://github.com/dagrejs/dagre) | MIT | web viewer: graph layout |
 | [mcp](https://github.com/modelcontextprotocol/python-sdk) (optional) | MIT | `appscreenmap mcp` |
 
-Vite bundles React, React DOM, `@xyflow/react` and `@dagrejs/dagre` into `web/dist`; their MIT licenses are listed
+Vite bundles React, React DOM, `@xyflow/react` and `@dagrejs/dagre` into `apps/viewer/dist`; their MIT licenses are listed
 above, and each package carries its own copyright notice. `mcp` brings its own dependencies when installed. Build and
 dev tools (Vite, TypeScript, pytest, ruff, hatchling) are not redistributed.
 
@@ -173,7 +173,7 @@ dev tools (Vite, TypeScript, pytest, ruff, hatchling) are not redistributed.
 AppScreenMap runs these if you have installed them; it does not include or redistribute them: `adb` and `aapt2`
 (Android SDK, Apache-2.0), `xcrun simctl` (Xcode), [idb](https://fbidb.io) and `idb_companion` (MIT), and, for the
 security-audit skill only, `frida` (wxWindows Library Licence) and, for the by-hand code checks, `jadx` (Apache-2.0).
-The security scanner (`src/appscreenmap/security.py`) was written from scratch for this project. It borrows ideas, not code,
+The security scanner (`packages/security/`) was written from scratch for this project. It borrows ideas, not code,
 from [mobile-recon](https://github.com/MKS-01/mobile-recon), an earlier MIT-licensed tool by the same author.
 
 ## Maestro (flow format only)
@@ -197,13 +197,10 @@ ideas, not code, with them.
 
 - **Playground** (`samples/playground-app/`): written for this project, MIT like the rest of the repo. Its APKs are
   release builds signed with the Android debug key.
-- **sample-app** (`samples/sample-app/sample-app-1.3.0.apk`): a build of [sample-app](https://github.com/MKS-01/sample-app),
-  MIT, maintained by the same author, signed with the author's release key.
-- **Apache-2.0 components inside the binaries.** Both APKs, built with Jetpack Compose, contain AndroidX, Compose,
-  Material 3 and the Kotlin standard library (Google and JetBrains, Apache-2.0); sample-app adds the libraries its own
-  repository declares. `samples/playground-app/gradle/wrapper/gradle-wrapper.jar` is Apache-2.0 too. Full text:
+- **Apache-2.0 components inside the binaries.** The Playground APKs, built with Jetpack Compose, contain AndroidX,
+  Compose, Material 3 and the Kotlin standard library (Google and JetBrains, Apache-2.0). `samples/playground-app/gradle/wrapper/gradle-wrapper.jar` is Apache-2.0 too. Full text:
   <https://www.apache.org/licenses/LICENSE-2.0>.
 - **Crawl output** (`runs/`) is git-ignored and not distributed with the project. `samples/demo.sh` generates crawls
-  of those two apps: screenshots, view hierarchies and reports. The form values are dummy data (for example
+  of the Playground: screenshots, view hierarchies and reports. The form values are dummy data (for example
   `demo@playground.dev`), and passwords appear only as `${APP_PASSWORD}` placeholders. Device screenshots can show
   Android or iOS system UI such as the status bar and keyboard; those belong to Google and Apple.

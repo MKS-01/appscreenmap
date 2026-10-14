@@ -7,6 +7,28 @@ resolution-markers = [
     "(python_full_version < '3.14' and sys_platform != 'emscripten') or (python_full_version < '3.12' and sys_platform == 'emscripten')",
 ]
 
+[manifest]
+members = [
+    "appscreenmap-a11y",
+    "appscreenmap-core",
+    "appscreenmap-crawler",
+    "appscreenmap-drivers",
+    "appscreenmap-engine",
+    "appscreenmap-exporters",
+    "appscreenmap-regression",
+    "appscreenmap-reports",
+    "appscreenmap-security",
+    "appscreenmap-testkit",
+]
+
+[manifest.dependency-groups]
+dev = [
+    { name = "appscreenmap-engine", extras = ["mcp"], editable = "apps/engine" },
+    { name = "appscreenmap-testkit", editable = "packages/testkit" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "ruff", specifier = ">=0.6" },
+]
+
 [[package]]
 name = "annotated-types"
 version = "0.8.0"
@@ -30,10 +52,64 @@ wheels = [
 ]
 
 [[package]]
-name = "appscreenmap"
+name = "appscreenmap-a11y"
 version = "0.1.0"
-source = { editable = "." }
+source = { editable = "packages/a11y" }
 dependencies = [
+    { name = "appscreenmap-core" },
+    { name = "appscreenmap-drivers" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "appscreenmap-core", editable = "packages/core" },
+    { name = "appscreenmap-drivers", editable = "packages/drivers" },
+]
+
+[[package]]
+name = "appscreenmap-core"
+version = "0.1.0"
+source = { editable = "packages/core" }
+dependencies = [
+    { name = "pillow" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pillow", specifier = ">=10.0" }]
+
+[[package]]
+name = "appscreenmap-crawler"
+version = "0.1.0"
+source = { editable = "packages/crawler" }
+dependencies = [
+    { name = "appscreenmap-core" },
+    { name = "appscreenmap-drivers" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "appscreenmap-core", editable = "packages/core" },
+    { name = "appscreenmap-drivers", editable = "packages/drivers" },
+]
+
+[[package]]
+name = "appscreenmap-drivers"
+version = "0.1.0"
+source = { editable = "packages/drivers" }
+
+[[package]]
+name = "appscreenmap-engine"
+version = "0.1.0"
+source = { editable = "apps/engine" }
+dependencies = [
+    { name = "appscreenmap-a11y" },
+    { name = "appscreenmap-core" },
+    { name = "appscreenmap-crawler" },
+    { name = "appscreenmap-drivers" },
+    { name = "appscreenmap-exporters" },
+    { name = "appscreenmap-regression" },
+    { name = "appscreenmap-reports" },
+    { name = "appscreenmap-security" },
     { name = "pillow" },
 ]
 
@@ -42,25 +118,92 @@ mcp = [
     { name = "mcp" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "mcp" },
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
 [package.metadata]
 requires-dist = [
+    { name = "appscreenmap-a11y", editable = "packages/a11y" },
+    { name = "appscreenmap-core", editable = "packages/core" },
+    { name = "appscreenmap-crawler", editable = "packages/crawler" },
+    { name = "appscreenmap-drivers", editable = "packages/drivers" },
+    { name = "appscreenmap-exporters", editable = "packages/exporters" },
+    { name = "appscreenmap-regression", editable = "packages/regression" },
+    { name = "appscreenmap-reports", editable = "packages/reports" },
+    { name = "appscreenmap-security", editable = "packages/security" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3,<3" },
     { name = "pillow", specifier = ">=10.0" },
 ]
 provides-extras = ["mcp"]
 
-[package.metadata.requires-dev]
-dev = [
-    { name = "mcp", specifier = ">=2.3,<3" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "ruff", specifier = ">=0.6" },
+[[package]]
+name = "appscreenmap-exporters"
+version = "0.1.0"
+source = { editable = "packages/exporters" }
+dependencies = [
+    { name = "appscreenmap-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "appscreenmap-core", editable = "packages/core" }]
+
+[[package]]
+name = "appscreenmap-regression"
+version = "0.1.0"
+source = { editable = "packages/regression" }
+dependencies = [
+    { name = "appscreenmap-core" },
+    { name = "appscreenmap-crawler" },
+    { name = "appscreenmap-drivers" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "appscreenmap-core", editable = "packages/core" },
+    { name = "appscreenmap-crawler", editable = "packages/crawler" },
+    { name = "appscreenmap-drivers", editable = "packages/drivers" },
+]
+
+[[package]]
+name = "appscreenmap-reports"
+version = "0.1.0"
+source = { editable = "packages/reports" }
+dependencies = [
+    { name = "appscreenmap-core" },
+    { name = "appscreenmap-drivers" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "appscreenmap-core", editable = "packages/core" },
+    { name = "appscreenmap-drivers", editable = "packages/drivers" },
+]
+
+[[package]]
+name = "appscreenmap-security"
+version = "0.1.0"
+source = { editable = "packages/security" }
+dependencies = [
+    { name = "appscreenmap-drivers" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "appscreenmap-drivers", editable = "packages/drivers" }]
+
+[[package]]
+name = "appscreenmap-testkit"
+version = "0.1.0"
+source = { editable = "packages/testkit" }
+dependencies = [
+    { name = "appscreenmap-core" },
+    { name = "appscreenmap-crawler" },
+    { name = "appscreenmap-drivers" },
+    { name = "pillow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "appscreenmap-core", editable = "packages/core" },
+    { name = "appscreenmap-crawler", editable = "packages/crawler" },
+    { name = "appscreenmap-drivers", editable = "packages/drivers" },
+    { name = "pillow", specifier = ">=10.0" },
 ]
 
 [[package]]

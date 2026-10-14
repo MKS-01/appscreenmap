@@ -1,0 +1,24 @@
+{
+  "name": "@appscreenmap/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The appscreenmap command: a terminal home that runs the dashboard, and the front door to the engine.",
+  "scripts": {
+    "dev": "bun run src/index.tsx",
+    "build": "bun build ./src/index.tsx --compile --outfile dist/appscreenmap",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@appscreenmap/design-tokens": "workspace:*",
+    "ink": "5.2.1",
+    "react": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.0",
+    "@types/react": "18.3.12",
+    "react-devtools-core": "4.28.5",
+    "typescript": "5.9.3"
+  }
+}

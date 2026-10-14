@@ -242,11 +242,11 @@ long-press.
 | **0. Plan + scaffold** | This doc, repo layout, MIT license, CI-ready tooling | ✅ |
 | **1. Android MVP** | ADB driver, analyzer, explorer, live map.json, Maestro + Mermaid export, visual diff, web viewer (runs, map, gallery, detail, compare), WCAG 2.2 checks + report, navigation load times | ✅ crawler · viewer in progress |
 | 2. Robustness | uiautomator2 backend (5× faster), WebView handling, better dialog/IME handling, model reuse to resume a crawl, `--from-run` to recrawl only changed screens | |
-| 3. iOS | **After Android is solid.** Simulator driver (`driver_ios.py`: `simctl` + `idb`, started Oct 2026), same map format and viewer. sample-app is the iOS sample. See §8.3 | 🚧 `crawl --platform ios` works on a simulator (sample-app); perf, permissions, iOS a11y rules next |
+| 3. iOS | **After Android is solid.** Simulator driver (`driver_ios.py`: `simctl` + `idb`, started Oct 2026), same map format and viewer. Its sample will be a SwiftUI Playground with the Android one's scenarios. See §8.3 | 🚧 `crawl --platform ios` works on a simulator (checked on a real SwiftUI app); perf, permissions, iOS a11y rules next |
 | 4. Intelligence | Optional LLM step: semantic screen names, smarter form inputs, goal-directed exploration ("reach checkout") | |
 | 5. Team | Docker image + GitHub Action, `appscreenmap publish` to a static site, Appium/Espresso page-object export | |
 | 6. Localisation | Crawl in several locales (incl. pseudo-locales), match screens across locales, l10n review in the viewer (untranslated text, truncation, overflow, RTL mirroring), side-by-side locale gallery, context screenshots for translators. Depends only on phase 1, so it can ship before 3–5. See §8.1 | |
-| 7. Agents & CI | MCP server (the map as agent memory), `appscreenmap verify` (replay every reach path on a new build, CI exit codes, baselines), secrets as `${ENV}` placeholders, text-aware visual diff. See §8.2 | ✅ crawler (`verify` on sample-app, same build: 8 passed, 3 skipped as state-dependent, exit 0) |
+| 7. Agents & CI | MCP server (the map as agent memory), `appscreenmap verify` (replay every reach path on a new build, CI exit codes, baselines), secrets as `${ENV}` placeholders, text-aware visual diff. See §8.2 | ✅ crawler (`verify` on a real app, same build: 8 passed, 3 skipped as state-dependent, exit 0) |
 | 8. Performance & conditions | Perfetto traces for slow transitions, crawl screen recordings, emulator network profiles, condition matrix (landscape, dark mode, denied permissions, display size), keyboard/D-pad reachability crawl. See §8.2 | |
 
 ### 8.1 Localisation support (planned)
@@ -336,10 +336,12 @@ telemetry (AppScreenMap sends nothing; keep it that way).
 
 ### 8.3 iOS (started)
 
-**Sample: sample-app.** It has a real SwiftUI iOS target (`iosApp/` in the sample-app repo, KMP shared core), builds
-for the simulator with `xcodebuild -sdk iphonesimulator`, and is the owner's own code, so every issue the crawl finds can
-be fixed at the source and re-crawled to prove the tool works. No separate "Playground iOS" for now. A simulator needs a
-`.app` from an iphonesimulator build: an `.ipa` is device-signed and won't run there (the driver says so).
+**Sample: Playground iOS (planned).** A SwiftUI version of `samples/playground-app/` with the same scenarios (one
+screen per feature, deliberate `A11Y BUG` screens, a v1 and a v2), built for the simulator with
+`xcodebuild -sdk iphonesimulator`, so iOS crawls get known answers the way Android ones do. Until it exists, the iOS
+driver is checked against a recorded tree (`packages/drivers/tests/fixtures/ios-reader-home.json`, names neutralised)
+and real SwiftUI apps crawled locally, outside the repo. A simulator needs a `.app` from an iphonesimulator build: an
+`.ipa` is device-signed and won't run there (the driver says so).
 
 **How it drives a simulator.** `simctl` boots, installs, launches, terminates, screenshots and grants permissions; `idb`
 (`idb_companion` + the `fb-idb` client) reads the accessibility tree and sends taps, swipes and text, which `simctl` can't
@@ -348,8 +350,8 @@ analyzer keys on, `resource-id` from the accessibility identifier, `bounds` in p
 explorer, exporters and viewer work unchanged. Measured: tree dump 0.5 s (Android: ~2 s). Coordinates are points; the
 screenshot is native pixels and the viewer scales by ratio, as it does between Android densities.
 
-**Done:** driver, translator, `doctor` checks, `crawl --platform ios --app X.app`, 14 tests (a real sample-app tree recorded
-as `tests/fixtures/`), and live crawls of sample-app on an iPhone 17 simulator: 7 screens, 15 transitions, 43 steps in 86 s,
+**Done:** driver, translator, `doctor` checks, `crawl --platform ios --app X.app`, 14 tests (a real app's tree recorded,
+names neutralised, as `packages/drivers/tests/fixtures/`), and live crawls of a real SwiftUI app on an iPhone 17 simulator: 7 screens, 15 transitions, 43 steps in 86 s,
 Maestro flows and the a11y audit written, then "nothing left to explore" (the tab bar is invisible to the tree; see below).
 How the Android-shaped explorer maps onto iOS:
 - *App lock.* No scriptable pinning on iOS, so the explorer enforces it: any tree whose owning process (matched by pid
@@ -366,22 +368,18 @@ runs them outside the app's tree; `simctl privacy grant all` covers the common o
 (iOS has none), and the iOS-specific accessibility rules (VoiceOver names, 44 pt targets per Apple HIG, Dynamic Type at the
 largest size) beside WCAG.
 
-**What the first look at sample-app found** (to fix in the app, then re-crawl to confirm):
-1. *Floating bottom bar has no accessibility.* `Shell/FloatingBar.swift` draws four icon buttons (Home, Following, Saved,
-   player) with no label, trait or identifier: they are absent from the accessibility tree, so VoiceOver can't reach them
-   and the crawler can't tab between sections.
-2. *Settings "×" close button is unlabeled*, so it's missing from the tree too: nothing to tap to leave the screen.
-3. *No accessibility identifiers anywhere* (0 in `iosApp/`; 3 labels): no stable ids for screen identity or Maestro `id:` selectors.
-4. *No heading traits.* 0 `.isHeader` in `iosApp/`: section titles (VOICE, NOTION, APPEARANCE) are plain text for the
-   VoiceOver Headings rotor. Plus 23 touch targets under 44 pt on Home alone.
-5. *Cards open an in-app browser* (SFSafariViewController): its content is out of process, so the tree is one node.
-   Expected, but the crawler must record it as leaving the app.
-6. *Crawler side, fixed:* "Erase everything on this device" (Settings → Reset) wasn't in the default `blocked_text`; added
-   `erase`, `wipe`, `reset all/app/data/device`, `clear data`, with a test.
+**What the first real-app crawl taught the crawler:**
+1. *Controls with no label, trait or identifier are absent from the accessibility tree*, so a custom floating tab bar
+   can't be reached by VoiceOver or the crawler: the crawl can't tab between sections, which is itself the finding.
+2. *An in-app browser (SFSafariViewController) is out of process*: the tree is one node, so it must count as leaving the
+   app (it does: `ios.external`, then a restart).
+3. *Few accessibility identifiers in real apps*: screen identity and Maestro selectors can't rely on `id:`.
+4. *Destructive wordings*: "Erase everything on this device" wasn't in the default `blocked_text`; added `erase`,
+   `wipe`, `reset all/app/data/device`, `clear data`, with a test.
 
 ### 8.4 Security audit: depth (planned)
 
-The rule catalogue is set up (`src/appscreenmap/security_rules.json`, 14 rules, documented in the `security-rules` skill; the
+The rule catalogue is set up (`packages/security/src/appscreenmap/security/rules.json`, 14 rules, documented in the `security-rules` skill; the
 workflow is the `security-audit` skill). Every rule is `planned`, so the Insights Security page says "not set up" and lists
 them. This section is how the scanner goes deeper than a manifest check, from two kinds of evidence.
 
@@ -439,18 +437,18 @@ Next features, first batch. Unchecked means not started; the open questions need
 - [ ] **Run history and versions.** Several runs of one app should read as a history, with the latest shown
   first. Open: how runs group (by package, by version, by device), and whether the viewer defaults to the
   newest run per project with older ones behind a history list. Touches `runs/index.json` and the Runs view
-  (`web/`).
+  (`apps/viewer/`).
 - [ ] **Adaptive UI review and guidelines.** Check how screens adapt across window sizes and
   orientations (phone, tablet, foldable; compact / medium / expanded width classes) against Android's
   adaptive-layout guidance. Likely builds on the condition matrix in §8.2 (landscape, display size).
   Open: which guidelines to encode as checks, and whether findings sit with the Accessibility tab or get
   their own.
-- [x] **Better Insights.** ✅ viewer: Insights is now an audit framework (`web/src/insights/`). Every audit uses
+- [x] **Better Insights.** ✅ viewer: Insights is now an audit framework (`apps/viewer/src/insights/`). Every audit uses
   one report shape: score, metrics, declarative charts, findings with severity, platform, deadline and official
   refs. Any tool can add or replace an audit by writing `audits/<id>.json` into the run folder (`docs/MAP_SCHEMA.md`).
   Built from real run data: crawl coverage, stability, accessibility (a11y.json), performance (perf.json).
   Overview: an audit card per audit, findings by audit, a store/platform deadline timeline, run history (small
-  multiples) and the device/OS strip. Official sources live in one catalogue (`web/src/insights/sources.ts`).
+  multiples) and the device/OS strip. Official sources live in one catalogue (`apps/viewer/src/insights/sources.ts`).
 - [ ] **Audits that still show sample data** (labelled "sample data" in the viewer; "Show sample audits" hides them):
   - **Adaptive UI.** Real today: manifest orientation locks and the crawl's window class. Next: crawl at 600
     and 840 dp (resizable emulator or tablet AVD), then check layouts per window size class.
@@ -468,7 +466,7 @@ Next features, first batch. Unchecked means not started; the open questions need
   (emulator / physical), display name, brand, AVD name, form factor, OS build and vendor skin, hardware,
   display in dp and window class, the settings that change what an app shows, WebView and Play services
   (`device.py`, documented in `docs/MAP_SCHEMA.md`); `report` prints it with device caveats. Open: a Device
-  section in the viewer (`web/`), and per-screenshot capture once locale or condition runs exist (one run,
+  section in the viewer (`apps/viewer/`), and per-screenshot capture once locale or condition runs exist (one run,
   several captures).
 - [ ] **Versions and flows per app** (designed: canvas "AppScreenMap redesign", boards *App · versions + compare*
   and *App · flows + crawl rules*). An app page with a version timeline (newest first, runs under each version,

@@ -1,6 +1,6 @@
 ---
 name: ios-simulator
-description: Set up, run and debug AppScreenMap against an iOS Simulator — building sample-app for the simulator, booting it (Xcode 27 Device Hub), installing idb, reading the accessibility tree, recording a test fixture, and diagnosing a bad iOS crawl (missing tab bar, in-app browser, flat trees, stuck screens). Use for any iOS work: `crawl --platform ios`, `doctor` showing no simulator, an iOS crawl that stops early or maps too little, or extending `driver_ios.py` / `ios_hierarchy.py`.
+description: Set up, run and debug AppScreenMap against an iOS Simulator — building the app for the simulator, booting it (Xcode 27 Device Hub), installing idb, reading the accessibility tree, recording a test fixture, and diagnosing a bad iOS crawl (missing tab bar, in-app browser, flat trees, stuck screens). Use for any iOS work: `crawl --platform ios`, `doctor` showing no simulator, an iOS crawl that stops early or maps too little, or extending `drivers/ios.py` / `drivers/ios_hierarchy.py`.
 ---
 
 # iOS Simulator: set up, run, debug
@@ -12,13 +12,13 @@ AppScreenMap drives a simulator with two tools, because neither does the whole j
 | `xcrun simctl` | boot/shutdown, install, launch/terminate, screenshots, permissions (`privacy`), Dynamic Type / appearance / contrast (`ui`), status bar, keychain, push, openurl | tap, swipe, type, read the UI tree |
 | `idb` (`idb_companion` + `fb-idb` client) | accessibility tree (`ui describe-all`), tap / swipe / text / key, `ui quiet` (idle + no animations), scroll, rotate, hinge, crash list, video, xctrace | build or install simulators |
 
-Code: `src/appscreenmap/driver_ios.py` (the driver the explorer calls) and `ios_hierarchy.py` (iOS tree → the
+Code: `packages/drivers/src/appscreenmap/drivers/ios.py` (the driver the explorer calls) and `ios_hierarchy.py` (iOS tree → the
 uiautomator-style XML the analyzer reads). Design and status: `docs/PLAN.md` §8.3.
 
 ## 1. Preflight
 
 ```bash
-uv run appscreenmap doctor     # needs: a booted simulator, idb client, idb_companion
+uv run appscreenmap-engine doctor     # needs: a booted simulator, idb client, idb_companion
 brew install facebook/fb/idb-companion
 uv tool install fb-idb         # puts `idb` on PATH (uvx --from fb-idb idb also works, ~1 s slower)
 xcrun simctl list devices available | head
@@ -32,26 +32,27 @@ xcrun simctl boot "iPhone 17"
   `idb_companion --udid <UDID> --grpc-port 10882 &` then `idb connect localhost 10882`, then `idb ui describe-all --udid <UDID>`.
 - One booted simulator is picked automatically; with several, pass `--serial <udid>`.
 
-## 2. Build the app (sample-app is the sample)
+## 2. Build the app
 
 A simulator runs a **`.app` from an `iphonesimulator` build**. An `.ipa` is device-signed (arm64, provisioning) and will not
-run there; the driver rejects it. sample-app (`../sample-app/iosApp`) is SwiftUI over a Kotlin Multiplatform core:
+run there; the driver rejects it. There's no iOS sample in the repo yet (a SwiftUI Playground with the same scenarios as
+the Android one is planned, `docs/PLAN.md`), so build the user's app:
 
 ```bash
-cd ../sample-app/iosApp
-xcodebuild -project iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator -configuration Debug \
+cd path/to/YourApp
+xcodebuild -project YourApp.xcodeproj -scheme YourApp -sdk iphonesimulator -configuration Debug \
   -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath <scratch>/dd CODE_SIGNING_ALLOWED=NO build
-# → <scratch>/dd/Build/Products/Debug-iphonesimulator/sample-app.app
+# → <scratch>/dd/Build/Products/Debug-iphonesimulator/YourApp.app   (use -workspace for CocoaPods / KMP projects)
 ```
 
-The first build runs Gradle to compile the Kotlin framework (minutes); later ones are fast. Don't edit the sample-app repo
-unless asked: the owner fixes what the crawl finds there and re-crawls to verify.
+A Kotlin Multiplatform app's first build also compiles the shared framework (minutes); later ones are fast. Don't edit
+the app's source unless asked: its owner fixes what the crawl finds and re-crawls to verify.
 
 ## 3. Crawl
 
 ```bash
-uv run appscreenmap crawl --platform ios --app <path>/sample-app.app --clear-data --max-steps 150
-uv run appscreenmap serve        # the run is in runs/sample-app-ios/
+uv run appscreenmap-engine crawl --platform ios --app <path>/YourApp.app --clear-data --max-steps 150
+uv run appscreenmap-engine serve        # the run is in runs/<app>-ios/
 ```
 
 `--font-scale 2.0` sets Dynamic Type to `accessibility-large` (WCAG 1.4.4). Load times and system permission alerts aren't
@@ -78,7 +79,7 @@ supported yet. `--package <bundle id>` re-crawls an already installed app.
 |---|---|---|
 | "nothing left to explore" after a few screens | The navigation (tab bar, close button) isn't in the accessibility tree | `idb ui describe-all` on that screen; if the control is absent, it's an app finding. Check for `.accessibilityLabel` / traits in the Swift view. |
 | Lots of `x:com.apple.mobilesafari` or `ios.external` screens | Links open Safari / an in-app browser | Expected; they are recorded as external and the app restarts. Block the link label in `blocked_text` to stop tapping it. |
-| Same screen mapped many times | Live content (timers, clocks, "1h ago") in the signature | Check `tests/` for the normalisation rules; digits are masked, words are not. Add a test, then tune like `tune-crawler`. |
+| Same screen mapped many times | Live content (timers, clocks, "1h ago") in the signature | Check `packages/core/tests/test_analyzer.py` for the normalisation rules; digits are masked, words are not. Add a test, then tune like `tune-crawler`. |
 | Blank elements list | Tree returned only the Application node | A system sheet is in front, or the app hasn't drawn yet: take `simctl io screenshot`, raise `--settle`. |
 | `idb describe-all returned no tree` | Companion not running / simulator not booted / wrong UDID | `doctor`; `idb list-targets`; kill stray `idb_companion` and retry. |
 | Tap does nothing | Off-screen or covered element, or coordinates in pixels | Taps are points. `idb ui describe-point x y` shows what is there. |
@@ -89,11 +90,11 @@ supported yet. `--package <bundle id>` re-crawls an already installed app.
 Tests never need a device. To capture a tree:
 
 ```bash
-idb ui describe-all --udid <UDID> | python3 -c "import sys,json; d=json.load(sys.stdin); json.dump(d[:30], open('tests/fixtures/<name>.json','w'), indent=1)"
+idb ui describe-all --udid <UDID> | python3 -c "import sys,json; d=json.load(sys.stdin); json.dump(d[:30], open('packages/drivers/tests/fixtures/<name>.json','w'), indent=1)"
 ```
 
 Shorten long text (no personal content), keep the Application node first, and test the translation in
-`tests/test_ios_hierarchy.py` (`idb_to_xml` → `analyze`). The driver takes an injectable runner (`run=`), so command output can
+`packages/drivers/tests/test_ios_hierarchy.py` (`idb_to_xml` → `analyze`). The driver takes an injectable runner (`run=`), so command output can
 be faked without a simulator.
 
 ## 7. Not used yet (worth a look)

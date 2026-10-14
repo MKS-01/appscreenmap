@@ -1,7 +1,7 @@
 # WCAG 2.2 Level A and AA on native Android
 
-Columns: **Check** = how AppScreenMap covers it: `crawler:<rule>` (a11y.py), `viewer:<rule>`
-(web/src/a11y.ts), `device` (an adb test in the a11y-audit skill), `manual`.
+Columns: **Check** = how AppScreenMap covers it: `crawler:<rule>` (a11y/checks.py), `viewer:<rule>`
+(apps/viewer/src/a11y.ts), `device` (an adb test in the a11y-audit skill), `manual`.
 Fixes: **V** = Android Views, **C** = Jetpack Compose. ★ = new in 2.2. † = advisory for a single
 native app under WCAG2ICT / EN 301 549.
 

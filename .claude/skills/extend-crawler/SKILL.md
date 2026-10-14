@@ -18,25 +18,25 @@ Keep each layer ignorant of the ones after it.
 
 | Feature | Where | Notes |
 |---|---|---|
-| **New driver** (uiautomator2 for ~5× speed, iOS via WebDriverAgent/idb) | new `driver_<name>.py` with the same public methods as `AdbDriver`: `snapshot()`, `screenshot()`, `tap/long_press/swipe/back/key/input_text/hide_keyboard`, `screen_size()`, `info()`, app management (`install/launch/force_stop/clear_data/grant_all`), `pin/unpin`, crash log | `snapshot()` must return a uiautomator-format XML so the analyzer is unchanged. For iOS, convert the XCUI tree to that format and keep the mapping in the driver. Add a `--driver` flag in `cli.cmd_crawl`. |
+| **New driver** (uiautomator2 for ~5× speed, iOS via WebDriverAgent/idb) | new `packages/drivers/.../drivers/<name>.py` with the same public methods as `AdbDriver`: `snapshot()`, `screenshot()`, `tap/long_press/swipe/back/key/input_text/hide_keyboard`, `screen_size()`, `info()`, app management (`install/launch/force_stop/clear_data/grant_all`), `pin/unpin`, crash log | `snapshot()` must return a uiautomator-format XML so the analyzer is unchanged. For iOS, convert the XCUI tree to that format and keep the mapping in the driver. Add a `--driver` flag in `cmd_crawl` (`apps/engine/src/appscreenmap/engine/cli/crawl.py`). |
 | **New export** (E2E tool: Appium, Espresso, Playwright-style, …) | Use the **`add-exporter`** skill | It covers the pluggable exporter interface, selectors, secrets, tests and licensing. |
-| **New UI pattern** | `analyzer._patterns()` | Add a test in `tests/test_analyzer.py` and list the pattern in `docs/MAP_SCHEMA.md`. |
+| **New UI pattern** | `analyzer._patterns()` | Add a test in `packages/core/tests/test_analyzer.py` and list the pattern in `docs/MAP_SCHEMA.md`. |
 | **Element kind / priority** | `analyzer._kind()`, `KIND_PRIORITY` | Kinds drive priority and global inference. |
 | **Config option** | `config.CrawlConfig` (dataclass field + comment) + `examples/appscreenmap.toml` | Unknown keys raise. Expose a CLI flag only if it's commonly changed. |
-| **CLI command** | `cli.py`: `cmd_<name>` + subparser | Keep logic in a module (like `report.py`); the CLI only formats. |
+| **CLI command** | `apps/engine/src/appscreenmap/engine/cli/<group>.py`: `cmd_<name>` + its parser in that module's `register()` (a new group goes in `GROUPS` in `cli/__init__.py`) | Keep logic in a module (like `reports/health.py`); the CLI only formats. |
 | **map.json field** | `model.*.to_dict()` | Additive only (schema 1). Document it in `docs/MAP_SCHEMA.md` and tell the user the web session can use it. |
 | **Exploration strategy** (LLM-guided, goal-directed) | `Explorer.next_action()` / `pick_frontier()` | Keep the deterministic path as the default. An LLM strategy is optional, plugged in behind a config flag, and must still respect `blocked_text` and `stay_in_app`. |
-| **Run analysis** | `report.py` | New findings should name the symptom and point at the cause. |
+| **Run analysis** | `packages/reports/` (`health.py`, `perf.py`) | New findings should name the symptom and point at the cause. |
 
 ## Checklist for every feature
 
-1. Tests first where possible, with synthetic hierarchies in `tests/helpers.py`. No device in unit tests.
-2. `uv run pytest -q && uv run ruff check src tests && uv run ruff format src`.
-3. If behavior on a device changed, run a real crawl of sample-app (`crawl-app` skill) and compare
+1. Tests first where possible, with synthetic hierarchies in `packages/testkit/src/appscreenmap/testkit/helpers.py`. No device in unit tests.
+2. `uv run pytest -q && uv run ruff check && uv run ruff format`.
+3. If behavior on a device changed, run a real crawl of the Playground (`crawl-app` skill) and compare
    `appscreenmap report` with the previous run.
 4. Docs: README (user-facing), `docs/MAP_SCHEMA.md` (data), `docs/PLAN.md` (roadmap status),
    `examples/appscreenmap.toml` (options).
-5. Don't touch `web/`. If the viewer should show the new data, describe the field and its meaning
+5. Don't touch `apps/viewer/`. If the viewer should show the new data, describe the field and its meaning
    to the user so the web session can pick it up.
 6. Safety: the crawler must never tap `blocked_text` matches, never leave the app, and always
-   restore device state (animations, pinning) in `cli.cmd_crawl`'s `finally`.
+   restore device state (animations, pinning) in `cmd_crawl`'s `finally` (`apps/engine/src/appscreenmap/engine/cli/crawl.py`).

@@ -13,7 +13,7 @@ for the data.
 
 Export is one hard-coded function: `export.maestro_flow(data, screen)` plus `mermaid(data)`, both called from
 `export.export_run()`. **There is no exporter interface, registry or `--format` flag yet.** Check
-`src/appscreenmap/export.py` and `cli.py` first; if that changed, follow the code, not this paragraph.
+`packages/exporters/` and `apps/engine/src/appscreenmap/engine/cli/verify.py` (`cmd_export`) first; if that changed, follow the code, not this paragraph.
 
 ## Step 0: build the interface (once, then reuse it)
 
@@ -25,7 +25,7 @@ export tests must still pass byte-for-byte).
 2. **Registry:** built-ins registered by name, plus third-party plugins through the `appscreenmap.exporters`
    entry-point group (so `pip install appscreenmap-<tool>` adds a format).
 3. **CLI:** `appscreenmap export <run> --format maestro,appium-python` (default: maestro, so nothing breaks) and
-   a crawl-time default in config. Keep logic in the module; `cli.py` only parses and prints.
+   a crawl-time default in config. Keep logic in the module; the CLI (`apps/engine/src/appscreenmap/engine/cli/`) only parses and prints.
 4. **Neutral steps:** `--format json` writes the resolved path per screen (launch → steps → assertion) so any tool
    in any language can generate its own tests. Treat this shape as public API: additive changes only.
 5. **Templates:** `--template file` renders the neutral steps through a user-supplied template, for people who
@@ -47,19 +47,19 @@ export tests must still pass byte-for-byte).
 3. **Declare capabilities.** If the tool can't express a step (long-press, back, a gesture), the exporter skips that
    screen and reports it, with the reason. Never emit a test that silently does less than the path.
 4. **Secrets.** Typed values come from `config.placeholders` (`${ENV}` placeholders). Never write a literal test
-   password into generated files; `tests/test_secrets.py` shows the expectation. Add the tool's way of reading env
+   password into generated files; `packages/crawler/tests/test_secrets.py` shows the expectation. Add the tool's way of reading env
    vars to the generated file's header comment.
 5. **Output layout.** `tests/<format>/…` or the tool's convention, one file per screen unless the tool prefers a
    page-object class per screen plus a path helper. Include a generated-file header with the run id.
 
 ## Tests (no device needed)
 
-- Golden test per exporter in `tests/test_model_and_exports.py` style: a synthetic map → expected file text.
+- Golden test per exporter in `packages/exporters/tests/test_export.py` style: a synthetic map → expected file text.
 - Cases to cover: id / text / desc / point selectors, autofill with a placeholder, scrolled element, a screen the
   exporter must skip, special characters in labels (quotes, regex metacharacters, unicode).
 - If the tool ships a parser or linter, run generated output through it in a test (skipped when not installed).
   Otherwise validate the format structurally (valid YAML / compiles / imports).
-- `uv run pytest -q && uv run ruff check src tests && uv run ruff format src`.
+- `uv run pytest -q && uv run ruff check && uv run ruff format`.
 
 ## Licensing
 
@@ -69,7 +69,7 @@ affiliated") and use the tool's name descriptively only ("exports Appium tests")
 
 ## Verify for real
 
-Generate for the sample-app sample (`runs/sample-app/<run-id>`), run the output with the actual tool on the emulator
+Generate for the Playground sample (`runs/playground/<run-id>`), run the output with the actual tool on the emulator
 for at least the launch screen and one three-step path, and say in your report which tool version you used. If you
 couldn't run it, say that plainly: "generated, not executed."
 

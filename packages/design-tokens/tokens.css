@@ -1,0 +1,130 @@
+/*
+ * AppScreenMap design tokens: Ghost dark × Xcode blue.
+ * The single source of colour, type, space, radius and motion for everything AppScreenMap draws:
+ * the web viewer (apps/viewer/, imported by apps/viewer/src/tokens.css) and, next, the HTML reports the crawler writes.
+ * Rules, rationale and how to change a value: .claude/skills/design-system/SKILL.md.
+ *
+ * Two layers. Primitives are raw values and are never used by components directly.
+ * Semantic tokens say what a value is for; components only use these.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ── primitives ──────────────────────────────────────────────────────── */
+  --gray-950: #0a0a0a;
+  --gray-900: #121212;
+  --gray-850: #181818;
+  --gray-800: #232323;
+  --gray-700: #333333;
+  --gray-500: #8a8a8a;
+  --gray-400: #a3a3a3;
+  --gray-100: #f0f0f0;
+
+  --blue-500: #4da3ff; /* Xcode blue, from the Ghost system */
+  --blue-400: #6cb4ff;
+  --green-400: #5dd17a;
+  --amber-400: #e6c35a;
+  --orange-400: #ff9a52;
+  --red-400: #ff5d5d;
+  --violet-400: #a78bfa;
+
+  /* ── surfaces and lines ──────────────────────────────────────────────── */
+  --bg: var(--gray-950); /* page */
+  --panel: var(--gray-900); /* cards, bars, sheets */
+  --panel-2: var(--gray-850); /* insets, code, hover, icon tiles */
+  --line: var(--gray-800); /* hairlines: the default separator */
+  --line-hi: var(--gray-700); /* control borders, frames, emphasised hairlines */
+
+  /* ── text (contrast on --bg / --panel) ───────────────────────────────── */
+  --text: var(--gray-100); /* 17.4 / 16.4 : 1 */
+  --dim: var(--gray-400); /* secondary: 7.8 / 7.4 : 1 */
+  --faint: var(--gray-500); /* ids, meta, axis labels: 5.7 / 5.4 : 1 */
+
+  /* ── accent: Xcode blue, only for what you can act on ────────────────── */
+  --accent: var(--blue-500); /* links, focus, selection, primary action: 7.5 : 1 */
+  --accent-hi: var(--blue-400); /* hover */
+  --accent-08: rgba(77, 163, 255, 0.08); /* faint wash */
+  --accent-14: rgba(77, 163, 255, 0.14); /* selected background */
+  --accent-28: rgba(77, 163, 255, 0.28); /* selected hairline, selection */
+  --on-accent: var(--gray-950); /* text on a filled accent button: 7.5 : 1 */
+
+  /* ── status: always paired with a word or glyph, never colour alone ──── */
+  --good: var(--green-400);
+  --warn: var(--amber-400);
+  --bad: var(--red-400);
+  --info: var(--violet-400);
+  --good-14: rgba(93, 209, 122, 0.14);
+  --warn-14: rgba(230, 195, 90, 0.14);
+  --bad-14: rgba(255, 93, 93, 0.14);
+  --info-14: rgba(167, 139, 250, 0.14);
+
+  /* crawler element outcomes (map.json elements[].status) */
+  --st-done: var(--good);
+  --st-pending: var(--warn);
+  --st-blocked: var(--bad);
+  --st-failed: var(--orange-400);
+  --st-unreachable: var(--info);
+  --st-skipped: var(--faint);
+
+  /* finding severity (a11y, audits) */
+  --sev-error: var(--bad);
+  --sev-warning: var(--warn);
+  --sev-info: var(--info);
+
+  /* ── type: Geist for UI text, Geist Mono for ids, numbers, code, labels ─ */
+  --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --text-xs: 11px; /* mono kickers, axis labels, tags */
+  --text-sm: 12px; /* meta, captions */
+  --text-base: 13px; /* secondary body, table cells */
+  --text-md: 14px; /* body */
+  --text-lg: 16px; /* card titles */
+  --text-xl: 19px; /* section titles (h2) */
+  --text-2xl: 26px; /* view titles (h1) */
+  --text-3xl: clamp(28px, 4vw, 34px); /* page headline */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+
+  --tracking-tight: -0.02em; /* headlines */
+  --tracking-label: 0.06em; /* uppercase mono kickers */
+
+  /* ── space (4 px base) ───────────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* ── radius: 8 px is the default; pills only for dots and tiny tags ──── */
+  --radius-sm: 4px; /* tags, meters, small chips */
+  --radius-md: 8px; /* buttons, inputs, cards */
+  --radius-lg: 12px; /* device frames, sheets */
+  --radius-pill: 999px;
+
+  /* ── elevation: Ghost is flat; hairlines separate, shadows only float ── */
+  --shadow: none;
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55); /* popovers, sheets, dragged map nodes */
+
+  /* ── motion ──────────────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 120ms;
+  --dur-fast: 150ms;
+  --dur-ui: 220ms;
+  --press-scale: scale(0.97);
+
+  /* ── layout ──────────────────────────────────────────────────────────── */
+  --hit-min: 44px; /* touch targets on phones */
+  --measure: 1180px; /* content width of reading views */
+}

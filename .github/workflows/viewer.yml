@@ -1,0 +1,17 @@
+name: viewer
+
+on:
+  push:
+    paths: ["apps/viewer/**", "packages/design-tokens/**", "packages/security/package.json", "packages/security/src/appscreenmap/security/rules.json", "package.json", "bun.lock", "docs/MAP_SCHEMA.md", ".github/workflows/viewer.yml"]
+  pull_request:
+    paths: ["apps/viewer/**", "packages/design-tokens/**", "packages/security/package.json", "packages/security/src/appscreenmap/security/rules.json", "package.json", "bun.lock", "docs/MAP_SCHEMA.md", ".github/workflows/viewer.yml"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+        working-directory: apps/viewer

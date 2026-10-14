@@ -70,18 +70,18 @@ went away. Cold start is recorded on every relaunch. Animations are off during a
 `perf_summary` tool.
 
 ```
-$ uv run appscreenmap perf runs/playground/<run-id> --budget 1000
+$ uv run appscreenmap-engine perf runs/playground/<run-id> --budget 1000
   cold start: 151 ms median, 161 ms max over 11 launch(es)
-   🔴  s018 'Reports'     2770 / 2770 / 2770  ×1  loading indicator, never settled
-   🟠  s019 'Gallery'     1825 / 1825 / 1825  ×1  97.8% janky
-   🟢  s005 'Article'      214 /  225 /  228  ×8
+   SLOW        s018 'Reports'     2770 / 2770 / 2770  ×1  loading indicator, never settled
+   NEEDS WORK  s019 'Gallery'     1825 / 1825 / 1825  ×1  97.8% janky
+   ok          s005 'Article'      214 /  225 /  228  ×8
 ```
 
 **Security** (Android). `appscreenmap security <run>` is a small stdlib-only scanner that takes three kinds of evidence:
 the APK (the manifest through one `aapt2` call, plus high-confidence secret formats found by regex over the raw dex,
 resource and asset bytes, so there is no decompiling and a scan takes about 0.1 s), the app's data folder over adb
 (plain-text secrets in preferences and files), and a log from the observation-only
-[Frida script](../.claude/skills/security-audit/scripts/frida-observe.js) (plain-HTTP hosts, missing certificate pins).
+[Frida hook](../packages/security/src/appscreenmap/security/hooks/frida-observe.js) (plain-HTTP hosts, missing certificate pins).
 Findings use the text and official sources of the [`security-rules`](../.claude/skills/security-rules/SKILL.md)
 catalogue, never contain a secret's value, and are written to `audits/security.json`, so the Security audit in the
 dashboard shows real findings. The [`security-audit` skill](../.claude/skills/security-audit/SKILL.md) tells an agent how
@@ -96,7 +96,7 @@ and exportable like the built-in ones (format in [MAP_SCHEMA.md](MAP_SCHEMA.md))
 ```
 runs/
   index.json                  all runs, newest first, grouped by project
-  <project>/<run-id>/         e.g. runs/sample-app/sample-app-20261013-015149/
+  <project>/<run-id>/         e.g. runs/playground/playground-v1-20261013-031007/
     map.json                  screens, elements, transitions, events, stats (live during the crawl)
     trace.jsonl               one line per step
     screens/                  s001.png (full), s001.jpg (thumbnail), s001.xml (hierarchy)
@@ -119,20 +119,32 @@ never mix with the Android runs of the same app). `runs/` is git-ignored: it is 
 ## Project layout
 
 ```
-src/appscreenmap/   crawler: drivers (Android, iOS Simulator), analyzer, explorer, model, export,
-                    visual diff, a11y, perf, replay + verify, MCP server, CLI
-web/                the dashboard (React + Vite, built with Bun)
-design/             tokens.css: colour, type, space and motion for the viewer and reports
-samples/            Playground and sample-app APKs, sources, iOS build script and demo.sh
+apps/
+  engine/           appscreenmap.engine: the CLI (cli/, one module per command group) and the MCP server
+  viewer/           the dashboard (React + Vite, built with Bun), @appscreenmap/viewer
+packages/
+  core/             appscreenmap.core: map.json model, analyzer, config, runs, notes, media
+  drivers/          appscreenmap.drivers: Android (adb, dumpsys, device facts, apkinfo), iOS Simulator
+  crawler/          appscreenmap.crawler: explorer, replay, load timing
+  a11y/             appscreenmap.a11y: WCAG 2.2 checks, criteria catalogue, HTML/MD report
+  security/         appscreenmap.security: scanner, rules.json (@appscreenmap/security-rules), Frida hook
+  reports/          appscreenmap.reports: health report, perf summary
+  regression/       appscreenmap.regression: verify against baselines, visual diff
+  exporters/        appscreenmap.exporters: Maestro flows, Mermaid
+  design-tokens/    tokens.css (@appscreenmap/design-tokens): colour, type, space, motion
+  testkit/          dev-only test helpers (synthetic hierarchies, fake device), the package-layer check
+samples/            the Playground sample app (APKs + source) and demo.sh
 runs/               crawl output (git-ignored, generated locally)
-docs/               SETUP.md, ARCHITECTURE.md, PLAN.md (design + roadmap), MAP_SCHEMA.md (data contract)
+docs/               SETUP, ARCHITECTURE, MONOREPO (layout + migration), PLAN, MAP_SCHEMA (data contract)
 examples/           sample config
-tests/              unit tests on synthetic hierarchies (no device needed)
+pyproject.toml      uv workspace (Python)  ·  package.json  Bun workspace (TypeScript)  ·  Makefile
 ```
+
+Each package keeps its tests in `<package>/tests/`.
 
 ```bash
 uv sync && uv run pytest -q
-uv run ruff check src tests && uv run ruff format src
+uv run ruff check && uv run ruff format
 ```
 
 ## Prior art
