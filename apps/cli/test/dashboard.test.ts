@@ -10,7 +10,7 @@ let started: Dashboard[] = [];
 let blockers: Server[] = [];
 
 afterEach(() => {
-  started.forEach(stopDashboard);
+  started.forEach((d) => stopDashboard(d));
   blockers.forEach((b) => b.close());
   started = [];
   blockers = [];

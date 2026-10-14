@@ -13,7 +13,9 @@ import { C } from "../theme";
 import { readProgress, runEvents, tail, type Progress } from "../watch";
 import { Live, LogTail, RunRow, StatusRow, SuggestionList, statusTone, type Line, type Tone } from "./parts";
 
-export const MAP_SCHEMA = 1;
+import { MAP_SCHEMA_VERSION } from "../schema";
+
+export const MAP_SCHEMA = MAP_SCHEMA_VERSION;
 const TABS = ["Home", "Crawl", "Runs", "Agent"] as const;
 const POLL_MS = 1000;
 
@@ -33,9 +35,10 @@ export interface AppProps {
   opened: boolean;
   runsRoot: string;
   cwd: string;
+  updateNotice?: Promise<string | null>;
 }
 
-export function App({ version, engine, dashboard, dashboardError, opened, runsRoot, cwd }: AppProps) {
+export function App({ version, engine, dashboard, dashboardError, opened, runsRoot, cwd, updateNotice }: AppProps) {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const [tab, setTab] = useState(0);
@@ -49,6 +52,7 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
   const [launched, setLaunched] = useState<Launched | null>(null);
   const [launchedExit, setLaunchedExit] = useState<string | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
+  const [update, setUpdate] = useState<string | null>(null);
   const prevRuns = useRef(runs);
 
   const crawlItems = useMemo(
@@ -66,6 +70,7 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
   useEffect(() => {
     refreshDevices();
     engineVersion(engine).then(setEngineVer);
+    updateNotice?.then(setUpdate);
     const tick = () => {
       const next = readRuns(runsRoot);
       for (const ev of runEvents(prevRuns.current, next)) {
@@ -224,6 +229,11 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
       <Text color={C.faint}>
         map every screen of a mobile app · cli {version} · engine {engineVer ?? "…"} · map schema {MAP_SCHEMA}
       </Text>
+      {update && (
+        <Text color={C.dim}>
+          {update} → <Text color={C.accent}>appscreenmap update</Text>
+        </Text>
+      )}
 
       <Box flexDirection="column" marginTop={1}>
         {lines.map((l) => (

@@ -9,9 +9,39 @@ macOS for now (Terminal, iTerm2); the Linux code paths exist but aren't tested.
 ```bash
 appscreenmap                 # terminal home + dashboard (same as `appscreenmap start`)
 appscreenmap start --runs runs --port 8765 --no-open
-appscreenmap version         # CLI, engine and map schema versions
+appscreenmap setup           # install or repair: uv (asks first), the engine, the dashboard
+appscreenmap update          # newest release's cli, engine and dashboard (--check: only report; or name one part)
+appscreenmap paths           # where things live
+appscreenmap clean           # old dashboard versions, download cache, old logs (--runs: old runs too; asks first)
+appscreenmap version         # CLI, engine, dashboard and map schema versions
 appscreenmap crawl --apk app.apk --clear-data   # … and every other engine command
 ```
+
+## Install
+
+From a release (macOS; the first release isn't published yet):
+
+```bash
+curl -fsSL https://github.com/MKS-01/appscreenmap/releases/latest/download/install.sh | sh
+```
+
+`install.sh` puts the binary in `~/.local/bin` (checked against the release's `SHA256SUMS`) and runs `appscreenmap
+setup`, which installs the engine as a uv tool from the release's wheels and the dashboard into the home folder. From a
+source checkout: `make setup`, then `make cli`.
+
+**Home folder** (`~/Library/Application Support/appscreenmap`, or `$APPSCREENMAP_HOME`): `config.json`
+(`updateCheck`, `releaseUrl`), `viewer/<version>/` with a `current` link, `cache/` (downloads, the daily update check),
+and `dashboard.json` (the dashboard this CLI started, so a second terminal home reuses it only for the same runs
+folder, and one left behind by a killed terminal home is stopped on the next start).
+
+**Updates.** The terminal home checks the release at most once a day and only shows a notice; it never installs by
+itself. Off with `APPSCREENMAP_NO_UPDATE_CHECK=1`, in CI, or `"updateCheck": false`. A dashboard is installed only if it
+reads this CLI's map schema. In a source checkout, update with `git pull && make setup`.
+
+**Releases** are a flat folder: `manifest.json` (versions and the SHA-256 of every file), `SHA256SUMS`, the macOS
+binaries, the engine's wheels, `viewer-<version>.tar.gz` and `install.sh`. `make release-local` builds one in
+`dist/release/`; point the CLI at it with `APPSCREENMAP_RELEASE_URL=file://…/dist/release/` to test `install.sh`,
+`setup` and `update` without publishing anything.
 
 | Key | In the terminal home |
 |---|---|
@@ -48,6 +78,7 @@ dashboard's rules: blue only for what you can act on, status always with a word 
 bun run dev                  # from source (bun run dev -- start --no-open, bun run dev -- version, …)
 bun test && bun run typecheck
 make cli                     # from the repo root: dist/appscreenmap, wired to this checkout's engine
+make release-local           # from the repo root: dist/release/, to test install.sh, setup and update
 ```
 
 `react-devtools-core` is a dev dependency only so the binary compiles (Ink imports it for `DEV=true`).

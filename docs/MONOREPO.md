@@ -76,8 +76,10 @@ appscreenmap mcp                  → the engine's MCP server over stdio
   tab). It watches `runs/index.json`, so a run an agent records elsewhere appears in the TUI and the
   dashboard reloads.
 - **Home folder** (`~/Library/Application Support/appscreenmap`, `~/.local/share/appscreenmap`;
-  `APPSCREENMAP_HOME` overrides): `config.toml`, `viewer/<version>/` with a `current` symlink, `cache/`,
-  and a pid file so a server orphaned by a killed CLI is cleaned up on the next start.
+  `APPSCREENMAP_HOME` overrides): `config.json`, `viewer/<version>/` with a `current` symlink, `cache/`,
+  and `dashboard.json` so a server orphaned by a killed CLI is cleaned up on the next start.
+- **Engine install:** `uv tool install --find-links <the release's wheels> appscreenmap-engine==<version>`, so a release
+  needs no PyPI publishing; the wheels ride along as release files.
 - **Versions:** each binary release pins compatible engine and viewer versions. The viewer bundle carries
   `viewer.json` (`version`, `map_schema`, `min_cli`), downloads are checked against SHA-256 sums, and the
   update check runs at most daily, never updates on its own, and is off in CI or with
@@ -102,7 +104,7 @@ a local release folder (`APPSCREENMAP_RELEASE_URL=file://…`).
 | 7 | CI, CLAUDE.md files, docs and skill paths; `samples/demo.sh playground` end to end |
 | 8 | `apps/cli`: `start` terminal home (supervises the engine's `serve`), pass-through to the engine, `version` |
 | 9 | Crawl tab: live progress of any running crawl (from `index.json`, `map.json`, `trace.jsonl`), run start/finish notices, start/stop a crawl here |
-| 10 | `setup`, `update`, `paths`, `clean`, install script |
+| 10 | `setup`, `update`, `paths`, `clean`, `install.sh`, `make release-local` (a release folder to test against) |
 | 11 | Release workflow (switched off) |
 | 12 | Playground iOS: a SwiftUI version of `samples/playground-app/` with the same scenarios, so iOS crawls get known answers |
 
@@ -128,3 +130,4 @@ session owns (`web/`, `design/`), so they can review exactly what was touched.
 | Samples | `6fe1531` | Playground is the only sample: `samples/sample-app/` removed (APK, build scripts, config; still in git history), `demo.sh` keeps only the Playground scenarios, samples README rewritten around it (scenario 20, iOS, waits for Playground iOS, step 12). iOS fixture `sample-app-ios-home.json` → `ios-reader-home.json` with the app name, bundle id and a personal greeting neutralised (same tree otherwise). Skills, CLAUDE.md, docs and test examples use the Playground; README dashboard screenshot and `docs/media/dashboard.*` removed until a Playground one exists; sample-app licence notice removed | — |
 | 8 | `8be92b8` | New `apps/cli` (`@appscreenmap/cli`, Bun + Ink 5 / React 18.3.1, the viewer's React, so the workspace has one React and one `@types/react`): `appscreenmap` / `start` opens a terminal home (dashboard via the engine's `serve`, Android/iOS status, Home · Crawl · Runs · Agent tabs, copy / open run / new terminal keys), `version`, every other command passed to the engine with its exit code. Colours from `@appscreenmap/design-tokens`. 12 Bun tests (fake engine for the dashboard), typecheck, compiled binary; `.github/workflows/cli.yml` on macOS; `make cli` / `make cli-check`. Bun workspace adds `apps/cli` (43 packages added to `bun.lock`, existing 140 versions unchanged; viewer CSS byte-identical). README: Tested on macOS badge, CLI CI badge, `apps/cli` row | — |
 | 9 | `1d82be1` | `apps/cli`: `watch.ts` (live progress from `runs/index.json`, the run's `map.json` and the tail of `trace.jsonl`; run started/finished events; works for crawls started anywhere, so the planned engine JSON event stream isn't needed) and `launch.ts` (`x` runs a command in the background, output in `runs/.logs/`; `s` / quit stop it with SIGINT so the crawl saves). Crawl tab live panel; a ready-to-run Playground crawl in a checkout. 21 Bun tests (watcher, launcher with a fake crawl); checked in a pseudo-terminal against a simulated crawl | — |
+| 10 | (this) | `apps/cli`: `home.ts` (home folder, config, viewer versions with an atomic `current` link), `release.ts` (manifest, SHA-256-checked downloads, engine as a uv tool from the release's wheels, viewer install, self-update, daily check), `clean.ts` (planner: never the active viewer or a running run), `commands.ts` (`setup` for a checkout or a release, `update [--check] [part]`, `paths`, `clean`), `dashboard.json` record (attach only on the same runs folder, reap orphans), the installed dashboard shared with every engine command (`APPSCREENMAP_WEB`). Root `install.sh` (macOS, checksum-verified), `apps/cli/scripts/build-release.ts` (`make release-local`). 39 Bun tests; end to end in an isolated sandbox: install.sh → setup → version/paths → update to a newer local release → clean → terminal home serving the installed dashboard with the update notice → orphan reaped | — |

@@ -159,7 +159,9 @@ uv run appscreenmap serve                        # open the dashboard
 ```
 
 `make cli` builds the `appscreenmap` binary (`apps/cli/dist/appscreenmap`): run it with no arguments for a terminal
-home with the dashboard, device status, your runs and agent prompts in one place; every other command works as above.
+home with the dashboard, device status, your runs (live while a crawl runs) and agent prompts in one place; every other
+command works as above, plus `setup`, `update`, `paths` and `clean`. With the first release, installing will be one line
+(`curl … install.sh | sh`, see [`apps/cli`](apps/cli/README.md)).
 On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. The Playground sample app ships in
 [`samples/`](samples/); `samples/demo.sh` crawls it so the dashboard has something to show.
 
