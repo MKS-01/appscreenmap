@@ -17,3 +17,12 @@ if (args[0] === "serve") {
       new URL(req.url).pathname === "/runs/index.json" ? Response.json({ runs: [] }) : new Response("viewer"),
   });
 }
+if (args[0] === "crawl") {
+  // Prints a line per "step" until Ctrl-C, then saves and exits cleanly, like the real crawl.
+  console.log(`mapping (${args.slice(1).join(" ")})`);
+  process.on("SIGINT", () => {
+    console.log("stopped: saving what we have");
+    process.exit(0);
+  });
+  setInterval(() => console.log("step"), 50);
+}

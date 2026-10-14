@@ -18,10 +18,18 @@ appscreenmap crawl --apk app.apk --clear-data   # … and every other engine com
 | `1`–`4`, `←` `→` | Home · Crawl · Runs · Agent |
 | `↑` `↓` | select a command or a run |
 | `c` | copy the selected command |
+| `x` / `s` | Crawl: run the selected command here (output in `runs/.logs/`) / stop it like Ctrl-C (the run is saved as `stopped`) |
 | `↵` | Runs: open the run in the dashboard; elsewhere: copy |
 | `o` | open the dashboard |
 | `t` | open a new terminal window here for an agent session (macOS Terminal, iTerm2; elsewhere it copies `cd <dir>`) |
-| `r` / `q` | refresh / quit (stops the dashboard if this CLI started it) |
+| `r` / `q` | refresh / quit (stops what this CLI started: a crawl saves first, then the dashboard) |
+
+**Live crawls.** The Crawl tab follows whichever crawl is running in the runs folder, started here or by an agent in
+another terminal: budget bar, step and time, screens, transitions, crashes, and the latest steps with screen titles
+and outcomes (★ new screen, → known, · same screen, ↗ left the app, ✘ crash). It reads what the engine already writes
+(`runs/index.json`, the run's `map.json` and `trace.jsonl`) once a second, so no engine change or event stream is
+needed. A run starting or finishing shows on the bottom line from any tab. In a source checkout the first Crawl entry
+is a ready-to-run Playground crawl.
 
 **The dashboard** is the engine's `serve` (viewer, `runs/`, the notes endpoint), run in the background: one
 implementation of that contract, in the engine. A dashboard already running on the port is reused; a busy port moves

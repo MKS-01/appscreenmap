@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { version } from "../package.json";
 import { openUrl, startDashboard, stopDashboard, type Dashboard } from "./dashboard";
 import { ENGINE_MISSING, engineVersion, findEngine, runEngine, type Engine } from "./engine";
+import { stopAll } from "./launch";
 import { App, MAP_SCHEMA } from "./ui/App";
 
 const HELP = `appscreenmap ${version}: map every screen of a mobile app
@@ -82,6 +83,7 @@ async function start(engine: Engine, flags: StartFlags): Promise<number> {
     process.stdout.write("\x1b[2J\x1b[3J\x1b[H");
   });
   await ink.waitUntilExit();
+  await stopAll(); // a crawl started here saves and records its run as stopped
   stop();
   return 0;
 }
