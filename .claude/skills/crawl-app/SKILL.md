@@ -98,7 +98,7 @@ Things to call out to the user:
 
 ## 4. Use the output
 
-- Viewer: `uv run appscreenmap serve` (needs `web/dist`; the web session owns that build).
+- Viewer: `uv run appscreenmap serve` (needs `apps/viewer/dist`; the web session owns that build).
 - Maestro flow to reach a screen: `runs/<project>/<run-id>/flows/s004.yaml` → `maestro test …`.
 - Visual diff between two builds: crawl each, then
   `uv run appscreenmap diff runs/<project>/<old> runs/<project>/<new>`. The report lands in `<new>/diff/<old-id>/`.

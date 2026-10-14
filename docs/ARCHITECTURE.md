@@ -119,24 +119,28 @@ never mix with the Android runs of the same app). `runs/` is git-ignored: it is 
 ## Project layout
 
 ```
-packages/core/      appscreenmap.core: map.json model, analyzer, config, runs, notes, media
-packages/drivers/   appscreenmap.drivers: Android (adb, dumpsys, device facts, apkinfo), iOS Simulator
-packages/crawler/   appscreenmap.crawler: explorer, replay, load timing
-packages/a11y/      appscreenmap.a11y: WCAG 2.2 checks, criteria catalogue, HTML/MD report
-packages/security/  appscreenmap.security: scanner, rules.json (also read by the viewer), Frida hook
-packages/reports/   appscreenmap.reports: health report, perf summary
-packages/regression/  appscreenmap.regression: verify against baselines, visual diff
-packages/exporters/ appscreenmap.exporters: Maestro flows, Mermaid
-packages/testkit/   dev-only test helpers (synthetic hierarchies, fake device) and the package-layer check
-apps/engine/        appscreenmap.engine: the CLI (cli/, one module per command group) and the MCP server
-                    (each package keeps its tests in <package>/tests/)
-web/                the dashboard (React + Vite, built with Bun)
-design/             tokens.css: colour, type, space and motion for the viewer and reports
+apps/
+  engine/           appscreenmap.engine: the CLI (cli/, one module per command group) and the MCP server
+  viewer/           the dashboard (React + Vite, built with Bun), @appscreenmap/viewer
+packages/
+  core/             appscreenmap.core: map.json model, analyzer, config, runs, notes, media
+  drivers/          appscreenmap.drivers: Android (adb, dumpsys, device facts, apkinfo), iOS Simulator
+  crawler/          appscreenmap.crawler: explorer, replay, load timing
+  a11y/             appscreenmap.a11y: WCAG 2.2 checks, criteria catalogue, HTML/MD report
+  security/         appscreenmap.security: scanner, rules.json (@appscreenmap/security-rules), Frida hook
+  reports/          appscreenmap.reports: health report, perf summary
+  regression/       appscreenmap.regression: verify against baselines, visual diff
+  exporters/        appscreenmap.exporters: Maestro flows, Mermaid
+  design-tokens/    tokens.css (@appscreenmap/design-tokens): colour, type, space, motion
+  testkit/          dev-only test helpers (synthetic hierarchies, fake device), the package-layer check
 samples/            Playground and sample-app APKs, sources, iOS build script and demo.sh
 runs/               crawl output (git-ignored, generated locally)
 docs/               SETUP, ARCHITECTURE, MONOREPO (layout + migration), PLAN, MAP_SCHEMA (data contract)
 examples/           sample config
+pyproject.toml      uv workspace (Python)  ·  package.json  Bun workspace (TypeScript)  ·  Makefile
 ```
+
+Each package keeps its tests in `<package>/tests/`.
 
 ```bash
 uv sync && uv run pytest -q

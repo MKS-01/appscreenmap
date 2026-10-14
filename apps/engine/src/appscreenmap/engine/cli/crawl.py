@@ -82,7 +82,7 @@ def cmd_doctor(args) -> int:
     row(
         dist is not None,
         "web viewer build (for `serve`)",
-        str(dist) if dist else "run `bun install && bun run build` in web/",
+        str(dist) if dist else "run `bun install && make viewer`",
     )
     return 0 if ok else 1
 

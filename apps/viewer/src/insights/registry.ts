@@ -3,7 +3,7 @@ import { runFile } from "../api";
 import type { AppMapData } from "../types";
 import { a11yReport, coverageReport, notRun, perfReport, stabilityReport, type A11yFile, type BuildContext, type PerfFile } from "./builtin";
 import { adaptiveReport, platformReport, securityReport, storeReport } from "./samples";
-import securityRules from "../../../packages/security/src/appscreenmap/security/rules.json";
+import securityRules from "@appscreenmap/security-rules/rules.json";
 import { SOURCES } from "./sources";
 import type { AuditDef, AuditReport, PlannedCheck, Platform, Severity } from "./types";
 
@@ -101,7 +101,7 @@ export const AUDITS: Entry[] = [
       { title: "Cleartext traffic deprecation", detail: "usesCleartextTraffic is on a deprecation path; the replacement is a network security config.", platform: "android", needs: "the manifest", refs: [SOURCES.android17All] },
       { title: "New devices and SDK deadlines", detail: "iPhone Duo (available Oct 23, 2026) and the Xcode and SDK versions App Store Connect accepts.", platform: "ios", needs: "the .app's Info.plist", refs: [SOURCES.appleUpcoming] },
     ],
-    enable: ["Matched against the yearly behavior-change lists in web/src/insights/sources.ts; needs the manifest and a jadx scan of the build (planned: appscreenmap platform <run>)"],
+    enable: ["Matched against the yearly behavior-change lists in apps/viewer/src/insights/sources.ts; needs the manifest and a jadx scan of the build (planned: appscreenmap platform <run>)"],
     build: () => platformReport(),
   },
   {

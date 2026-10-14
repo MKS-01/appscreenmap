@@ -6,7 +6,7 @@ AppScreenMap is MIT-licensed (see [LICENSE](LICENSE)). It includes or depends on
 
 ### Lucide icons (web viewer)
 
-The inline SVG icon shapes in `web/src/components/Icon.tsx` are taken from or modelled on [Lucide](https://lucide.dev),
+The inline SVG icon shapes in `apps/viewer/src/components/Icon.tsx` are taken from or modelled on [Lucide](https://lucide.dev),
 used under the ISC license. Lucide in turn includes portions derived from [Feather](https://feathericons.com) (MIT).
 Both licenses follow:
 
@@ -59,7 +59,7 @@ Check the upstream notice at <https://github.com/lucide-icons/lucide/blob/main/L
 
 The viewer's UI font (Geist) and monospace font (Geist Mono) come from the `@fontsource-variable/geist` and
 `@fontsource-variable/geist-mono` packages (npm dependencies, not in the source tree) and are bundled into the built
-viewer (`web/dist`) as `.woff2` files. They are licensed under the SIL Open Font License 1.1, which requires this notice and license to accompany any copy:
+viewer (`apps/viewer/dist`) as `.woff2` files. They are licensed under the SIL Open Font License 1.1, which requires this notice and license to accompany any copy:
 
 ```
 Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font)
@@ -164,7 +164,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 | [@dagrejs/dagre](https://github.com/dagrejs/dagre) | MIT | web viewer: graph layout |
 | [mcp](https://github.com/modelcontextprotocol/python-sdk) (optional) | MIT | `appscreenmap mcp` |
 
-Vite bundles React, React DOM, `@xyflow/react` and `@dagrejs/dagre` into `web/dist`; their MIT licenses are listed
+Vite bundles React, React DOM, `@xyflow/react` and `@dagrejs/dagre` into `apps/viewer/dist`; their MIT licenses are listed
 above, and each package carries its own copyright notice. `mcp` brings its own dependencies when installed. Build and
 dev tools (Vite, TypeScript, pytest, ruff, hatchling) are not redistributed.
 

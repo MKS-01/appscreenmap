@@ -1,6 +1,6 @@
 """WCAG 2.2 checks that need the whole crawl: cross-screen consistency, flows, device facts.
 
-The web viewer runs per-screen Accessibility-Scanner-style checks in the browser (web/src/a11y.ts:
+The web viewer runs per-screen Accessibility-Scanner-style checks in the browser (apps/viewer/src/a11y.ts:
 missing labels, 48 dp targets, contrast, …). This module adds what only a crawl can see and maps
 every finding to a WCAG 2.2 success criterion. Output: `<run>/a11y.json` (see docs/MAP_SCHEMA.md).
 

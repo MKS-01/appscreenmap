@@ -9,8 +9,8 @@ The project uses [Bun](https://bun.sh) as package manager and runtime (`bun.lock
 
 ```bash
 bun install
-bun run dev      # http://localhost:5173 — serves ../runs at /runs (override with APPSCREENMAP_RUNS=path)
-bun run build    # → web/dist, which `appscreenmap serve` picks up
+bun run dev      # http://localhost:5173 — serves ../../runs (the repo's runs/) at /runs (override with APPSCREENMAP_RUNS=path)
+bun run build    # → apps/viewer/dist, which `appscreenmap serve` picks up
 ```
 
 | Route | View |
@@ -49,4 +49,4 @@ density is estimated from screen width. They're hints for a person to triage, no
 **UI changes:** follow [`DESIGN.md`](DESIGN.md) (tokens in `src/tokens.css`, live reference at `#/design`) and the
 project skill `.claude/skills/web-ui`.
 
-Contributing and the full project README are in the [repo root](../README.md). Types in `src/types.ts` mirror `map.json` schema 1 (`packages/core/src/appscreenmap/core/model.py`); update both together.
+Contributing and the full project README are in the [repo root](../../README.md). Types in `src/types.ts` mirror `map.json` schema 1 (`packages/core/src/appscreenmap/core/model.py`); update both together.

@@ -11,7 +11,7 @@ One catalogue, three readers:
 |---|---|
 | `packages/security/src/appscreenmap/security/rules.json` | the source of truth: id, title, platform, category, severity, tools needed, why, fix, official refs, status |
 | `packages/security/src/appscreenmap/security/rules.py` | loads and **validates** it (severity, platform, category, https + official host only, unique ids) |
-| `web/src/insights/registry.ts` | the viewer shows every `planned` rule as a placeholder on the Security audit ("not set up") |
+| `apps/viewer/src/insights/registry.ts` | the viewer shows every `planned` rule as a placeholder on the Security audit ("not set up") |
 | [`reference/rules.md`](reference/rules.md) | the human version with how to detect each rule by hand; a test fails if a rule is missing from it |
 
 ## What a rule is
@@ -44,8 +44,8 @@ One catalogue, three readers:
 1. Edit `rules.json`. Read the official page you cite; copy its exact title.
 2. Add the row to `reference/rules.md` (id in backticks; the test checks this) with how to detect it by hand.
 3. `uv run pytest packages/security/tests/test_security_rules.py` (validates fields, hosts, ids, and the docs sync), then
-   `cd web && bun run build`.
+   `cd apps/viewer && bun run build`.
 4. When a scanner implements a rule, set `"status": "ready"` and add a fixture test beside the scanner.
 
 Run the audit with the `security-audit` skill. Platform deadlines and yearly Android/iOS changes are the *Platform changes*
-audit (`web/src/insights/sources.ts`), not this one.
+audit (`apps/viewer/src/insights/sources.ts`), not this one.

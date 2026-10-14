@@ -3,8 +3,14 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "appscreenmap-web",
+      "name": "appscreenmap-monorepo",
+    },
+    "apps/viewer": {
+      "name": "@appscreenmap/viewer",
+      "version": "0.1.0",
       "dependencies": {
+        "@appscreenmap/design-tokens": "workspace:*",
+        "@appscreenmap/security-rules": "workspace:*",
         "@dagrejs/dagre": "1.1.4",
         "@fontsource-variable/geist": "5.3.0",
         "@fontsource-variable/geist-mono": "5.3.0",
@@ -21,8 +27,22 @@
         "vite": "5.4.19",
       },
     },
+    "packages/design-tokens": {
+      "name": "@appscreenmap/design-tokens",
+      "version": "0.1.0",
+    },
+    "packages/security": {
+      "name": "@appscreenmap/security-rules",
+      "version": "0.1.0",
+    },
   },
   "packages": {
+    "@appscreenmap/design-tokens": ["@appscreenmap/design-tokens@workspace:packages/design-tokens"],
+
+    "@appscreenmap/security-rules": ["@appscreenmap/security-rules@workspace:packages/security"],
+
+    "@appscreenmap/viewer": ["@appscreenmap/viewer@workspace:apps/viewer"],
+
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
 
     "@babel/compat-data": ["@babel/compat-data@7.29.7", "", {}, "sha512-locTkQyKvwIEgBzVrn8693ebc97F2U8ZHjbXwDXJ5Fn2TCpNwTlKcaKLkdHop5c/icOFE7qt7Q9JC5hnKNa6Gg=="],

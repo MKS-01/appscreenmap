@@ -1,0 +1,7 @@
+{
+  "name": "@appscreenmap/security-rules",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The security audit's rule catalogue (rules.json), for TypeScript readers such as the viewer.",
+  "exports": { "./rules.json": "./src/appscreenmap/security/rules.json" }
+}

@@ -439,18 +439,18 @@ Next features, first batch. Unchecked means not started; the open questions need
 - [ ] **Run history and versions.** Several runs of one app should read as a history, with the latest shown
   first. Open: how runs group (by package, by version, by device), and whether the viewer defaults to the
   newest run per project with older ones behind a history list. Touches `runs/index.json` and the Runs view
-  (`web/`).
+  (`apps/viewer/`).
 - [ ] **Adaptive UI review and guidelines.** Check how screens adapt across window sizes and
   orientations (phone, tablet, foldable; compact / medium / expanded width classes) against Android's
   adaptive-layout guidance. Likely builds on the condition matrix in §8.2 (landscape, display size).
   Open: which guidelines to encode as checks, and whether findings sit with the Accessibility tab or get
   their own.
-- [x] **Better Insights.** ✅ viewer: Insights is now an audit framework (`web/src/insights/`). Every audit uses
+- [x] **Better Insights.** ✅ viewer: Insights is now an audit framework (`apps/viewer/src/insights/`). Every audit uses
   one report shape: score, metrics, declarative charts, findings with severity, platform, deadline and official
   refs. Any tool can add or replace an audit by writing `audits/<id>.json` into the run folder (`docs/MAP_SCHEMA.md`).
   Built from real run data: crawl coverage, stability, accessibility (a11y.json), performance (perf.json).
   Overview: an audit card per audit, findings by audit, a store/platform deadline timeline, run history (small
-  multiples) and the device/OS strip. Official sources live in one catalogue (`web/src/insights/sources.ts`).
+  multiples) and the device/OS strip. Official sources live in one catalogue (`apps/viewer/src/insights/sources.ts`).
 - [ ] **Audits that still show sample data** (labelled "sample data" in the viewer; "Show sample audits" hides them):
   - **Adaptive UI.** Real today: manifest orientation locks and the crawl's window class. Next: crawl at 600
     and 840 dp (resizable emulator or tablet AVD), then check layouts per window size class.
@@ -468,7 +468,7 @@ Next features, first batch. Unchecked means not started; the open questions need
   (emulator / physical), display name, brand, AVD name, form factor, OS build and vendor skin, hardware,
   display in dp and window class, the settings that change what an app shows, WebView and Play services
   (`device.py`, documented in `docs/MAP_SCHEMA.md`); `report` prints it with device caveats. Open: a Device
-  section in the viewer (`web/`), and per-screenshot capture once locale or condition runs exist (one run,
+  section in the viewer (`apps/viewer/`), and per-screenshot capture once locale or condition runs exist (one run,
   several captures).
 - [ ] **Versions and flows per app** (designed: canvas "AppScreenMap redesign", boards *App · versions + compare*
   and *App · flows + crawl rules*). An app page with a version timeline (newest first, runs under each version,

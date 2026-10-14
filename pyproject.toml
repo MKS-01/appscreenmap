@@ -2,6 +2,7 @@
 
 [tool.uv.workspace]
 members = ["apps/engine", "packages/*"]
+exclude = ["packages/design-tokens"]  # CSS only, no Python
 
 [tool.uv.sources]
 appscreenmap-engine = { workspace = true }

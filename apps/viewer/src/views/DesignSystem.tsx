@@ -4,7 +4,7 @@ import { Icon, type IconName } from "../components/Icon";
 import { Bars, Columns, Meter, SampleTag, Split } from "../insights/charts";
 import { STATUS_HELP, STATUSES, statusColor } from "../util";
 
-// Living reference for the viewer's design system (web/DESIGN.md). Renders the real tokens and classes,
+// Living reference for the viewer's design system (apps/viewer/DESIGN.md). Renders the real tokens and classes,
 // so it can't drift from the CSS. Not linked in the nav; open #/design.
 
 const COLOR_TOKENS: [string, string][] = [
@@ -71,8 +71,8 @@ export default function DesignSystem() {
         </span>
         <h1 className="how-title">Viewer design system</h1>
         <p className="how-lede">
-          Ghost dark × Xcode blue, rendered from the real CSS. Values live in <code>design/tokens.css</code> (shared with the HTML
-          reports); rules and decisions in the <code>design-system</code> skill; components in <code>web/DESIGN.md</code>.
+          Ghost dark × Xcode blue, rendered from the real CSS. Values live in <code>packages/design-tokens/tokens.css</code> (shared with the HTML
+          reports); rules and decisions in the <code>design-system</code> skill; components in <code>apps/viewer/DESIGN.md</code>.
         </p>
       </header>
 

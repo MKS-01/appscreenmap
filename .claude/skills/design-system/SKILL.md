@@ -1,22 +1,22 @@
 ---
 name: design-system
-description: AppScreenMap's token system (design/tokens.css): Ghost dark × Xcode blue, Geist type, the mobile icon language, which surfaces use the tokens, and how to change a value safely. Use before touching any colour, type, spacing, radius or motion value anywhere in the repo (web viewer, HTML reports), when adding a new surface that draws UI, or when asked to align, retheme or "centralise" the design.
+description: AppScreenMap's token system (packages/design-tokens/tokens.css): Ghost dark × Xcode blue, Geist type, the mobile icon language, which surfaces use the tokens, and how to change a value safely. Use before touching any colour, type, spacing, radius or motion value anywhere in the repo (web viewer, HTML reports), when adding a new surface that draws UI, or when asked to align, retheme or "centralise" the design.
 ---
 
 # AppScreenMap design system
 
 One look for everything AppScreenMap draws: the web viewer today, the crawler's HTML reports next. This skill owns
 **the tokens and the rules behind them**. `web-ui` owns how the viewer is built with them (components, motion,
-verification), and `web/DESIGN.md` is the viewer's component reference.
+verification), and `apps/viewer/DESIGN.md` is the viewer's component reference.
 
 ## Where it lives
 
 | File | What |
 |---|---|
-| `design/tokens.css` | **The single source.** Primitives (`--gray-*`, `--blue-*`, …) and semantic tokens. Nothing else defines a colour, size or curve. |
-| `web/src/tokens.css` | The viewer's entry: `@import "../../design/tokens.css"` plus legacy aliases (below). |
-| `web/src/main.tsx` | Loads the fonts: `@fontsource-variable/geist` and `geist-mono` (self-hosted, OFL, no network at runtime). |
-| `#/design` (`web/src/views/DesignSystem.tsx`) | Live reference rendered from the real CSS. |
+| `packages/design-tokens/tokens.css` | **The single source.** Primitives (`--gray-*`, `--blue-*`, …) and semantic tokens. Nothing else defines a colour, size or curve. |
+| `apps/viewer/src/tokens.css` | The viewer's entry: `@import "@appscreenmap/design-tokens/tokens.css"` (a Bun workspace package) plus legacy aliases (below). |
+| `apps/viewer/src/main.tsx` | Loads the fonts: `@fontsource-variable/geist` and `geist-mono` (self-hosted, OFL, no network at runtime). |
+| `#/design` (`apps/viewer/src/views/DesignSystem.tsx`) | Live reference rendered from the real CSS. |
 | `scripts/contrast.ts` (this skill) | Contrast check for every text and status token on every surface. |
 
 Mockups the system was designed from: the canvas "AppScreenMap redesign"
@@ -26,8 +26,8 @@ Mockups the system was designed from: the canvas "AppScreenMap redesign"
 
 | Surface | Status |
 |---|---|
-| Web viewer (`web/`) | **Adopted.** Every value comes from `design/tokens.css`. Old token names still work through aliases. |
-| WCAG report (`a11y-report.html`, `packages/a11y/src/appscreenmap/a11y/report.py`) | **Not yet.** It has its own light/dark palette inline (`--bg #f7f7f5`, `--accent #3d5afe`, …). To adopt: read `design/tokens.css` at report time and inline it, and ship the file in the wheel (hatch `force-include` `design/tokens.css` → `appscreenmap/design/tokens.css`). That's crawler-side work, so coordinate with that workstream. |
+| Web viewer (`apps/viewer/`) | **Adopted.** Every value comes from `packages/design-tokens/tokens.css`. Old token names still work through aliases. |
+| WCAG report (`a11y-report.html`, `packages/a11y/src/appscreenmap/a11y/report.py`) | **Not yet.** It has its own light/dark palette inline (`--bg #f7f7f5`, `--accent #3d5afe`, …). To adopt: read `packages/design-tokens/tokens.css` at report time and inline it, and ship the file in the wheel (hatch `force-include` `packages/design-tokens/tokens.css` → `appscreenmap/design/tokens.css`). That's crawler-side work, so coordinate with that workstream. |
 | Exported Markdown, Maestro flows, Mermaid | No styling. Nothing to adopt. |
 
 ## The look, in five rules
@@ -80,21 +80,21 @@ touch     --hit-min 44px on phones
 
 ## Changing a token
 
-1. Edit `design/tokens.css` only. Change the primitive if the hue changes; change the semantic mapping if
+1. Edit `packages/design-tokens/tokens.css` only. Change the primitive if the hue changes; change the semantic mapping if
    the role changes.
 2. `bun .claude/skills/design-system/scripts/contrast.ts`. It must print "All pairs pass" (text ≥ 4.5:1 on
    `--bg`, `--panel` and `--panel-2`). It already caught `--faint #808080` at 4.47:1 on `--panel-2`; that's why it's `#8a8a8a`.
-3. `cd web && bun run build`, then screenshot with the `web-ui` skill's `shot.ts` (dark, 1400 and 390).
-4. Update the Values block above, `web/DESIGN.md`'s token table and `#/design` if a token was added or renamed.
+3. `cd apps/viewer && bun run build`, then screenshot with the `web-ui` skill's `shot.ts` (dark, 1400 and 390).
+4. Update the Values block above, `apps/viewer/DESIGN.md`'s token table and `#/design` if a token was added or renamed.
 5. Grep for hard-coded colours you may have just orphaned:
-   `grep -nE "#[0-9a-fA-F]{3,8}\b|rgba?\(" web/src -r` should only show `design/tokens.css` values and alpha masks.
+   `grep -nE "#[0-9a-fA-F]{3,8}\b|rgba?\(" apps/viewer/src -r` should only show `packages/design-tokens/tokens.css` values and alpha masks.
 
 ## Legacy aliases (migrate, then delete)
 
-`web/src/tokens.css` maps the pre-Ghost names onto the new ones so ~200 older rules kept working through the
+`apps/viewer/src/tokens.css` maps the pre-Ghost names onto the new ones so ~200 older rules kept working through the
 switch: `--border` → `--line`, `--muted` → `--dim`, `--accent-soft` → `--accent-14`, `--accent-text` →
 `--accent`, `--mono` → `--font-mono`, `--radius` → `--radius-md`. New code uses the new names. When you touch a
-rule, migrate it; when `grep -r "var(--muted" web/src` finds nothing, delete that alias.
+rule, migrate it; when `grep -r "var(--muted" apps/viewer/src` finds nothing, delete that alias.
 
 ## Decisions (Oct 2026), in the owner's words
 
@@ -113,8 +113,8 @@ rule, migrate it; when `grep -r "var(--muted" web/src` finds nothing, delete tha
   status words ("Partial" for a budget-capped crawl, "Blocked" for a store gate). See the mockup canvas.
 - **Approved:** *"this look overall good. lets revamp everything around the same"*.
 - **Project mark:** D, "stacked screens": a filled `--accent` tile (radius 8 on a 32 grid) holding two dark
-  phone screens, the back one at 45 % opacity. `Logo` in `web/src/components/common.tsx`, favicon in
-  `web/index.html` (hex mirrors of `--accent` / `--bg`, since a favicon can't read CSS variables). Chosen from four
+  phone screens, the back one at 45 % opacity. `Logo` in `apps/viewer/src/components/common.tsx`, favicon in
+  `apps/viewer/index.html` (hex mirrors of `--accent` / `--bg`, since a favicon can't read CSS variables). Chosen from four
   options on the canvas's "Logo options" board. The owner first picked C ("phone with a route"), then changed to
   *"D looks more better"* before it shipped. Solid shapes only: a mark must read at 16 px.
 
