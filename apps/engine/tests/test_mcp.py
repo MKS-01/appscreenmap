@@ -158,7 +158,7 @@ def test_crawl_status_reads_the_run_from_the_log(tools, tmp_path, monkeypatch):
 
     run_dir = next(iter((tools.runs_root / "proj").iterdir()))
     log = tmp_path / "crawl.log"
-    log.write_text(f"🗺  mapping Fake 1.0 on Fake → {run_dir}\n[  1] s001 · click 'About'\n")
+    log.write_text(f"mapping Fake 1.0 on Fake into {run_dir}\n[  1] s001 · click 'About'\n")
     proc = subprocess.Popen([sys.executable, "-c", "pass"])
     proc.wait()
     tools._jobs["crawl-x"] = {"proc": proc, "log": log, "started": time.time()}
@@ -200,3 +200,15 @@ def test_transition_steps_include_revealed_by():
     t = {"from": "a", "to": "b", "key": "k1", "action": "click", "label": "OPEN", "kind": "button"}
     steps = transition_steps(data, [t])
     assert [(s["label"], s["to"]) for s in steps] == [("15 MIN", "a"), ("OPEN", "b")]
+
+
+def test_crawl_log_run_dir_line_old_and_new():
+    from appscreenmap.engine.mcp_server import _RUN_DIR_RE
+
+    new = "mapping Playground 1.0 on Pixel (emulator) into runs/playground/playground-v1-1"
+    old = "🗺  mapping Playground 1.0 on Pixel (emulator) → runs/playground/playground-v1-1"
+    assert (
+        _RUN_DIR_RE.search(new).group(1)
+        == _RUN_DIR_RE.search(old).group(1)
+        == "runs/playground/playground-v1-1"
+    )

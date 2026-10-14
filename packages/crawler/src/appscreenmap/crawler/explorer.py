@@ -89,11 +89,11 @@ class Explorer:
                 target, path = self.pick_frontier()
                 if target is None:
                     self.stop_reason = "complete: nothing left to explore"
-                    self.log("✔ nothing left to explore")
+                    self.log("nothing left to explore")
                     break
                 self.navigate(target, path)
             else:
-                self.log(f"⏹ {self.stop_reason}")
+                self.log(f"end: {self.stop_reason}")
         finally:
             self._trace.close()
             self.save()
@@ -217,7 +217,7 @@ class Explorer:
         screen = self.map.new_screen(obs, self.step)
         self._capture(screen, obs)
         self.log(
-            f"  ★ new screen {screen.id}: {screen.title!r} [{obs.activity_short}] {','.join(screen.patterns)}"
+            f"  new screen {screen.id}: {screen.title!r} [{obs.activity_short}] {','.join(screen.patterns)}"
         )
         return screen, True
 
@@ -250,7 +250,7 @@ class Explorer:
         self.map.events.append(
             {"step": self.step, "type": "permission", "detail": node.text or node.short_rid}
         )
-        self.log(f"  🔓 allowed permission dialog ({node.text or node.short_rid})")
+        self.log(f"  allowed a permission dialog ({node.text or node.short_rid})")
         time.sleep(self.cfg.settle_seconds)
         return True
 
@@ -275,7 +275,7 @@ class Explorer:
                 "log": f"crashes/crash-{n}.txt" if log_text else None,
             }
         )
-        self.log("  💥 app crashed")
+        self.log("  app crashed")
         is_new = "crash" not in self.map.screens
         screen = self.map.screens.get("crash") or self.map.new_screen(obs, self.step, kind="crash")
         if is_new:
@@ -321,7 +321,7 @@ class Explorer:
         time.sleep(self.cfg.settle_seconds)
         if not screen.autofill:
             screen.autofill = filled
-            self.log(f"  ⌨ filled {len(filled)} field(s): {', '.join(f['label'] for f in filled)}")
+            self.log(f"  filled {len(filled)} field(s): {', '.join(f['label'] for f in filled)}")
         obs = self.observe()
         self.obs = obs
         if obs.package == self.pkg and (obs.activity or "") == (screen.activity or ""):
@@ -594,7 +594,7 @@ class Explorer:
         self.restarts += 1
         if self.restarts > max(20, self.cfg.max_steps // 3):
             raise CrawlAborted("too many restarts; the app keeps leaving or crashing")
-        self.log(f"  ↻ restart app ({reason})")
+        self.log(f"  restart app ({reason})")
         self.d.force_stop(self.pkg)
         launch = self.d.launch(self.pkg, self.launch_activity)
         if launch:
@@ -641,7 +641,7 @@ class Explorer:
         return bool(target.reach_path) and target.reach_path[0].screen in first
 
     def navigate(self, target: Screen, path: list[Transition] | None) -> bool:
-        self.log(f"  → navigate to {target.id} ({target.title!r})")
+        self.log(f"  navigate to {target.id} ({target.title!r})")
         if path and self.follow(path, target):
             return True
         self.restart(f"route to {target.id}")
@@ -680,7 +680,7 @@ class Explorer:
                     return True
         target.nav_failures += 1
         self.map.events.append({"step": self.step, "type": "nav_failed", "detail": target.id})
-        self.log(f"  ✗ could not reach {target.id} (attempt {target.nav_failures})")
+        self.log(f"  could not reach {target.id} (attempt {target.nav_failures})")
         if target.nav_failures >= 2:
             for e in target.pending():
                 e.status, e.note = "unreachable", "could not navigate back to this screen"

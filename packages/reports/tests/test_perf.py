@@ -64,4 +64,4 @@ def test_summarize_ranks_screens_and_flags_budget(tmp_path):
     assert any("s002" in f and "3000 ms" in f for f in rep["findings"])
     assert any("frozen" in f for f in rep["findings"])
     assert (run / "perf.json").is_file()
-    assert "🔴" in format_perf(rep) and "Feed" in format_perf(rep)
+    assert "SLOW" in format_perf(rep) and "Feed" in format_perf(rep)

@@ -23,12 +23,12 @@ const engineVersion = readFileSync(join(ROOT, "apps/engine/pyproject.toml"), "ut
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 
-console.log("▸ engine wheels");
+console.log("engine wheels");
 run(["uv", "build", "--all-packages", "--wheel", "--out-dir", OUT]);
 for (const f of readdirSync(OUT)) if (f.startsWith("appscreenmap_testkit-") || !f.endsWith(".whl")) rmSync(join(OUT, f), { force: true });
 const wheels = readdirSync(OUT).filter((f) => f.endsWith(".whl")).sort();
 
-console.log("▸ dashboard");
+console.log("dashboard");
 run(["bun", "run", "build"], join(ROOT, "apps/viewer"));
 const stage = join(OUT, ".viewer");
 cpSync(join(ROOT, "apps/viewer/dist"), stage, { recursive: true });
@@ -37,7 +37,7 @@ const viewerFile = `viewer-${viewerVersion}.tar.gz`;
 run(["tar", "-czf", join(OUT, viewerFile), "-C", stage, "."]);
 rmSync(stage, { recursive: true, force: true });
 
-console.log("▸ cli binaries");
+console.log("cli binaries");
 const binaries: Record<string, { file: string; sha256: string }> = {};
 for (const t of TARGETS) {
   const file = `appscreenmap-${t}`;
@@ -56,5 +56,5 @@ const manifest = {
 writeFileSync(join(OUT, "manifest.json"), JSON.stringify(manifest, null, 1) + "\n");
 const files = readdirSync(OUT).filter((f) => f !== "SHA256SUMS" && !f.startsWith(".")).sort();
 writeFileSync(join(OUT, "SHA256SUMS"), files.map((f) => `${sha(join(OUT, f))}  ${f}`).join("\n") + "\n");
-console.log(`✓ release ${cliVersion} in ${OUT}  (${files.length} files)\n  APPSCREENMAP_RELEASE_URL=file://${OUT}/`);
+console.log(`release ${cliVersion} ready in ${OUT}  (${files.length} files)\n  APPSCREENMAP_RELEASE_URL=file://${OUT}/`);
 if (!existsSync(join(OUT, "manifest.json"))) process.exit(1);

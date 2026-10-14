@@ -74,23 +74,21 @@ def cmd_security(args) -> int:
         print(json.dumps(audit, indent=1))
         return 0
     print(
-        f"🔒 security audit for {app.get('label') or app['package']}: score {audit['score']}, {audit['summary']}"
+        f"security audit for {app.get('label') or app['package']}: score {audit['score']}, {audit['summary']}"
     )
     for f in audit["findings"]:
         print(f"  {f['severity']:7} {f['title']}")
     for m in audit["metrics"]:
         if m["label"] == "note":
             print(f"  ! {m['value']}")
-    print(
-        f"📄 {run / 'audits' / 'security.json'}  (open the Insights → Security page in `appscreenmap serve`)"
-    )
+    print(f"report: {run / 'audits' / 'security.json'}  (Insights, then Security, in `appscreenmap serve`)")
     return 0
 
 
 def register(sub) -> None:
     s = sub.add_parser(
         "security",
-        help="security audit of an Android build (manifest, secrets, data at rest, Frida log) → audits/security.json",
+        help="security audit of an Android build (manifest, secrets, data at rest, Frida log), written to audits/security.json",
     )
     s.add_argument("run", nargs="?")
     s.add_argument(

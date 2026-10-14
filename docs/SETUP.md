@@ -138,8 +138,8 @@ a step's element is gone, or it leads to the wrong screen, out of the app, or to
 reported as blocked, and every screen it reaches is diffed against the base run.
 
 ```
-✘ 9 passed, 1 failed, 1 blocked, 0 skipped · 2 visually changed   (1.3.0 vs base 1.2.0)
-  ✘ s005 'Settings': 'Settings' is not on s002
+FAILED: 9 passed, 1 failed, 1 blocked, 0 skipped · 2 visually changed   (1.3.0 vs base 1.2.0)
+  fail s005 'Settings': 'Settings' is not on s002
   ⊘ s009 'Connect Notion': blocked by s005
   ≠ s002 'Hello, test': 0.84% pixels; text 1 changed
 ```

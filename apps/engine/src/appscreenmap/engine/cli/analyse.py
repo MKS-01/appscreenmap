@@ -28,7 +28,7 @@ def cmd_a11y(args) -> int:
     print(json.dumps(rep, indent=1) if args.json else format_audit(rep, args.level))
     if args.report:
         out = write_reports(args.run, args.level)
-        print(f"\n📄 report → {out['html']}\n            {out['md']}")
+        print(f"\nreport: {out['html']}\n        {out['md']}")
     return 0
 
 

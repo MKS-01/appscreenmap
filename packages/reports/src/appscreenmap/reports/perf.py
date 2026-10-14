@@ -146,7 +146,7 @@ def format_perf(rep: dict, top: int = 12) -> str:
         return "\n".join(lines)
     lines.append("  screens, slowest first (median / p90 / max ms, samples):")
     for r in rep["screens"][:top]:
-        flag = {"slow": "🔴", "needs work": "🟠", "ok": "🟢"}[r["rating"]]
+        flag = {"slow": "SLOW", "needs work": "NEEDS WORK", "ok": "ok"}[r["rating"]]
         extra = []
         if r["janky_pct"] is not None and r["frames"] >= MIN_JANK_FRAMES:
             extra.append(f"{r['janky_pct']}% janky")
@@ -157,12 +157,12 @@ def format_perf(rep: dict, top: int = 12) -> str:
         if r["unsettled"]:
             extra.append("never settled")
         lines.append(
-            f"   {flag} {r['screen']:>5} {r['title'][:28]!r:30} {r['median_ms']:>5} / {r['p90_ms']:>5} / "
+            f"   {flag:<10} {r['screen']:>5} {r['title'][:28]!r:30} {r['median_ms']:>5} / {r['p90_ms']:>5} / "
             f"{r['max_ms']:>5}  ×{r['samples']}  {', '.join(extra)}"
         )
     lines.append("  slowest transitions:")
     for t in rep["transitions"][:5]:
-        lines.append(f"     {t['from']} → {t['to']}  {t['label'][:30]!r:32} {t['max_ms']} ms max")
+        lines.append(f"     {t['from']} to {t['to']}  {t['label'][:30]!r:32} {t['max_ms']} ms max")
     lines.append("  findings:" if rep["findings"] else "  findings: none")
-    lines += [f"    • {f}" for f in rep["findings"]]
+    lines += [f"    - {f}" for f in rep["findings"]]
     return "\n".join(lines)

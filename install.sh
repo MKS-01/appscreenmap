@@ -24,16 +24,16 @@ esac
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-echo "▸ downloading $ASSET"
+echo "downloading $ASSET"
 curl -fsSL "${RELEASE}SHA256SUMS" -o "$TMP/SHA256SUMS"
 curl -fsSL "${RELEASE}${ASSET}" -o "$TMP/$ASSET"
 if ! (cd "$TMP" && grep "  ${ASSET}\$" SHA256SUMS | shasum -a 256 -c - >/dev/null 2>&1); then
-  echo "✘ checksum mismatch for $ASSET: not installing it" >&2
+  echo "checksum mismatch for $ASSET: not installing it" >&2
   exit 1
 fi
 mkdir -p "$BIN_DIR"
 install -m 755 "$TMP/$ASSET" "$BIN_DIR/appscreenmap"
-echo "✓ installed $BIN_DIR/appscreenmap"
+echo "installed $BIN_DIR/appscreenmap"
 case ":$PATH:" in
   *":$BIN_DIR:"*) ;;
   *) echo "  $BIN_DIR isn't on your PATH yet; add it with:"

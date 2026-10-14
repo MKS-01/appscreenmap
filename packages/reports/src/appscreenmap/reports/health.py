@@ -149,6 +149,6 @@ def format_report(r: dict) -> str:
     if r["device_caveats"]:
         lines.append("  device caveats:")
         lines += [f"    ! {c}" for c in r["device_caveats"]]
-    lines.append("  findings:" if r["findings"] else "  findings: none 🎉")
-    lines += [f"    • {f}" for f in r["findings"]]
+    lines.append("  findings:" if r["findings"] else "  findings: none")
+    lines += [f"    - {f}" for f in r["findings"]]
     return "\n".join(lines)
