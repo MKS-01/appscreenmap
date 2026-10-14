@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import json
 import zipfile
-from argparse import Namespace
 from pathlib import Path
 
 import pytest
 
-from appscreenmap import cli
 from appscreenmap.drivers.apkinfo import find_aapt2
 from appscreenmap.security import (
     build_audit,
@@ -23,7 +21,7 @@ from appscreenmap.security import (
     scan_device_data,
     scan_secrets,
 )
-from appscreenmap.security_rules import load_rules
+from appscreenmap.security.rules import load_rules
 from appscreenmap.testkit.helpers import REPO
 
 FIX = Path(__file__).parent / "fixtures"
@@ -218,62 +216,3 @@ def test_audit_uses_rule_text_scores_and_never_reads_as_a_pass():
 
     clean = build_audit({"apk": {"ran": ["manifest", "static"], "notes": [], "findings": []}})
     assert clean["status"] == "info" and clean["score"] == 100  # unchecked rules remain, so never "pass"
-
-
-# ── the command ──────────────────────────────────────────────────────────────
-def make_run(tmp_path, platform="android"):
-    run = tmp_path / "run"
-    run.mkdir(parents=True)
-    (run / "map.json").write_text(
-        json.dumps(
-            {
-                "schema": 1,
-                "run": {
-                    "id": "r",
-                    "app": {"package": "com.x", "label": "X", "platform": platform},
-                    "device": {"platform": platform},
-                },
-                "screens": [],
-                "transitions": [],
-            }
-        )
-    )
-    return run
-
-
-def args(run, **kw):
-    base = {
-        "run": str(run),
-        "apk": None,
-        "pull": False,
-        "device": False,
-        "frida_log": None,
-        "serial": None,
-        "json": False,
-    }
-    return Namespace(**{**base, **kw})
-
-
-def test_command_merges_evidence_from_separate_runs_of_the_scanner(tmp_path, capsys):
-    run = make_run(tmp_path)
-    apk = tmp_path / "a.apk"
-    with zipfile.ZipFile(apk, "w") as z:
-        z.writestr("classes.dex", AWS.encode())
-    log = tmp_path / "frida.log"
-    log.write_text(LOG)
-    assert cli.cmd_security(args(run, apk=str(apk))) == 0
-    assert cli.cmd_security(args(run, frida_log=str(log))) == 0
-    audit = json.loads((run / "audits" / "security.json").read_text())
-    rules = {f["id"].split(":")[0] for f in audit["findings"]}
-    assert {"hardcoded-secret", "cleartext-observed", "no-cert-pinning"} <= rules
-    assert "dynamic" in audit["summary"] and "static" in audit["summary"]
-    assert set(json.loads((run / "audits" / "security-evidence.json").read_text())["sources"]) == {
-        "apk",
-        "frida",
-    }
-
-
-def test_command_refuses_without_input_and_for_ios(tmp_path, capsys):
-    assert cli.cmd_security(args(make_run(tmp_path))) == 2
-    assert cli.cmd_security(args(make_run(tmp_path / "ios", "ios"), apk="x.apk")) == 2
-    assert cli.cmd_security(args(tmp_path / "missing")) == 2

@@ -12,6 +12,7 @@ members = [
     "appscreenmap-core",
     "appscreenmap-drivers",
     "appscreenmap-engine",
+    "appscreenmap-security",
     "appscreenmap-testkit",
 ]
 
@@ -68,6 +69,7 @@ source = { editable = "apps/engine" }
 dependencies = [
     { name = "appscreenmap-core" },
     { name = "appscreenmap-drivers" },
+    { name = "appscreenmap-security" },
     { name = "pillow" },
 ]
 
@@ -80,10 +82,22 @@ mcp = [
 requires-dist = [
     { name = "appscreenmap-core", editable = "packages/core" },
     { name = "appscreenmap-drivers", editable = "packages/drivers" },
+    { name = "appscreenmap-security", editable = "packages/security" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3,<3" },
     { name = "pillow", specifier = ">=10.0" },
 ]
 provides-extras = ["mcp"]
+
+[[package]]
+name = "appscreenmap-security"
+version = "0.1.0"
+source = { editable = "packages/security" }
+dependencies = [
+    { name = "appscreenmap-drivers" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "appscreenmap-drivers", editable = "packages/drivers" }]
 
 [[package]]
 name = "appscreenmap-testkit"

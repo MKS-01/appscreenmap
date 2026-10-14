@@ -92,10 +92,10 @@ a local release folder (`APPSCREENMAP_RELEASE_URL=file://…`).
 | 1 | Workspace skeleton: virtual root `pyproject.toml`, `Makefile`; `src/` + `tests/` → `apps/engine/` |
 | 2 | Extract `packages/core` and `packages/testkit` |
 | 3a | Extract `packages/drivers` (security needs `apkinfo`); dumpsys parsers leave `perf.py` |
-| 3b | Extract `packages/security`: split the scanner, move the Frida hook, add `package.json` for the rules |
+| 3b | Extract `packages/security`: split the scanner, move the Frida hook into the package |
 | 4 | Extract `crawler`, `a11y`, `reports`, `regression`, `exporters`; `LoadMeter` leaves `perf.py` |
 | 5 | Split `cli.py` into `appscreenmap.engine.cli.*`; MCP server under `apps/engine` |
-| 6 | Bun workspace: `design/` → `packages/design-tokens/`, `web/` → `apps/viewer/` (coordinated with the web session) |
+| 6 | Bun workspace: `design/` → `packages/design-tokens/`, `web/` → `apps/viewer/`, `packages/security/package.json` (`@appscreenmap/security-rules`) (coordinated with the web session) |
 | 7 | CI, CLAUDE.md files, docs and skill paths; `samples/demo.sh playground` end to end |
 | 8 | `apps/cli` skeleton: `start` TUI, `Bun.serve`, pass-through to the engine |
 | 9 | Crawl tab with live progress, run watcher |
@@ -115,4 +115,5 @@ session owns (`web/`, `design/`), so they can review exactly what was touched.
 | 1 | `c74ebac` | `src/` + `tests/` → `apps/engine/`; virtual workspace root; Makefile; repo-wide ruff | — |
 | 1 | `8a7ef00` | — | `web/src/insights/registry.ts`: rules import → `apps/engine/src/appscreenmap/security_rules.json` (import path + comment only) |
 | 2 | `2c20635` | `model`, `analyzer`, `config`, `runs`, `notes`, `media` → `packages/core` (`appscreenmap.core.*`); `tests/helpers.py` → `packages/testkit` (`appscreenmap.testkit.helpers`); `appscreenmap` becomes a namespace package (version from `appscreenmap.core.__version__`); package-layer test | Comments only, pointing at the moved files: `web/src/types.ts:1`, `web/src/views/HowItWorks.tsx:9`, `web/vite.config.ts:21`, `web/README.md:52` |
-| 3a | (this) | `driver.py` → `drivers/base.py` (`DriverError`, `Snapshot`) + `drivers/android.py` (`AdbDriver`); `driver_ios.py` → `drivers/ios.py`; `device`, `apkinfo`, `ios_hierarchy` → `packages/drivers`; dumpsys parsers `perf.py` → `drivers/dumpsys.py` (`_TOTAL_RE` → `TOTAL_FRAMES_RE`); iOS fixture moves with its test | — |
+| 3a | `6111d79` | `driver.py` → `drivers/base.py` (`DriverError`, `Snapshot`) + `drivers/android.py` (`AdbDriver`); `driver_ios.py` → `drivers/ios.py`; `device`, `apkinfo`, `ios_hierarchy` → `packages/drivers`; dumpsys parsers `perf.py` → `drivers/dumpsys.py` (`_TOTAL_RE` → `TOTAL_FRAMES_RE`); iOS fixture moves with its test | — |
+| 3b | (this) | `security.py` → `packages/security`, split into `manifest`, `secrets`, `apk`, `device_data`, `frida`, `audit` (public API re-exported from `appscreenmap.security`); `security_rules.{py,json}` → `security/rules.{py,json}`; `.claude/skills/security-audit/scripts/frida-observe.js` → `security/hooks/` (ships in the wheel; new `appscreenmap security --frida-script` prints its path); CLI tests → `apps/engine/tests/test_security_cli.py` | `web/src/insights/registry.ts`: rules import → `packages/security/src/appscreenmap/security/rules.json` (import path + comment only) |

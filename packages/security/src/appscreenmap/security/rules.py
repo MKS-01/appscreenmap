@@ -1,4 +1,4 @@
-"""The security audit's rule catalogue (security_rules.json): loaded and validated here, read by the viewer too.
+"""The security audit's rule catalogue (rules.json): loaded and validated here, read by the viewer too.
 
 A rule says what is checked, why it matters, how to fix it and which official page backs it. Whether a rule is
 `planned` or `ready` decides how the viewer shows it. Documented in .claude/skills/security-rules.
@@ -12,7 +12,7 @@ from functools import cache
 from pathlib import Path
 from urllib.parse import urlparse
 
-PATH = Path(__file__).with_name("security_rules.json")
+PATH = Path(__file__).with_name("rules.json")
 SEVERITIES = ("error", "warning", "info")
 PLATFORMS = ("android", "ios", "both")
 STATUSES = ("planned", "ready")

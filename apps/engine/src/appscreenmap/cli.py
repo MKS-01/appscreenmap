@@ -23,6 +23,14 @@ from appscreenmap.drivers.android import AdbDriver
 from appscreenmap.drivers.apkinfo import apk_info, find_aapt2
 from appscreenmap.drivers.base import DriverError
 from appscreenmap.drivers.device import describe
+from appscreenmap.security import (
+    HOOK,
+    load_evidence,
+    parse_frida_log,
+    scan_apk,
+    scan_device_data,
+    write_audit,
+)
 
 from .a11y import audit_run, format_audit
 from .a11y_report import write_reports
@@ -31,13 +39,6 @@ from .export import export_run
 from .perf import format_perf
 from .perf import summarize as summarize_perf
 from .report import build_report, format_report
-from .security import (
-    load_evidence,
-    parse_frida_log,
-    scan_apk,
-    scan_device_data,
-    write_audit,
-)
 from .verify import format_verify, required_secrets, update_baselines, verify_run
 from .visual import diff_runs
 
@@ -336,6 +337,15 @@ def cmd_a11y(args) -> int:
 
 
 def cmd_security(args) -> int:
+    if args.frida_script:
+        print(HOOK)
+        return 0
+    if not args.run:
+        print(
+            "Which run? appscreenmap security <run> --apk FILE (or --pull, --device, --frida-log).",
+            file=sys.stderr,
+        )
+        return 2
     run = Path(args.run)
     if not (run / "map.json").is_file():
         print(f"Not a run directory (no map.json): {run}", file=sys.stderr)
@@ -695,7 +705,7 @@ def main(argv: list[str] | None = None) -> int:
         "security",
         help="security audit of an Android build (manifest, secrets, data at rest, Frida log) → audits/security.json",
     )
-    s.add_argument("run")
+    s.add_argument("run", nargs="?")
     s.add_argument(
         "--apk", help="APK to scan statically (manifest flags, exported components, hard-coded secrets)"
     )
@@ -707,7 +717,14 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="look for secrets left in the app's data folder (debuggable or rooted)",
     )
-    s.add_argument("--frida-log", help="output of frida-observe.js (see the security-audit skill)")
+    s.add_argument(
+        "--frida-log", help="what the Frida hook printed (see --frida-script and the security-audit skill)"
+    )
+    s.add_argument(
+        "--frida-script",
+        action="store_true",
+        help="print the path of the bundled Frida hook (frida -l …) and exit",
+    )
     s.add_argument("--serial")
     s.add_argument("--json", action="store_true", help="print the audit as JSON")
     s.set_defaults(fn=cmd_security)

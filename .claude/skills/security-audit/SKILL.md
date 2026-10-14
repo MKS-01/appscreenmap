@@ -40,7 +40,7 @@ collected so far, so you can run the three steps in any order. Add `--json` to r
 |---|---|---|
 | `--apk FILE` / `--pull` | Manifest (`aapt2`), network security config, secret formats in dex, resources and assets | `exported-component`, `cleartext-traffic`, `debuggable`, `allow-backup`, `hardcoded-secret` |
 | `--device` | Plain-text secrets in `shared_prefs/` and `files/`; needs a debuggable build (`run-as`) or a rooted emulator (`su`), else it says it didn't run | `secrets-at-rest` |
-| `--frida-log FILE` | JSON lines from `scripts/frida-observe.js` | `cleartext-observed`, `no-cert-pinning` |
+| `--frida-log FILE` | JSON lines from the Frida hook (`appscreenmap security --frida-script` prints its path) | `cleartext-observed`, `no-cert-pinning` |
 
 The secret scan only matches high-confidence formats (AWS, Stripe live, Slack, GitHub, private keys, database URLs with
 credentials, Google API keys) and records where and a short fingerprint, never the value. A Google API key is reported as info:
@@ -49,7 +49,7 @@ client keys ship in apps on purpose, so the fix is to restrict it.
 **Dynamic (Frida).** On your own debug build, with a frida server on the emulator:
 
 ```bash
-frida -U -f <package> -l .claude/skills/security-audit/scripts/frida-observe.js > frida.log   # then use or crawl the app
+frida -U -f <package> -l "$(uv run appscreenmap security --frida-script)" > frida.log   # then use or crawl the app
 ```
 
 The script only observes: it logs plain `http://` hosts and whether OkHttp has any certificate pin configured. It doesn't bypass
@@ -103,7 +103,7 @@ Never include a secret's value.
 
 ## Extending the scanner
 
-`apps/engine/src/appscreenmap/security.py` (stdlib only; tests in `apps/engine/tests/test_security.py` use real `aapt2` output saved in `apps/engine/tests/fixtures/`).
+`packages/security/` (stdlib only: `manifest.py`, `secrets.py`, `apk.py`, `device_data.py`, `frida.py`, `audit.py`; tests in `packages/security/tests/` use real `aapt2` output saved in `packages/security/tests/fixtures/`).
 Add a check by returning `{"rule": <id>, "key": ..., "detail": ...}` from a collector, add a fixture test, and flip the rule's
-`status` to `ready` in `security_rules.json`. Next in line: the `jadx`-backed code rules, and iOS (plist and data container).
+`status` to `ready` in `rules.json`. Next in line: the `jadx`-backed code rules, and iOS (plist and data container).
 Use `extend-crawler` for CLI wiring.
