@@ -20,6 +20,7 @@ dependencies = [
   "appscreenmap-core",
   "appscreenmap-drivers",
   "appscreenmap-security",
+  "appscreenmap-store",
   "appscreenmap-crawler",
   "appscreenmap-a11y",
   "appscreenmap-reports",
