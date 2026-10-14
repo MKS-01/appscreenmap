@@ -155,20 +155,6 @@ Not ready yet. Both show as "sample data" in the dashboard until the crawler wri
 
 Also planned: platform-change checks per Android/iOS release and store-readiness checks (target SDK deadlines).
 
-## Develop
-
-<p align="center">
-  <img src="docs/media/architecture.svg" alt="AppScreenMap architecture: packages, engine, CLI and viewer.">
-</p>
-
-```bash
-make setup
-uv run pytest -q && uv run ruff check   # synthetic hierarchies, no device needed
-```
-
-Try it on the [Playground](samples/README.md) app (known answers). Architecture and layout:
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Roadmap: [docs/PLAN.md](docs/PLAN.md) · Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
-
 ## License
 
 [MIT](LICENSE) © 2026 MKS and AppScreenMap contributors.
