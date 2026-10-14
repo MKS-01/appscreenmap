@@ -13,7 +13,7 @@ for the data.
 
 Export is one hard-coded function: `export.maestro_flow(data, screen)` plus `mermaid(data)`, both called from
 `export.export_run()`. **There is no exporter interface, registry or `--format` flag yet.** Check
-`src/appscreenmap/export.py` and `cli.py` first; if that changed, follow the code, not this paragraph.
+`apps/engine/src/appscreenmap/export.py` and `cli.py` first; if that changed, follow the code, not this paragraph.
 
 ## Step 0: build the interface (once, then reuse it)
 
@@ -47,19 +47,19 @@ export tests must still pass byte-for-byte).
 3. **Declare capabilities.** If the tool can't express a step (long-press, back, a gesture), the exporter skips that
    screen and reports it, with the reason. Never emit a test that silently does less than the path.
 4. **Secrets.** Typed values come from `config.placeholders` (`${ENV}` placeholders). Never write a literal test
-   password into generated files; `tests/test_secrets.py` shows the expectation. Add the tool's way of reading env
+   password into generated files; `apps/engine/tests/test_secrets.py` shows the expectation. Add the tool's way of reading env
    vars to the generated file's header comment.
 5. **Output layout.** `tests/<format>/…` or the tool's convention, one file per screen unless the tool prefers a
    page-object class per screen plus a path helper. Include a generated-file header with the run id.
 
 ## Tests (no device needed)
 
-- Golden test per exporter in `tests/test_model_and_exports.py` style: a synthetic map → expected file text.
+- Golden test per exporter in `apps/engine/tests/test_model_and_exports.py` style: a synthetic map → expected file text.
 - Cases to cover: id / text / desc / point selectors, autofill with a placeholder, scrolled element, a screen the
   exporter must skip, special characters in labels (quotes, regex metacharacters, unicode).
 - If the tool ships a parser or linter, run generated output through it in a test (skipped when not installed).
   Otherwise validate the format structurally (valid YAML / compiles / imports).
-- `uv run pytest -q && uv run ruff check src tests && uv run ruff format src`.
+- `uv run pytest -q && uv run ruff check && uv run ruff format`.
 
 ## Licensing
 

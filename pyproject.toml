@@ -1,49 +1,18 @@
-[project]
-name = "appscreenmap"
-version = "0.1.0"
-description = "Automatically explore a mobile app screen by screen and build a navigable map of every screen and transition."
-readme = "README.md"
-license = "MIT"
-license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
-requires-python = ">=3.11"
-authors = [{ name = "AppScreenMap contributors" }]
-keywords = ["android", "ios", "testing", "crawler", "ui-automation", "maestro", "visual-testing", "accessibility", "wcag"]
-classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Environment :: Console",
-  "Intended Audience :: Developers",
-  "Operating System :: MacOS",
-  "Operating System :: POSIX :: Linux",
-  "Programming Language :: Python :: 3",
-  "Topic :: Software Development :: Testing",
-]
-dependencies = ["pillow>=10.0"]
+# Workspace root (virtual: not a package itself). The product is apps/engine plus packages/*; see docs/MONOREPO.md.
 
-[project.urls]
-Homepage = "https://github.com/MKS-01/appscreenmap"
-Repository = "https://github.com/MKS-01/appscreenmap"
-Issues = "https://github.com/MKS-01/appscreenmap/issues"
-Changelog = "https://github.com/MKS-01/appscreenmap/releases"
+[tool.uv.workspace]
+members = ["apps/engine"]
 
-[project.scripts]
-appscreenmap = "appscreenmap.cli:main"
-
-[project.optional-dependencies]
-mcp = ["mcp>=2.3,<3"]  # `appscreenmap mcp`: the map as an MCP server for agents
+[tool.uv.sources]
+appscreenmap-engine = { workspace = true }
 
 [dependency-groups]
-dev = ["pytest>=8.0", "ruff>=0.6", "mcp>=2.3,<3"]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/appscreenmap"]
+dev = ["appscreenmap-engine[mcp]", "pytest>=8.0", "ruff>=0.6"]
 
 [tool.ruff]
 line-length = 110
 target-version = "py311"
+src = ["apps/*/src", "packages/*/src"]  # first-party code, for import sorting
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["apps/engine/tests"]

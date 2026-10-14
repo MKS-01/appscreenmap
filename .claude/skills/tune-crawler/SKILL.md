@@ -21,12 +21,12 @@ Never fix exploration by guessing. Each fix follows this loop:
    for e in o.elements: print(e.kind, e.action, repr(e.label), e.group, e.key)"
    ```
    To print the tree with groups, walk `parse_hierarchy()` + `_mark_repeats()`; see how
-   `tests/helpers.py` models Compose output.
-2. **Failing test.** Reproduce the structure in `tests/` with the `node()` / `hierarchy()` helpers.
+   `apps/engine/tests/helpers.py` models Compose output.
+2. **Failing test.** Reproduce the structure in `apps/engine/tests/` with the `node()` / `hierarchy()` helpers.
    Use synthetic data only; never commit real app dumps, since they contain user content.
 3. **Fix** in the right layer (map below). Keep the change minimal and explain *why* in a comment
    only where it's non-obvious.
-4. **Verify.** Run `uv run pytest -q && uv run ruff check src tests && uv run ruff format src`, then
+4. **Verify.** Run `uv run pytest -q && uv run ruff check && uv run ruff format`, then
    re-crawl sample-app with `--clear-data` and compare `report` numbers before and after
    (steps/screen, no-ops, near-duplicates, nav failures).
 

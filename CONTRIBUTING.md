@@ -18,9 +18,11 @@ To try a real crawl you need `adb` and an Android emulator, or on macOS a booted
 
 ```bash
 uv run pytest -q
-uv run ruff check src tests && uv run ruff format src
+uv run ruff check && uv run ruff format
 cd web && bun run build                   # tsc + vite must pass
 ```
+
+Or `make check` (Python lint + tests) and `make viewer`; `make` targets cover setup, tests, lint and the demo.
 
 CI runs the same checks.
 
@@ -28,7 +30,7 @@ CI runs the same checks.
 
 | Area | Path | Notes |
 |---|---|---|
-| Crawler (Python) | `src/appscreenmap/` | Drivers (Android, iOS Simulator) → analyzer → explorer → model → export/report → CLI |
+| Crawler (Python) | `apps/engine/src/appscreenmap/` | Drivers (Android, iOS Simulator) → analyzer → explorer → model → export/report → CLI |
 | Web viewer | `web/` | React + TypeScript + Vite. UI rules: [`web/DESIGN.md`](web/DESIGN.md) |
 | Design tokens | `design/tokens.css` | Colour, type, space and motion shared by the viewer and the HTML reports |
 | Data contract | `docs/MAP_SCHEMA.md` | `map.json` is the interface between crawler and viewer |
@@ -40,7 +42,7 @@ CI runs the same checks.
 
 - **`map.json` schema 1 is additive.** Add fields; don't rename or remove them. Update `docs/MAP_SCHEMA.md`
   and `web/src/types.ts` in the same change.
-- **Exploration fixes need a regression test** built from a synthetic hierarchy (`tests/helpers.py`) before you
+- **Exploration fixes need a regression test** built from a synthetic hierarchy (`apps/engine/tests/helpers.py`) before you
   re-crawl a real app.
 - **The crawl must stay inside the target app.** Don't add recovery that presses BACK out of the app or opens
   other apps.

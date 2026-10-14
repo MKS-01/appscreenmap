@@ -119,20 +119,21 @@ never mix with the Android runs of the same app). `runs/` is git-ignored: it is 
 ## Project layout
 
 ```
-src/appscreenmap/   crawler: drivers (Android, iOS Simulator), analyzer, explorer, model, export,
-                    visual diff, a11y, perf, replay + verify, MCP server, CLI
+apps/engine/        the Python engine (being split into packages/, see MONOREPO.md)
+  src/appscreenmap/ drivers (Android, iOS Simulator), analyzer, explorer, model, export, visual diff,
+                    a11y, security, perf, replay + verify, MCP server, CLI
+  tests/            unit tests on synthetic hierarchies (no device needed)
 web/                the dashboard (React + Vite, built with Bun)
 design/             tokens.css: colour, type, space and motion for the viewer and reports
 samples/            Playground and sample-app APKs, sources, iOS build script and demo.sh
 runs/               crawl output (git-ignored, generated locally)
-docs/               SETUP.md, ARCHITECTURE.md, PLAN.md (design + roadmap), MAP_SCHEMA.md (data contract)
+docs/               SETUP, ARCHITECTURE, MONOREPO (layout + migration), PLAN, MAP_SCHEMA (data contract)
 examples/           sample config
-tests/              unit tests on synthetic hierarchies (no device needed)
 ```
 
 ```bash
 uv sync && uv run pytest -q
-uv run ruff check src tests && uv run ruff format src
+uv run ruff check && uv run ruff format
 ```
 
 ## Prior art

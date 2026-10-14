@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from xml.sax.saxutils import quoteattr
 
 PKG = "com.example.app"
+REPO = next(p for p in Path(__file__).resolve().parents if (p / "samples").is_dir())
 
 
 def node(cls="android.view.View", bounds=(0, 0, 1080, 2400), children=(), **attrs) -> str:

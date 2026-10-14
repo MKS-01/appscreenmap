@@ -349,7 +349,7 @@ explorer, exporters and viewer work unchanged. Measured: tree dump 0.5 s (Androi
 screenshot is native pixels and the viewer scales by ratio, as it does between Android densities.
 
 **Done:** driver, translator, `doctor` checks, `crawl --platform ios --app X.app`, 14 tests (a real sample-app tree recorded
-as `tests/fixtures/`), and live crawls of sample-app on an iPhone 17 simulator: 7 screens, 15 transitions, 43 steps in 86 s,
+as `apps/engine/tests/fixtures/`), and live crawls of sample-app on an iPhone 17 simulator: 7 screens, 15 transitions, 43 steps in 86 s,
 Maestro flows and the a11y audit written, then "nothing left to explore" (the tab bar is invisible to the tree; see below).
 How the Android-shaped explorer maps onto iOS:
 - *App lock.* No scriptable pinning on iOS, so the explorer enforces it: any tree whose owning process (matched by pid
@@ -381,7 +381,7 @@ largest size) beside WCAG.
 
 ### 8.4 Security audit: depth (planned)
 
-The rule catalogue is set up (`src/appscreenmap/security_rules.json`, 14 rules, documented in the `security-rules` skill; the
+The rule catalogue is set up (`apps/engine/src/appscreenmap/security_rules.json`, 14 rules, documented in the `security-rules` skill; the
 workflow is the `security-audit` skill). Every rule is `planned`, so the Insights Security page says "not set up" and lists
 them. This section is how the scanner goes deeper than a manifest check, from two kinds of evidence.
 

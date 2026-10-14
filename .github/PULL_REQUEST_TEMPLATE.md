@@ -4,7 +4,7 @@
 
 ## How I checked it
 
-- [ ] `uv run pytest -q`, `ruff check src tests`, `ruff format --check src`
+- [ ] `uv run pytest -q`, `ruff check`, `ruff format --check`
 - [ ] `cd web && bun run build`
 - [ ] Crawled on an emulator or simulator (if the crawler changed): <!-- app, Android or iOS version -->
 - [ ] Screenshots at desktop and phone width (if the UI changed; the viewer is dark only)

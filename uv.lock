@@ -7,6 +7,18 @@ resolution-markers = [
     "(python_full_version < '3.14' and sys_platform != 'emscripten') or (python_full_version < '3.12' and sys_platform == 'emscripten')",
 ]
 
+[manifest]
+members = [
+    "appscreenmap-engine",
+]
+
+[manifest.dependency-groups]
+dev = [
+    { name = "appscreenmap-engine", extras = ["mcp"], editable = "apps/engine" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "ruff", specifier = ">=0.6" },
+]
+
 [[package]]
 name = "annotated-types"
 version = "0.8.0"
@@ -30,9 +42,9 @@ wheels = [
 ]
 
 [[package]]
-name = "appscreenmap"
+name = "appscreenmap-engine"
 version = "0.1.0"
-source = { editable = "." }
+source = { editable = "apps/engine" }
 dependencies = [
     { name = "pillow" },
 ]
@@ -42,26 +54,12 @@ mcp = [
     { name = "mcp" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "mcp" },
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3,<3" },
     { name = "pillow", specifier = ">=10.0" },
 ]
 provides-extras = ["mcp"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mcp", specifier = ">=2.3,<3" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "ruff", specifier = ">=0.6" },
-]
 
 [[package]]
 name = "attrs"

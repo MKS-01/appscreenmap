@@ -8,7 +8,7 @@ description: Maintain and scale the AppScreenMap crawler — upgrade Python deps
 ## Health check (run first)
 
 ```bash
-uv sync && uv run pytest -q && uv run ruff check src tests && uv run ruff format --check src
+uv sync && uv run pytest -q && uv run ruff check && uv run ruff format --check
 uv run appscreenmap doctor
 ```
 

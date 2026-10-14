@@ -5,7 +5,7 @@ description: Accessibility rules for native iOS apps (SwiftUI and UIKit) in AppS
 
 # iOS accessibility: the rules
 
-The Android counterpart is `wcag-mobile-rules` (criteria catalogue in `src/appscreenmap/wcag.py`); this page is what changes on
+The Android counterpart is `wcag-mobile-rules` (criteria catalogue in `apps/engine/src/appscreenmap/wcag.py`); this page is what changes on
 iOS. WCAG 2.2 still decides pass/fail; Apple's HIG sets stricter numbers in places. Say which one a finding used.
 
 ## The iOS accessibility tree is the evidence
@@ -91,7 +91,7 @@ with `/`, activities, `content-desc`) must branch on it or be skipped. In the vi
 by platform lives in the `IOS` overrides (read through `useRules()`, set by the run shell's `PlatformCtx`), and
 `TARGET_MIN` holds the per-platform target size (48 dp Android, 44 pt iOS). The translated XML puts `AXLabel` in `text` (or
 `hint` for fields) and `AXUniqueId` in `resource-id` as `<bundle>:id/<id>`. Test with a recorded tree
-(`tests/fixtures/sample-app-ios-home.json`), never a device.
+(`apps/engine/tests/fixtures/sample-app-ios-home.json`), never a device.
 
 ## Known findings in sample-app (the iOS sample), Oct 2026
 

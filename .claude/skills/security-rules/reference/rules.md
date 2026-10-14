@@ -1,6 +1,6 @@
 # Security rules: the full catalogue
 
-Machine-readable twin: `src/appscreenmap/security_rules.json` (validated by `security_rules.py`; a test fails if a rule is
+Machine-readable twin: `apps/engine/src/appscreenmap/security_rules.json` (validated by `security_rules.py`; a test fails if a rule is
 missing here). Status is **ready** for a rule that `appscreenmap security` checks (the manifest, hard-coded-secret, data-at-rest and Frida-log
 rules, Android) and **planned** for the rest, which the viewer shows as "not set up". "Detect" says how a rule is checked and what
 you can do by hand. Every source is official.
@@ -66,4 +66,4 @@ cite and a way to detect them with a fixture test.
 
 ## Adding or changing a rule
 
-See `security-rules/SKILL.md`: edit the JSON, add the row here, run `uv run pytest tests/test_security_rules.py`.
+See `security-rules/SKILL.md`: edit the JSON, add the row here, run `uv run pytest apps/engine/tests/test_security_rules.py`.

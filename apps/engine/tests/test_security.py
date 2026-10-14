@@ -8,6 +8,7 @@ from argparse import Namespace
 from pathlib import Path
 
 import pytest
+from helpers import REPO
 
 from appscreenmap import cli
 from appscreenmap.apkinfo import find_aapt2
@@ -26,7 +27,6 @@ from appscreenmap.security import (
 from appscreenmap.security_rules import load_rules
 
 FIX = Path(__file__).parent / "fixtures"
-REPO = Path(__file__).resolve().parent.parent
 MANIFEST = (FIX / "insecure_manifest.xmltree.txt").read_text()
 NSC = (FIX / "insecure_nsc.xmltree.txt").read_text()
 RESOURCES = (FIX / "insecure_resources.txt").read_text()
