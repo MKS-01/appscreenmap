@@ -103,13 +103,13 @@ export async function cmdSetup({ yes }: { yes: boolean }): Promise<number> {
     const have = engine ? await engineVersion(engine) : null;
     if (engine && have === m.engine.version) out.ok(`engine ${have}`);
     else {
-      out.step(`installing engine ${m.engine.version} (uv tool) …`);
+      out.step(`installing engine ${m.engine.version} (uv tool)`);
       (await installEngine(home, base, m, uv)) === 0 ? out.ok(`engine ${m.engine.version}`) : ((failed = true), out.bad("engine install failed"));
     }
     if (home.currentViewer() === m.viewer.version && home.currentViewerDir()) out.ok(`dashboard ${m.viewer.version}`);
     else {
       try {
-        out.step(`installing dashboard ${m.viewer.version} …`);
+        out.step(`installing dashboard ${m.viewer.version}`);
         await installViewer(home, base, m);
         out.ok(`dashboard ${m.viewer.version} (${tilde(home.currentViewerDir() ?? "")})`);
       } catch (e) {

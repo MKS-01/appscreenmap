@@ -10,13 +10,16 @@ export function paint(hex: string, s: string): string {
   return `\x1b[38;2;${n >> 16};${(n >> 8) & 255};${n & 255}m${s}\x1b[0m`;
 }
 
+// Status as a short word in its colour (the design system's rule: never a glyph alone).
+const tag = (hex: string, word: string) => `  ${paint(hex, word.padEnd(5))} `;
+
 export const out = {
   title: (s: string) => console.log(paint(C.text, s)),
-  ok: (s: string) => console.log(`  ${paint(C.good, "✔")} ${s}`),
-  warn: (s: string) => console.log(`  ${paint(C.warn, "!")} ${s}`),
-  bad: (s: string) => console.log(`  ${paint(C.bad, "✘")} ${s}`),
-  skip: (s: string) => console.log(`  ${paint(C.faint, "○")} ${paint(C.dim, s)}`),
-  step: (s: string) => console.log(`  ${paint(C.faint, "…")} ${paint(C.dim, s)}`),
+  ok: (s: string) => console.log(`${tag(C.good, "ok")}${s}`),
+  warn: (s: string) => console.log(`${tag(C.warn, "warn")}${s}`),
+  bad: (s: string) => console.log(`${tag(C.bad, "fail")}${s}`),
+  skip: (s: string) => console.log(`${tag(C.faint, "skip")}${paint(C.dim, s)}`),
+  step: (s: string) => console.log(`${tag(C.faint, "")}${paint(C.dim, s)}`),
   dim: (s: string) => console.log(paint(C.dim, s)),
   cmd: (s: string) => paint(C.accent, s),
 };

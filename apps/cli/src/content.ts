@@ -9,7 +9,7 @@ export interface Suggestion {
   env?: Record<string, string>;
 }
 
-const PLAYGROUND_CRAWL: Suggestion = {
+export const PLAYGROUND_CRAWL: Suggestion = {
   cmd: "APP_PASSWORD=playground-demo appscreenmap crawl --apk samples/playground-app/apk/playground-v1.apk --config samples/playground-app/appscreenmap.toml --clear-data",
   what: "map the Playground sample (needs an emulator)",
   engine: ["crawl", "--apk", "samples/playground-app/apk/playground-v1.apk", "--config", "samples/playground-app/appscreenmap.toml", "--clear-data", "--project", "playground", "--name", "playground-v1"],

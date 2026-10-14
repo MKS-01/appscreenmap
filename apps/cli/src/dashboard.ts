@@ -96,7 +96,7 @@ export async function startDashboard(
       return { url, origin: "attached", proc: null };
     }
     if (!(await portFree(host, p))) continue;
-    onStatus(`starting the dashboard on ${url} …`);
+    onStatus(`starting the dashboard on ${url}`);
     const proc = Bun.spawn(
       [...engine.cmd, "serve", "--runs", runs, "--host", host, "--port", String(p), "--no-open"],
       { stdout: "ignore", stderr: "pipe", env: viewer ? { ...process.env, APPSCREENMAP_WEB: viewer } : process.env },
