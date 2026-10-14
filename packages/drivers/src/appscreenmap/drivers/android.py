@@ -1,4 +1,4 @@
-"""Device drivers. v1 ships an ADB driver; the interface leaves room for uiautomator2 and iOS."""
+"""Android driver: drives a device or emulator over adb (uiautomator dumps, input, dumpsys)."""
 
 from __future__ import annotations
 
@@ -7,28 +7,15 @@ import shlex
 import shutil
 import subprocess
 import time
-from dataclasses import dataclass
 from pathlib import Path
 
+from .base import DriverError, Snapshot
 from .device import PROBE, build_info, parse_getprop, parse_probe
-from .perf import _TOTAL_RE, parse_am_start, parse_framestats, parse_gfx_summary
+from .dumpsys import TOTAL_FRAMES_RE, parse_am_start, parse_framestats, parse_gfx_summary
 
 _DUMP_PATH = "/sdcard/appscreenmap_dump.xml"
 _MARK = "__APPSCREENMAP__"
 _ACTIVITY_RE = re.compile(r"ActivityRecord\{\S+ u\d+ ([\w.]+)/([\w.$]+)")
-
-
-class DriverError(RuntimeError):
-    pass
-
-
-@dataclass
-class Snapshot:
-    """One raw observation of the device: hierarchy XML plus the foreground activity."""
-
-    xml: str
-    package: str | None
-    activity: str | None
 
 
 class AdbDriver:
@@ -173,7 +160,7 @@ class AdbDriver:
         self.shell(f"dumpsys gfxinfo {package} reset >/dev/null")
 
     def frames_rendered(self, package: str) -> int | None:
-        m = _TOTAL_RE.search(
+        m = TOTAL_FRAMES_RE.search(
             self.shell(f"dumpsys gfxinfo {package} 2>/dev/null | grep -m1 'Total frames rendered'")
         )
         return int(m.group(1)) if m else None

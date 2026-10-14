@@ -15,7 +15,7 @@ Never fix exploration by guessing. Each fix follows this loop:
    The hierarchy of every screen is in `runs/<project>/<run-id>/screens/<sid>.xml`. To capture the live screen:
    ```bash
    uv run python -c "
-   from appscreenmap.driver import AdbDriver; from appscreenmap.analyzer import analyze
+   from appscreenmap.drivers.android import AdbDriver; from appscreenmap.core.analyzer import analyze
    d=AdbDriver(); s=d.snapshot(); w,h=d.screen_size(); o=analyze(s.xml,None,s.activity,w,h)
    print(o.title, o.patterns, o.signature)
    for e in o.elements: print(e.kind, e.action, repr(e.label), e.group, e.key)"

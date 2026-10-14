@@ -6,6 +6,7 @@ members = ["apps/engine", "packages/*"]
 [tool.uv.sources]
 appscreenmap-engine = { workspace = true }
 appscreenmap-core = { workspace = true }
+appscreenmap-drivers = { workspace = true }
 appscreenmap-testkit = { workspace = true }
 
 [dependency-groups]

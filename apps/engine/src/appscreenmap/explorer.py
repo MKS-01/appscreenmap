@@ -21,8 +21,9 @@ from appscreenmap.core.analyzer import (
 from appscreenmap.core.config import CrawlConfig, placeholders, resolve
 from appscreenmap.core.media import save_thumbnail
 from appscreenmap.core.model import AppMap, Element, Screen, Step, Transition, selector_for
+from appscreenmap.drivers.android import AdbDriver
+from appscreenmap.drivers.base import DriverError
 
-from .driver import AdbDriver, DriverError
 from .perf import LoadMeter, Timing, has_loading_indicator
 
 SCROLL_SAME_SCREEN = 0.4  # token similarity above which a scrolled view is still the same screen

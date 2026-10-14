@@ -70,7 +70,7 @@ findings: `contentDescription`, `semantics`, `Role.`, `paneTitle`, `liveRegion`,
 Each issue's status lives in `<run>/notes.json` under `a11y`: `{ "<issue key>": { "status":
 "confirmed" | "wontfix" | "false_positive", "note": "…", "updated": "<iso>" } }`. The viewer edits
 the same file. To write it from the CLI, load the existing file, merge your decisions, and validate
-with `appscreenmap.notes.validate` before saving (format owned by the web session; don't change it).
+with `appscreenmap.core.notes.validate` before saving (format owned by the web session; don't change it).
 `appscreenmap a11y` then hides false positives and won't-fixes.
 
 ## 6. Report

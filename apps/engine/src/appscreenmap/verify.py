@@ -24,8 +24,8 @@ from appscreenmap.core.analyzer import analyze
 from appscreenmap.core.config import placeholders
 from appscreenmap.core.media import save_thumbnail
 from appscreenmap.core.model import load_map, write_json_atomic
+from appscreenmap.drivers.base import DriverError
 
-from .driver import DriverError
 from .replay import MATCH_THRESHOLD, Replayer, ReplayFailed
 from .visual import compare_images, screen_text_diff, text_changed
 

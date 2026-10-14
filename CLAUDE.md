@@ -10,8 +10,9 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   package: never add `src/appscreenmap/__init__.py`). A package imports only what its `pyproject.toml` depends on
   (`packages/testkit/tests/test_layers.py` checks).
   - `packages/core/`: `appscreenmap.core`: map.json model, analyzer, config, runs, notes, media; imports nothing else
+  - `packages/drivers/`: `appscreenmap.drivers`: Android (adb, dumpsys, device facts, apkinfo) and iOS Simulator; stdlib only
   - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`)
-  - `apps/engine/`: the rest of the engine, until it moves into packages (driver → explorer → export/visual/report → cli)
+  - `apps/engine/`: the rest of the engine, until it moves into packages (explorer → export/visual/report → cli)
   - tests live next to their code (`<package>/tests/`), on synthetic hierarchies; no device needed
 - `web/`: React viewer, **owned by a separate session**. Don't edit it from crawler work.
 - `design/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode blue, Geist), for

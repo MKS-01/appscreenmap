@@ -19,10 +19,10 @@ from PIL import Image, ImageDraw
 
 from appscreenmap.core import __version__
 from appscreenmap.core.model import load_map
+from appscreenmap.drivers.device import describe
+from appscreenmap.drivers.device import rows as device_rows
 
 from .a11y import RULES, audit_run
-from .device import describe
-from .device import rows as device_rows
 from .wcag import BY_SC, DEVICE_TESTS, LEVEL_ORDER, VIEWER_RULES, criteria_up_to, sc_key
 
 MAX_EVIDENCE = 8  # screenshot crops per criterion

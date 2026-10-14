@@ -119,7 +119,7 @@ def test_export_skips_screens_without_a_path(tmp_path):
 from fakedevice import SCREENS, FakeApp
 from fakedevice import btn as _btn
 
-from appscreenmap.driver import Snapshot
+from appscreenmap.drivers.base import Snapshot
 from appscreenmap.testkit.helpers import hierarchy, node
 
 SIGNIN_SCREENS = {

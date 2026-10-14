@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from appscreenmap import cli
-from appscreenmap.apkinfo import find_aapt2
+from appscreenmap.drivers.apkinfo import find_aapt2
 from appscreenmap.security import (
     build_audit,
     manifest_findings,

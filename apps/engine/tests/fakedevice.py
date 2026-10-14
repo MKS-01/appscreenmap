@@ -7,7 +7,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from appscreenmap.driver import Snapshot
+from appscreenmap.drivers.base import Snapshot
 from appscreenmap.testkit.helpers import PKG, hierarchy, node
 
 ACT = f"{PKG}.MainActivity"

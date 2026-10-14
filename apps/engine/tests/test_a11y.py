@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from appscreenmap.a11y import RULES, audit_run, format_audit
-from appscreenmap.apkinfo import parse_manifest_activities
+from appscreenmap.drivers.apkinfo import parse_manifest_activities
 from appscreenmap.testkit.helpers import PKG, hierarchy, node
 
 ACT = f"{PKG}.MainActivity"
