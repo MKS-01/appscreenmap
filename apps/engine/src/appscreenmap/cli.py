@@ -19,12 +19,13 @@ from appscreenmap.core import __version__, notes
 from appscreenmap.core.config import CrawlConfig
 from appscreenmap.core.model import AppMap, load_map
 from appscreenmap.core.runs import new_run_dir, resolve_run, update_index
+from appscreenmap.drivers.android import AdbDriver
+from appscreenmap.drivers.apkinfo import apk_info, find_aapt2
+from appscreenmap.drivers.base import DriverError
+from appscreenmap.drivers.device import describe
 
 from .a11y import audit_run, format_audit
 from .a11y_report import write_reports
-from .apkinfo import apk_info, find_aapt2
-from .device import describe
-from .driver import AdbDriver, DriverError
 from .explorer import CrawlAborted, Explorer
 from .export import export_run
 from .perf import format_perf
@@ -53,7 +54,7 @@ def _doctor_ios(row) -> None:
     if not xcrun:
         print("  · iOS: Xcode not installed (optional: only needed to crawl iOS apps)")
         return
-    from .driver_ios import IosSimulatorDriver
+    from appscreenmap.drivers.ios import IosSimulatorDriver
 
     sims = IosSimulatorDriver.list_devices()
     idb = bool(shutil.which("idb") or shutil.which("uvx"))
@@ -148,7 +149,7 @@ def _setup_ios(args, cfg: CrawlConfig):
     """Same for an iOS Simulator: install a `.app` if given, read its Info.plist. Returns (driver, app, bundle_id, None)."""
     import plistlib
 
-    from .driver_ios import IosSimulatorDriver
+    from appscreenmap.drivers.ios import IosSimulatorDriver
 
     d = IosSimulatorDriver(args.serial)
     app: dict = {}

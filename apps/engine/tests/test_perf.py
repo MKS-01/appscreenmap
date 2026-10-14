@@ -2,14 +2,12 @@ import json
 import time
 
 from appscreenmap.core.analyzer import parse_hierarchy
+from appscreenmap.drivers.dumpsys import parse_am_start, parse_framestats, parse_gfx_summary
 from appscreenmap.perf import (
     LoadMeter,
     format_perf,
     frame_metrics,
     has_loading_indicator,
-    parse_am_start,
-    parse_framestats,
-    parse_gfx_summary,
     summarize,
 )
 from appscreenmap.testkit.helpers import hierarchy, node

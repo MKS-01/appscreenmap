@@ -1,4 +1,4 @@
-from appscreenmap.device import (
+from appscreenmap.drivers.device import (
     PROBE,
     build_info,
     caveats,

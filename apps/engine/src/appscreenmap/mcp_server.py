@@ -401,7 +401,8 @@ class MapTools:
 
     # ── device ───────────────────────────────────────────────────────────────
     def _replayer(self, data: dict, serial: str | None):
-        from .driver import AdbDriver
+        from appscreenmap.drivers.android import AdbDriver
+
         from .replay import Replayer
 
         return Replayer(AdbDriver(serial or self.serial), data, log=lambda *a: None)
@@ -553,8 +554,7 @@ def build_server(tools: MapTools):
 
     from appscreenmap.core import __version__
     from appscreenmap.core.config import MissingSecret
-
-    from .driver import DriverError
+    from appscreenmap.drivers.base import DriverError
 
     def expected(fn):
         """Pass anticipated failures to the agent as tool errors. The SDK hides the message of any

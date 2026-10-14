@@ -91,7 +91,7 @@ with `/`, activities, `content-desc`) must branch on it or be skipped. In the vi
 by platform lives in the `IOS` overrides (read through `useRules()`, set by the run shell's `PlatformCtx`), and
 `TARGET_MIN` holds the per-platform target size (48 dp Android, 44 pt iOS). The translated XML puts `AXLabel` in `text` (or
 `hint` for fields) and `AXUniqueId` in `resource-id` as `<bundle>:id/<id>`. Test with a recorded tree
-(`apps/engine/tests/fixtures/duskread-ios-home.json`), never a device.
+(`packages/drivers/tests/fixtures/duskread-ios-home.json`), never a device.
 
 ## Known findings in DuskRead (the iOS sample), Oct 2026
 

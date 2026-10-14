@@ -20,7 +20,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from .apkinfo import find_aapt2
+from appscreenmap.drivers.apkinfo import find_aapt2
+
 from .security_rules import load_rules
 
 COMPONENT_TAGS = ("activity", "activity-alias", "service", "receiver", "provider")

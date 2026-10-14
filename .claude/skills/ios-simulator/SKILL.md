@@ -1,6 +1,6 @@
 ---
 name: ios-simulator
-description: Set up, run and debug AppScreenMap against an iOS Simulator — building DuskRead for the simulator, booting it (Xcode 27 Device Hub), installing idb, reading the accessibility tree, recording a test fixture, and diagnosing a bad iOS crawl (missing tab bar, in-app browser, flat trees, stuck screens). Use for any iOS work: `crawl --platform ios`, `doctor` showing no simulator, an iOS crawl that stops early or maps too little, or extending `driver_ios.py` / `ios_hierarchy.py`.
+description: Set up, run and debug AppScreenMap against an iOS Simulator — building DuskRead for the simulator, booting it (Xcode 27 Device Hub), installing idb, reading the accessibility tree, recording a test fixture, and diagnosing a bad iOS crawl (missing tab bar, in-app browser, flat trees, stuck screens). Use for any iOS work: `crawl --platform ios`, `doctor` showing no simulator, an iOS crawl that stops early or maps too little, or extending `drivers/ios.py` / `drivers/ios_hierarchy.py`.
 ---
 
 # iOS Simulator: set up, run, debug
@@ -12,7 +12,7 @@ AppScreenMap drives a simulator with two tools, because neither does the whole j
 | `xcrun simctl` | boot/shutdown, install, launch/terminate, screenshots, permissions (`privacy`), Dynamic Type / appearance / contrast (`ui`), status bar, keychain, push, openurl | tap, swipe, type, read the UI tree |
 | `idb` (`idb_companion` + `fb-idb` client) | accessibility tree (`ui describe-all`), tap / swipe / text / key, `ui quiet` (idle + no animations), scroll, rotate, hinge, crash list, video, xctrace | build or install simulators |
 
-Code: `apps/engine/src/appscreenmap/driver_ios.py` (the driver the explorer calls) and `ios_hierarchy.py` (iOS tree → the
+Code: `packages/drivers/src/appscreenmap/drivers/ios.py` (the driver the explorer calls) and `ios_hierarchy.py` (iOS tree → the
 uiautomator-style XML the analyzer reads). Design and status: `docs/PLAN.md` §8.3.
 
 ## 1. Preflight
@@ -89,11 +89,11 @@ supported yet. `--package <bundle id>` re-crawls an already installed app.
 Tests never need a device. To capture a tree:
 
 ```bash
-idb ui describe-all --udid <UDID> | python3 -c "import sys,json; d=json.load(sys.stdin); json.dump(d[:30], open('apps/engine/tests/fixtures/<name>.json','w'), indent=1)"
+idb ui describe-all --udid <UDID> | python3 -c "import sys,json; d=json.load(sys.stdin); json.dump(d[:30], open('packages/drivers/tests/fixtures/<name>.json','w'), indent=1)"
 ```
 
 Shorten long text (no personal content), keep the Application node first, and test the translation in
-`apps/engine/tests/test_ios_hierarchy.py` (`idb_to_xml` → `analyze`). The driver takes an injectable runner (`run=`), so command output can
+`packages/drivers/tests/test_ios_hierarchy.py` (`idb_to_xml` → `analyze`). The driver takes an injectable runner (`run=`), so command output can
 be faked without a simulator.
 
 ## 7. Not used yet (worth a look)

@@ -1,0 +1,15 @@
+[project]
+name = "appscreenmap-drivers"
+version = "0.1.0"
+description = "AppScreenMap device drivers: Android over adb, iOS Simulator over simctl + idb, device facts, APK info."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/appscreenmap"]

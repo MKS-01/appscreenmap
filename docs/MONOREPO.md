@@ -91,8 +91,9 @@ a local release folder (`APPSCREENMAP_RELEASE_URL=file://…`).
 |---|---|
 | 1 | Workspace skeleton: virtual root `pyproject.toml`, `Makefile`; `src/` + `tests/` → `apps/engine/` |
 | 2 | Extract `packages/core` and `packages/testkit` |
-| 3 | Extract `packages/security`: split the scanner, move the Frida hook, add `package.json` for the rules |
-| 4 | Extract `drivers`, `crawler`, `a11y`, `reports`, `regression`, `exporters`; dumpsys parsers and `LoadMeter` leave `perf.py` |
+| 3a | Extract `packages/drivers` (security needs `apkinfo`); dumpsys parsers leave `perf.py` |
+| 3b | Extract `packages/security`: split the scanner, move the Frida hook, add `package.json` for the rules |
+| 4 | Extract `crawler`, `a11y`, `reports`, `regression`, `exporters`; `LoadMeter` leaves `perf.py` |
 | 5 | Split `cli.py` into `appscreenmap.engine.cli.*`; MCP server under `apps/engine` |
 | 6 | Bun workspace: `design/` → `packages/design-tokens/`, `web/` → `apps/viewer/` (coordinated with the web session) |
 | 7 | CI, CLAUDE.md files, docs and skill paths; `samples/demo.sh playground` end to end |
@@ -113,4 +114,5 @@ session owns (`web/`, `design/`), so they can review exactly what was touched.
 |---|---|---|---|
 | 1 | `c74ebac` | `src/` + `tests/` → `apps/engine/`; virtual workspace root; Makefile; repo-wide ruff | — |
 | 1 | `8a7ef00` | — | `web/src/insights/registry.ts`: rules import → `apps/engine/src/appscreenmap/security_rules.json` (import path + comment only) |
-| 2 | (this) | `model`, `analyzer`, `config`, `runs`, `notes`, `media` → `packages/core` (`appscreenmap.core.*`); `tests/helpers.py` → `packages/testkit` (`appscreenmap.testkit.helpers`); `appscreenmap` becomes a namespace package (version from `appscreenmap.core.__version__`); package-layer test | Comments only, pointing at the moved files: `web/src/types.ts:1`, `web/src/views/HowItWorks.tsx:9`, `web/vite.config.ts:21`, `web/README.md:52` |
+| 2 | `2c20635` | `model`, `analyzer`, `config`, `runs`, `notes`, `media` → `packages/core` (`appscreenmap.core.*`); `tests/helpers.py` → `packages/testkit` (`appscreenmap.testkit.helpers`); `appscreenmap` becomes a namespace package (version from `appscreenmap.core.__version__`); package-layer test | Comments only, pointing at the moved files: `web/src/types.ts:1`, `web/src/views/HowItWorks.tsx:9`, `web/vite.config.ts:21`, `web/README.md:52` |
+| 3a | (this) | `driver.py` → `drivers/base.py` (`DriverError`, `Snapshot`) + `drivers/android.py` (`AdbDriver`); `driver_ios.py` → `drivers/ios.py`; `device`, `apkinfo`, `ios_hierarchy` → `packages/drivers`; dumpsys parsers `perf.py` → `drivers/dumpsys.py` (`_TOTAL_RE` → `TOTAL_FRAMES_RE`); iOS fixture moves with its test | — |

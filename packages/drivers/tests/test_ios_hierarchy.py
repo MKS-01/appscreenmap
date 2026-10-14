@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 
 from appscreenmap.core.analyzer import analyze, parse_hierarchy
-from appscreenmap.driver import DriverError
-from appscreenmap.driver_ios import IosSimulatorDriver
-from appscreenmap.ios_hierarchy import idb_to_xml, is_out_of_process
+from appscreenmap.drivers.base import DriverError
+from appscreenmap.drivers.ios import IosSimulatorDriver
+from appscreenmap.drivers.ios_hierarchy import idb_to_xml, is_out_of_process
 
 HOME = json.loads((Path(__file__).parent / "fixtures" / "duskread-ios-home.json").read_text())
 BUNDLE = "dev.mks.duskread"

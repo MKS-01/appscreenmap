@@ -10,6 +10,7 @@ resolution-markers = [
 [manifest]
 members = [
     "appscreenmap-core",
+    "appscreenmap-drivers",
     "appscreenmap-engine",
     "appscreenmap-testkit",
 ]
@@ -56,11 +57,17 @@ dependencies = [
 requires-dist = [{ name = "pillow", specifier = ">=10.0" }]
 
 [[package]]
+name = "appscreenmap-drivers"
+version = "0.1.0"
+source = { editable = "packages/drivers" }
+
+[[package]]
 name = "appscreenmap-engine"
 version = "0.1.0"
 source = { editable = "apps/engine" }
 dependencies = [
     { name = "appscreenmap-core" },
+    { name = "appscreenmap-drivers" },
     { name = "pillow" },
 ]
 
@@ -72,6 +79,7 @@ mcp = [
 [package.metadata]
 requires-dist = [
     { name = "appscreenmap-core", editable = "packages/core" },
+    { name = "appscreenmap-drivers", editable = "packages/drivers" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3,<3" },
     { name = "pillow", specifier = ">=10.0" },
 ]

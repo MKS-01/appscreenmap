@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import unquote, urlparse
 
-from .driver import DriverError, Snapshot
+from .base import DriverError, Snapshot
 from .ios_hierarchy import element_type, idb_to_xml, is_out_of_process
 
 _STATE = re.compile(r"\((Booted|Shutdown|Shutting Down|Creating)\)")
