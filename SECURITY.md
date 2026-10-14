@@ -22,7 +22,7 @@ AppScreenMap runs locally and drives a device or emulator through `adb` (or an i
   Maestro flows and the trace. Use throwaway test accounts and review `runs/` before sharing or committing it.
 - **The crawler taps real UI on the connected device.** It avoids labels like delete, pay and log out, but it is
   not a sandbox. Use an emulator or a test device.
-- Dependencies are pinned in `uv.lock` and `web/bun.lock`.
+- Dependencies are pinned in `uv.lock` and `bun.lock`.
 
 ## Supported versions
 

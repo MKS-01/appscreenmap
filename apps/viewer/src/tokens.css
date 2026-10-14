@@ -1,11 +1,11 @@
 /*
- * The viewer's token entry point. Values live in ../../design/tokens.css (shared with the HTML reports);
+ * The viewer's token entry point. Values live in @appscreenmap/design-tokens (packages/design-tokens/tokens.css, shared with the HTML reports);
  * see .claude/skills/design-system/SKILL.md. Never define a colour, size or curve here.
  *
  * Below: legacy names from before the Ghost tokens, mapped onto the semantic ones so older rules keep working.
  * Don't use them in new code; migrate a rule to the new name when you touch it, then delete the alias once unused.
  */
-@import "../../design/tokens.css";
+@import "@appscreenmap/design-tokens/tokens.css";
 
 :root {
   --border: var(--line);

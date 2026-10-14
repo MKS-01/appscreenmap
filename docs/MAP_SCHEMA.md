@@ -1,6 +1,6 @@
 # `map.json` schema (v1)
 
-The contract between the crawler (written by `packages/core/src/appscreenmap/core/model.py`) and the web viewer (`web/`).
+The contract between the crawler (written by `packages/core/src/appscreenmap/core/model.py`) and the web viewer (`apps/viewer/`).
 The crawler only **adds** fields within schema 1. Renaming or removing a field bumps `schema`.
 
 ## Files a run produces
@@ -253,7 +253,7 @@ Ratings: median ≤ budget → ok, ≤ 2.5 × budget → needs work, above → s
 ## `a11y.json`
 
 Written by `appscreenmap a11y <run>` and at the end of every crawl. These are crawl-level WCAG 2.2
-checks; the viewer's per-screen scanner rules (`web/src/a11y.ts`) are not included.
+checks; the viewer's per-screen scanner rules (`apps/viewer/src/a11y.ts`) are not included.
 
 ```jsonc
 {
@@ -335,7 +335,7 @@ the rest.
 ```
 
 Cite official sources only (Android Developers, Google Play, Apple Developer, W3C). The viewer's catalogue of
-sources is `web/src/insights/sources.ts`. Update it when a platform or store publishes its yearly changes.
+sources is `apps/viewer/src/insights/sources.ts`. Update it when a platform or store publishes its yearly changes.
 
 ## `diff/<base>/diff.json`
 

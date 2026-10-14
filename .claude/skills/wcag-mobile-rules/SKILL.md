@@ -54,7 +54,7 @@ This page covers what you need every time.
 | Source | Rules | Where |
 |---|---|---|
 | Crawler (`appscreenmap a11y`, `a11y.json`) | 2.5.8 with spacing, 2.5.3, 2.1.1, 4.1.2 role, 2.4.11, 1.3.4, 1.4.4 truncation, 1.1.1 review, 2.4.2 review, 3.2.2, 3.2.3, 3.2.4, 3.2.6, 3.3.7, 3.3.8 review, 2.5.7 review | `packages/a11y/src/appscreenmap/a11y/checks.py` |
-| Viewer (web session) | missing label (4.1.2/1.1.1), unlabeled field (3.3.2/4.1.2), field contentDescription, 48 dp touch target (guideline), contrast estimate (1.4.3), duplicate description (2.4.6), redundant role words (best practice) | `web/src/a11y.ts` |
+| Viewer (web session) | missing label (4.1.2/1.1.1), unlabeled field (3.3.2/4.1.2), field contentDescription, 48 dp touch target (guideline), contrast estimate (1.4.3), duplicate description (2.4.6), redundant role words (best practice) | `apps/viewer/src/a11y.ts` |
 | Device tests (the `a11y-audit` skill) | 1.4.4 / 1.4.10 at font scale 2.0, 1.3.4 rotation, 2.1.1 / 2.4.3 / 2.4.7 with Switch Access or keyboard, TalkBack spot checks | manual with adb |
 | Manual only | Media (1.2.x), 1.3.3, 1.4.1, 1.4.13, 2.2.x, 2.3.1, 2.5.1, 2.5.2, 2.5.4, 3.1.x, 3.3.1, 3.3.3, 3.3.4, 4.1.3 | checklist in `a11y-audit` |
 

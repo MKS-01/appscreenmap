@@ -84,7 +84,7 @@ NATIVE_ADVISORY = {"2.4.1", "2.4.5", "3.2.3", "3.2.4", "3.2.6"}
 # Criteria with an adb/device test in the a11y-audit skill.
 DEVICE_TESTS = {"1.3.2", "1.3.4", "1.4.4", "1.4.10", "2.1.1", "2.1.2", "2.4.3", "2.4.7", "2.4.11", "3.2.1"}
 
-# The web viewer's per-screen rules (web/src/a11y.ts) and the criterion each maps to.
+# The web viewer's per-screen rules (apps/viewer/src/a11y.ts) and the criterion each maps to.
 # sc None = a platform guideline / best practice, not a WCAG requirement.
 VIEWER_RULES: dict[str, dict] = {
     "label-missing": {"sc": "4.1.2", "title": "Missing label", "severity": "error"},

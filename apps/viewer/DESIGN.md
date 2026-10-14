@@ -1,6 +1,6 @@
 # Viewer design system
 
-The rules for every UI change in `web/`. Live reference: open the viewer at **`#/design`**, which renders
+The rules for every UI change in `apps/viewer/`. Live reference: open the viewer at **`#/design`**, which renders
 these tokens and components from the real CSS. Motion and interaction follow Emil Kowalski's design-engineering
 approach (the `emil-design-eng` skill): invisible details done right, motion only with a purpose.
 
@@ -11,16 +11,16 @@ approach (the `emil-design-eng` skill): invisible details done right, motion onl
 2. **Show the real thing.** Prefer the app's own screenshots and real run data over illustrations. Explanations
    use the latest run when one exists (see How it works).
 3. **Every pixel earns its place.** Dark only (Ghost dark × Xcode blue, see the `design-system` skill). No
-   hard-coded colours: every value comes from `design/tokens.css`.
+   hard-coded colours: every value comes from `packages/design-tokens/tokens.css`.
 4. **Fast beats fancy.** Views people use all day (map, screens, detail, tables) get almost no motion. Rarely
    seen pages (How it works, empty states) may use explanatory motion.
 5. **Accessible by default.** Keyboard reachable, visible focus, labelled icons, `prefers-reduced-motion`
    respected. We ship an accessibility reviewer; the viewer must pass its own bar.
 
-## Tokens (`design/tokens.css`)
+## Tokens (`packages/design-tokens/tokens.css`)
 
 The single source for the viewer and the HTML reports; the `design-system` skill owns the values, the rules and
-how to change one (with a contrast check). `web/src/tokens.css` only imports it and keeps legacy aliases.
+how to change one (with a contrast check). `apps/viewer/src/tokens.css` only imports it and keeps legacy aliases.
 
 | Group | Tokens | Use |
 |---|---|---|

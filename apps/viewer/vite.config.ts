@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
 // In dev, serve the crawler's output directory at /runs (same URL layout as `appscreenmap serve`).
-const runsRoot = path.resolve(__dirname, process.env.APPSCREENMAP_RUNS ?? "../runs");
+const runsRoot = path.resolve(__dirname, process.env.APPSCREENMAP_RUNS ?? "../../runs");
 
 const TYPES: Record<string, string> = {
   ".json": "application/json",
@@ -80,5 +80,5 @@ function serveRuns(): Plugin {
 
 export default defineConfig({
   plugins: [react(), serveRuns()],
-  server: { port: 5173, fs: { allow: [".."] } }, // the viewer imports design/tokens.css and the security rule catalogue from the repo root
+  server: { port: 5173, fs: { allow: ["../.."] } }, // workspace packages (design tokens, security rules) live in packages/
 });

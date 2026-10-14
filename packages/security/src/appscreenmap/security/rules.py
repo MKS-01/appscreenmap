@@ -16,7 +16,7 @@ PATH = Path(__file__).with_name("rules.json")
 SEVERITIES = ("error", "warning", "info")
 PLATFORMS = ("android", "ios", "both")
 STATUSES = ("planned", "ready")
-# Only first-party documentation backs a rule (same policy as web/src/insights/sources.ts).
+# Only first-party documentation backs a rule (same policy as apps/viewer/src/insights/sources.ts).
 OFFICIAL_HOSTS = (
     "developer.android.com",
     "developer.apple.com",

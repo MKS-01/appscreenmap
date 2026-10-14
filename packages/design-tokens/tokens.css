@@ -1,7 +1,7 @@
 /*
  * AppScreenMap design tokens: Ghost dark × Xcode blue.
  * The single source of colour, type, space, radius and motion for everything AppScreenMap draws:
- * the web viewer (web/, imported by web/src/tokens.css) and, next, the HTML reports the crawler writes.
+ * the web viewer (apps/viewer/, imported by apps/viewer/src/tokens.css) and, next, the HTML reports the crawler writes.
  * Rules, rationale and how to change a value: .claude/skills/design-system/SKILL.md.
  *
  * Two layers. Primitives are raw values and are never used by components directly.

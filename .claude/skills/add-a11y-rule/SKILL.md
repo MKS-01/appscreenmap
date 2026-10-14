@@ -11,7 +11,7 @@ description: Add or improve an automated WCAG 2.2 accessibility check in AppScre
 |---|---|---|
 | Several screens, flows (`reach_path`, `autofill`), crawl events, manifest/device facts | `packages/a11y/src/appscreenmap/a11y/checks.py` | crawler (this session) |
 | One screen's hierarchy only | `a11y/checks.py` **if** the viewer doesn't already cover it (see the table in `wcag-mobile-rules`) | crawler |
-| Screenshot pixels in the browser (contrast), interactive UI | `web/src/a11y.ts` | **web session**. Don't edit it. Write the spec below and give it to the user to pass on. |
+| Screenshot pixels in the browser (contrast), interactive UI | `apps/viewer/src/a11y.ts` | **web session**. Don't edit it. Write the spec below and give it to the user to pass on. |
 | Data the crawl doesn't capture yet (e.g. focus traversal, live regions, autofill hints) | First extend the driver/explorer to record it (`extend-crawler`), add it to `map.json` (additive), then write the rule | crawler |
 
 Never duplicate a viewer rule in Python. If a viewer rule is wrong (e.g. it calls 48 dp a WCAG

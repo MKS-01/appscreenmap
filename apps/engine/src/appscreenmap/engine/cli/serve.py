@@ -18,7 +18,9 @@ def _web_dist() -> Path | None:
         os.environ.get("APPSCREENMAP_WEB"),
         Path(__file__).resolve().parents[2] / "web",  # bundled in the wheel: appscreenmap/web
     ]
-    candidates += [d / "web" / "dist" for d in Path(__file__).resolve().parents]  # source checkout
+    candidates += [
+        d / "apps" / "viewer" / "dist" for d in Path(__file__).resolve().parents
+    ]  # source checkout
     for c in candidates:
         if c and (Path(c) / "index.html").is_file():
             return Path(c)
@@ -100,7 +102,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
 def cmd_serve(args) -> int:
     dist = _web_dist()
     if dist is None:
-        print("Web viewer not built. Run: cd web && bun install && bun run build", file=sys.stderr)
+        print("Web viewer not built. Run: bun install && make viewer", file=sys.stderr)
         return 2
     runs_root = Path(args.runs).resolve()
     runs_root.mkdir(parents=True, exist_ok=True)

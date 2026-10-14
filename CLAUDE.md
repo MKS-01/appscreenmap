@@ -5,7 +5,9 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 
 ## Layout
 
-- The repo is becoming a monorepo (`apps/` + `packages/`); target layout and migration steps in `docs/MONOREPO.md`.
+- A monorepo: `apps/` (what people run) + `packages/` (building blocks); layout, plan and the migration log in
+  `docs/MONOREPO.md`. Two workspaces: uv for Python (`pyproject.toml`), Bun for TypeScript (`package.json`: the
+  viewer, `packages/design-tokens`, and `packages/security` as `@appscreenmap/security-rules`). `make setup`.
 - Python is a uv workspace (the root `pyproject.toml` is virtual). Everything imports as `appscreenmap.*` (a namespace
   package: never add `src/appscreenmap/__init__.py`). A package imports only what its `pyproject.toml` depends on
   (`packages/testkit/tests/test_layers.py` checks).
@@ -19,10 +21,13 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
     `packages/exporters/`: Maestro, Mermaid
   - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`;
     `appscreenmap.testkit.fakedevice`: a scriptable fake app/driver)
-  - `apps/engine/`: `appscreenmap.engine`: the CLI (`engine/cli/`, one module per command group) and the MCP server (`engine/mcp_server.py`), on top of every package
+  - `apps/engine/`: `appscreenmap.engine`: the CLI (`engine/cli/`, one module per command group) and the MCP
+    server (`engine/mcp_server.py`), on top of every package
   - tests live next to their code (`<package>/tests/`), on synthetic hierarchies; no device needed
-- `web/`: React viewer, **owned by a separate session**. Don't edit it from crawler work.
-- `design/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode blue, Geist), for
+- `apps/viewer/`: React viewer, **owned by a separate session**. Don't edit it from crawler work. It imports the
+  tokens and the security rules as workspace packages, never by relative path.
+- `packages/design-tokens/tokens.css`: the single source of colour, type, space and motion (Ghost dark × Xcode
+  blue, Geist), for
   the viewer and the HTML reports. Change it only through the `design-system` skill.
 - `samples/`: the end-to-end playground. `playground-app/` (purpose-built Compose app, v1/v2 APKs + source,
   every screen = a scenario) and `duskread/` (real app APK). `samples/demo.sh` runs every scenario.
@@ -31,7 +36,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 
 ## Rules
 
-- `map.json` is the contract with `web/`. Within schema 1, only add fields; never rename or remove
+- `map.json` is the contract with `apps/viewer/`. Within schema 1, only add fields; never rename or remove
   them. Update `docs/MAP_SCHEMA.md` in the same change.
 - Test against the samples (Playground for known answers, DuskRead for a real app), not stock apps. Use
   `--clear-data` to map the first-run state. When a feature needs a new scenario, add a screen to the
@@ -55,7 +60,7 @@ uv run appscreenmap perf runs/duskread/<run-id>     # load time per screen, jank
 
 ## Skills (`.claude/skills/`)
 
-- `design-system`: the token system (`design/tokens.css`), its rules and decisions, and the contrast check
+- `design-system`: the token system (`packages/design-tokens/tokens.css`), its rules and decisions, and the contrast check
 - `ios-simulator`: set up, run and debug an iOS Simulator crawl (build DuskRead, simctl + idb, diagnosing a bad crawl)
 - `security-audit`: run `appscreenmap security` on an Android build (manifest, secrets, data at rest, Frida log) and judge the result
 - `security-rules`: the security rule catalogue (`packages/security/.../rules.json`): ids, severities, fixes, official sources

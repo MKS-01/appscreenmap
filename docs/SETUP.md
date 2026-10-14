@@ -11,14 +11,14 @@ command, configuration, end-to-end tests, CI and MCP. For how the crawler works 
 | **Python** | 3.11 or newer, with [uv](https://docs.astral.sh/uv/) |
 | **Android** | Platform-tools (`adb`) and a running emulator or USB device |
 | **iOS** | macOS with Xcode, a booted simulator, and [idb](https://fbidb.io): `brew install facebook/fb/idb-companion` and `uv tool install fb-idb` |
-| **Dashboard** | [Bun](https://bun.sh), to build the viewer once from a source checkout (`web/dist` is not committed, so `serve` won't start until it exists) |
+| **Dashboard** | [Bun](https://bun.sh), to build the viewer once from a source checkout (`apps/viewer/dist` is not committed, so `serve` won't start until it exists) |
 | **Recommended** | `aapt2` (Android build-tools): app details, activity coverage and the security manifest checks |
 | **Optional** | An AI agent (Claude Code or any MCP client) for the hands-off flow; [Maestro](https://maestro.mobile.dev) to run the generated flows; [Frida](https://frida.re) (`uv tool install frida-tools`) for the dynamic security check |
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
 uv sync
-(cd web && bun install && bun run build)   # the dashboard, one time
+bun install && make viewer     # the dashboard, one time
 uv run appscreenmap doctor     # checks adb, devices, simulators, idb, aapt2, viewer build
 ```
 

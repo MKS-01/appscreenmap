@@ -36,7 +36,7 @@ Keep each layer ignorant of the ones after it.
    `appscreenmap report` with the previous run.
 4. Docs: README (user-facing), `docs/MAP_SCHEMA.md` (data), `docs/PLAN.md` (roadmap status),
    `examples/appscreenmap.toml` (options).
-5. Don't touch `web/`. If the viewer should show the new data, describe the field and its meaning
+5. Don't touch `apps/viewer/`. If the viewer should show the new data, describe the field and its meaning
    to the user so the web session can pick it up.
 6. Safety: the crawler must never tap `blocked_text` matches, never leave the app, and always
    restore device state (animations, pinning) in `cmd_crawl`'s `finally` (`apps/engine/src/appscreenmap/engine/cli/crawl.py`).

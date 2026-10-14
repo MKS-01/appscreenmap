@@ -1,9 +1,9 @@
 # Day-to-day commands for the whole monorepo (Python via uv, TypeScript via Bun). See docs/MONOREPO.md.
 .PHONY: setup test lint fmt check viewer viewer-dev demo
 
-setup:        ## install everything: Python workspace + viewer deps
+setup:        ## install everything: Python workspace (uv) + TypeScript workspace (Bun)
 	uv sync
-	cd web && bun install
+	bun install
 
 test:         ## Python tests (no device needed)
 	uv run pytest -q
@@ -18,11 +18,11 @@ fmt:          ## fix lint and formatting
 
 check: lint test   ## everything CI checks on the Python side
 
-viewer:       ## build the dashboard (web/dist), needed by `appscreenmap serve`
-	cd web && bun run build
+viewer:       ## build the dashboard (apps/viewer/dist), needed by `appscreenmap serve`
+	cd apps/viewer && bun run build
 
 viewer-dev:   ## dashboard dev server with hot reload
-	cd web && bun run dev
+	cd apps/viewer && bun run dev
 
 demo:         ## crawl every sample scenario (needs an emulator; see samples/README.md)
 	samples/demo.sh

@@ -118,7 +118,7 @@ an [MCP server](docs/SETUP.md#agents-mcp) so it can query the map instead of exp
 - **Crawl replay**: step through the crawl to see what was tapped and why.
 - **How it works**: the crawl loop, walked through on your own latest run.
 
-To work on the viewer, see [`web/README.md`](web/README.md).
+To work on the viewer, see [`apps/viewer/README.md`](apps/viewer/README.md).
 
 ## Export and share
 
@@ -153,7 +153,7 @@ Ask your agent, or run it yourself:
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
 uv sync
-(cd web && bun install && bun run build)         # the dashboard, one time
+bun install && make viewer                       # the dashboard, one time
 uv run appscreenmap doctor                       # checks the prerequisites above, says what is missing
 uv run appscreenmap crawl --apk path/to/app.apk  # Android: install + map
 uv run appscreenmap serve                        # open the dashboard

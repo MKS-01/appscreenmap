@@ -1,8 +1,8 @@
-// Checks the WCAG contrast of every text/status token against every surface in design/tokens.css.
+// Checks the WCAG contrast of every text/status token against every surface in packages/design-tokens/tokens.css.
 // Run after changing any colour:   bun .claude/skills/design-system/scripts/contrast.ts
 // Exit 1 when a required pair falls below its minimum.
 
-const file = new URL("../../../../design/tokens.css", import.meta.url);
+const file = new URL("../../../../packages/design-tokens/tokens.css", import.meta.url);
 const css = await Bun.file(file).text();
 
 const raw = new Map<string, string>();

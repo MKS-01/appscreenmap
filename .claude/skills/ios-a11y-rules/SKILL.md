@@ -50,7 +50,7 @@ The crawler reads what `idb ui describe-all` returns (see `ios-simulator`): the 
 | Check | Criterion | iOS evidence | Status |
 |---|---|---|---|
 | Control not reachable (absent from tree) | 4.1.2, 2.1.1, 2.5.3 | crawl can't reach it / screenshot shows it | **found by crawling**; no dedicated rule yet |
-| Tappable element with no `AXLabel` | 4.1.2, 1.1.1 | Button with empty label | works in the **viewer's scanner** (`label-missing`, `web/src/a11y.ts`) for a control that is present but unnamed; no crawler rule yet |
+| Tappable element with no `AXLabel` | 4.1.2, 1.1.1 | Button with empty label | works in the **viewer's scanner** (`label-missing`, `apps/viewer/src/a11y.ts`) for a control that is present but unnamed; no crawler rule yet |
 | Target < 44 pt (warn) / < 24 pt (fail) | 2.5.8 | `frame` | viewer scanner flags < 44 pt (Apple HIG) as a warning; the crawler's `target-size-min` (`a11y.json`) fails < 24 pt with the spacing exception |
 | Section titles without Header trait | 1.3.1, 2.4.6 | no `Header` in traits on any title-like text | planned; DuskRead has 0 `.isHeader` |
 | No `accessibilityIdentifier` | (testability, not WCAG) | `AXUniqueId` null | reported as an info on screens with actions |
@@ -87,7 +87,7 @@ A custom control built from `onTapGesture` is invisible to assistive tech: use `
 ## Adding an iOS rule
 
 Follow `add-a11y-rule`. iOS runs have `run.device.platform == "ios"`; rules that read Android-only attributes (resource ids
-with `/`, activities, `content-desc`) must branch on it or be skipped. In the viewer (`web/src/a11y.ts`) wording that differs
+with `/`, activities, `content-desc`) must branch on it or be skipped. In the viewer (`apps/viewer/src/a11y.ts`) wording that differs
 by platform lives in the `IOS` overrides (read through `useRules()`, set by the run shell's `PlatformCtx`), and
 `TARGET_MIN` holds the per-platform target size (48 dp Android, 44 pt iOS). The translated XML puts `AXLabel` in `text` (or
 `hint` for fields) and `AXUniqueId` in `resource-id` as `<bundle>:id/<id>`. Test with a recorded tree
