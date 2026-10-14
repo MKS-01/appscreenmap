@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "checked": "2026-10-15",
+  "note": "Dated store rules the audit measures a build against. Refresh after each Play / App Store announcement (yearly: Play in spring for the August deadline, Apple in spring for the April deadline). Only dates published by the stores belong in `tiers`; anything expected goes in `expected`.",
+  "android": {
+    "tiers": {
+      "phone": [
+        {"api": 35, "from": "2025-08-31"},
+        {"api": 36, "from": "2026-08-31", "extension_until": "2026-11-01"}
+      ],
+      "wear": [
+        {"api": 34, "from": "2025-08-31"},
+        {"api": 35, "from": "2026-08-31", "extension_until": "2026-11-01"}
+      ],
+      "tv": [{"api": 34, "from": "2025-08-31"}],
+      "automotive": [
+        {"api": 34, "from": "2025-08-31"},
+        {"api": 35, "from": "2026-08-31", "extension_until": "2026-11-01"}
+      ],
+      "xr": [{"api": 34, "from": "2026-08-31"}]
+    },
+    "existing_app_min_api": 35,
+    "expected": "Google has published no requirement beyond API 36 yet. The yearly pattern (a new level due 31 August) points to API 37 in 2027: confirm on the Play Console help page before planning around it.",
+    "refs": [
+      {
+        "title": "Target API level requirements for Google Play apps",
+        "url": "https://support.google.com/googleplay/android-developer/answer/11926878",
+        "publisher": "Google Play Console Help"
+      }
+    ]
+  },
+  "ios": {
+    "sdk": {"min_major": 26, "from": "2026-04-28", "text": "built with Xcode 26 or later using an SDK for iOS 26 or iPadOS 26"},
+    "deployment": {"min_major": 13, "from": "2026-09-09"},
+    "expected": "Apple has published nothing beyond the iOS 26 SDK rule. It has raised the SDK minimum every April since 2023: expect the 27 SDKs from April 2027 and confirm on Apple's Upcoming Requirements page.",
+    "refs": [
+      {
+        "title": "Upcoming requirements",
+        "url": "https://developer.apple.com/news/upcoming-requirements/",
+        "publisher": "Apple Developer"
+      }
+    ]
+  }
+}

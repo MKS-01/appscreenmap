@@ -22,6 +22,8 @@ from appscreenmap.drivers.base import DriverError
 from appscreenmap.drivers.device import describe
 from appscreenmap.exporters.export import export_run
 from appscreenmap.reports.perf import summarize as summarize_perf
+from appscreenmap.store import android_facts, build_audit, ios_facts
+from appscreenmap.store import write_audit as write_store_audit
 
 from .serve import _web_dist
 
@@ -171,6 +173,30 @@ def _setup_ios(args, cfg: CrawlConfig):
     return d, app, package, None
 
 
+def _store_audit(run_dir: Path, args, d, package: str, ios: bool) -> dict | None:
+    """Write audits/store.json from the crawled build's SDK levels. Never fails a crawl; None if it couldn't run."""
+    try:
+        if ios:
+            facts = ios_facts(args.app) if args.app else None
+        elif args.apk:
+            facts = android_facts(args.apk)
+        else:  # crawled an installed app: read the SDK levels from a pulled copy of its APK
+            remote = d.apk_path(package)
+            facts = None
+            if remote:
+                with tempfile.TemporaryDirectory() as tmp:
+                    d.pull(remote, Path(tmp) / "base.apk")
+                    facts = android_facts(Path(tmp) / "base.apk")
+        if facts is None:
+            return None
+        audit = build_audit(facts)
+        write_store_audit(run_dir, audit)
+        return audit
+    except (DriverError, OSError, ValueError, KeyError) as e:
+        print(f"  store readiness skipped: {e}", file=sys.stderr)
+        return None
+
+
 def cmd_crawl(args) -> int:
     cfg = CrawlConfig.load(
         args.config,
@@ -283,6 +309,7 @@ def cmd_crawl(args) -> int:
         export = export_run(run_dir)
         audit = audit_run(run_dir)
         write_reports(run_dir)
+        store = _store_audit(run_dir, args, d, package, ios)
         perf = summarize_perf(run_dir, budget_ms=cfg.perf_budget_ms)
         update_index(runs_root)
     st = amap.stats()
@@ -300,6 +327,8 @@ def cmd_crawl(args) -> int:
             f"(median); {len(perf['findings'])} perf finding(s): appscreenmap perf {run_dir}"
         )
     print(f"  {audit['summary']['issues']} WCAG 2.2 findings: {run_dir / 'a11y-report.html'}")
+    if store and store["status"] != "not_run":
+        print(f"  store readiness: {store.get('status_label') or store['status']}: {store['summary']}")
     print(f"  view it: appscreenmap serve --runs {runs_root}")
     return code
 

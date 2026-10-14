@@ -9,6 +9,7 @@ appscreenmap-engine = { workspace = true }
 appscreenmap-core = { workspace = true }
 appscreenmap-drivers = { workspace = true }
 appscreenmap-security = { workspace = true }
+appscreenmap-store = { workspace = true }
 appscreenmap-crawler = { workspace = true }
 appscreenmap-a11y = { workspace = true }
 appscreenmap-reports = { workspace = true }
@@ -23,6 +24,7 @@ dev = ["appscreenmap-engine[mcp]", "appscreenmap-testkit", "pytest>=8.0", "ruff>
 line-length = 110
 target-version = "py311"
 src = ["apps/*/src", "packages/*/src"]  # first-party code, for import sorting
+extend-exclude = [".claude/skills/play-policy-insights"]  # vendored from github.com/android/skills, kept unchanged
 
 [tool.pytest.ini_options]
 testpaths = ["apps/*/tests", "packages/*/tests"]

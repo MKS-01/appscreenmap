@@ -18,6 +18,7 @@ members = [
     "appscreenmap-regression",
     "appscreenmap-reports",
     "appscreenmap-security",
+    "appscreenmap-store",
     "appscreenmap-testkit",
 ]
 
@@ -110,6 +111,7 @@ dependencies = [
     { name = "appscreenmap-regression" },
     { name = "appscreenmap-reports" },
     { name = "appscreenmap-security" },
+    { name = "appscreenmap-store" },
     { name = "pillow" },
 ]
 
@@ -128,6 +130,7 @@ requires-dist = [
     { name = "appscreenmap-regression", editable = "packages/regression" },
     { name = "appscreenmap-reports", editable = "packages/reports" },
     { name = "appscreenmap-security", editable = "packages/security" },
+    { name = "appscreenmap-store", editable = "packages/store" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3,<3" },
     { name = "pillow", specifier = ">=10.0" },
 ]
@@ -180,6 +183,17 @@ requires-dist = [
 name = "appscreenmap-security"
 version = "0.1.0"
 source = { editable = "packages/security" }
+dependencies = [
+    { name = "appscreenmap-drivers" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "appscreenmap-drivers", editable = "packages/drivers" }]
+
+[[package]]
+name = "appscreenmap-store"
+version = "0.1.0"
+source = { editable = "packages/store" }
 dependencies = [
     { name = "appscreenmap-drivers" },
 ]

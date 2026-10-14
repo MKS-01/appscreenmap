@@ -113,6 +113,7 @@ claude mcp add appscreenmap -- appscreenmap mcp
 | Map and review a crawl | [`crawl-app`](.claude/skills/crawl-app/SKILL.md), [`tune-crawler`](.claude/skills/tune-crawler/SKILL.md) |
 | Accessibility (WCAG 2.2) | [`a11y-audit`](.claude/skills/a11y-audit/SKILL.md) |
 | iOS Simulator setup | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
+| Store deadlines (Play target API, App Store SDK) | [`store-requirements`](.claude/skills/store-requirements/SKILL.md) |
 | Test export | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
 
 ## Dashboard
@@ -139,10 +140,15 @@ Mermaid graph (`map.mmd`), a one-file WCAG report (`a11y-report.html`, evidence 
 | `a11y <run> --report` | WCAG 2.2 checks and report |
 | `perf <run>` | Load time, jank, cold start |
 | `security <run> --apk app.apk` | Manifest, code, secrets and data-at-rest checks (`--app` for an iOS build) |
+| `store [run] --apk app.apk` · `--app App.ipa` | Target / compile / min SDK (Android) or build SDK and deployment target (iOS) against Google Play and App Store rules, with every deadline in the next 365 days. A crawl writes it too |
 | `verify` | Replay paths on a new build; exit codes for CI |
 | `serve` · `mcp` | Dashboard · MCP server |
 
 Run as `appscreenmap <command>`. More: `appscreenmap --help`, [docs/SETUP.md](docs/SETUP.md).
+
+After pulling new code, run `make install` again to rebuild the `appscreenmap` command. The agent skills from Google's
+[android/skills](https://github.com/android/skills) stay current with `make skills-check` and `make skills-sync`, and
+Apple's Xcode 27 skills with `make skills-xcode`.
 
 ## Roadmap
 
@@ -153,7 +159,7 @@ Details in [docs/PLAN.md](docs/PLAN.md).
 | **Adaptive UI review** | Crawl at phone, tablet and foldable window sizes (compact, medium, expanded width classes) and check each layout against Android's adaptive-layout guidance | Only manifest orientation locks and the crawl's window class are real; shows as "sample data" in the dashboard |
 | **Security audit, remaining rule** | Sensitive data in logs (`sensitive-logging`), and confirming code findings instead of only matching strings | `appscreenmap security` works today on Android (`--apk`) and iOS (`--app`): manifest and Info.plist flags, risky API use in the code, hard-coded secrets, data at rest, and runtime pinning and cleartext checks from a Frida log (18 of 19 rules). See the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
 
-Also planned: platform-change checks per Android/iOS release and store-readiness checks (target SDK deadlines).
+Also planned: platform-change checks per Android/iOS release. Store readiness (target SDK and build SDK deadlines) is built: `appscreenmap store`.
 
 ## License
 

@@ -17,6 +17,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   - `packages/a11y/`: WCAG checks (`checks.py`), criteria (`wcag.py`), HTML/MD report
   - `packages/security/`: all security tooling (scanner modules, `rules.json` catalogue also read by the viewer,
     `hooks/frida-observe.js`); stdlib only
+  - `packages/store/`: store readiness (target / compile / min SDK vs Play and App Store rules, 365 days ahead; `requirements.json`)
   - `packages/reports/`: health report, perf summary · `packages/regression/`: verify, visual diff ·
     `packages/exporters/`: Maestro, Mermaid
   - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`;
@@ -68,6 +69,8 @@ uv run appscreenmap-engine perf runs/playground/<run-id>     # load time per scr
 - `design-system`: the token system (`packages/design-tokens/tokens.css`), its rules and decisions, and the contrast check
 - `ios-simulator`: set up, run and debug an iOS Simulator crawl (build for the simulator, simctl + idb, diagnosing a bad crawl)
 - `security-audit`: run `appscreenmap security` on an Android build (manifest, secrets, data at rest, Frida log) and judge the result
+- `store-requirements`: refresh the dated Play / App Store rules in `packages/store/.../requirements.json` (each spring, after announcements)
+- `play-policy-insights`, `android-permissions-security`, `android-intent-security`, `edge-to-edge`, `adaptive`: unchanged copies from github.com/android/skills (Apache-2.0; `make skills-sync`) for audits and scans; `audit-xcode-security-settings`, `uikit-app-modernization`: Apple's, synced from Xcode 27 (`make skills-xcode`, git-ignored, no license). Audit/scan skills only, no development skills; excluded from ruff
 - `security-rules`: the security rule catalogue (`packages/security/.../rules.json`): ids, severities, fixes, official sources
 - `ios-a11y-rules`: iOS accessibility (VoiceOver, Dynamic Type, HIG 44 pt) mapped to WCAG, what is detected and the Swift fix
 - `crawl-app`: run a crawl and review the result
