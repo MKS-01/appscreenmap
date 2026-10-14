@@ -24,11 +24,10 @@
 <p align="center">
   <a href="#why-appscreenmap">Why</a> &nbsp;·&nbsp;
   <a href="#how-it-works-for-you">How it works</a> &nbsp;·&nbsp;
+  <a href="#get-started">Get started</a> &nbsp;·&nbsp;
+  <a href="#continue-with-your-agent">Your agent</a> &nbsp;·&nbsp;
   <a href="#the-dashboard">Dashboard</a> &nbsp;·&nbsp;
-  <a href="#export-and-share">Export</a> &nbsp;·&nbsp;
-  <a href="#prerequisites">Prerequisites</a> &nbsp;·&nbsp;
-  <a href="#quick-start">Run it</a> &nbsp;·&nbsp;
-  <a href="#inside-the-repo">Inside</a>
+  <a href="#export-and-share">Export</a>
 </p>
 
 <p align="center"><sub>Deterministic crawler, no model calls. Plain files out.</sub></p>
@@ -78,12 +77,64 @@ answers for the agent itself ("how do I reach Settings?"). The map is the produc
    looks off (two screens merged, wasted taps, a failed route) it tunes the config and crawls again. Then it
    generates the test flows and runs whatever else you asked for: audits, a comparison with the last build, a
    check that a new build still reaches every screen.
-3. **You review in the dashboard.** Run `appscreenmap serve` and everything is there: the map, every screen, the
+3. **You review in the dashboard.** Run `appscreenmap` and everything is there: the map, every screen, the
    test flows, the audits and their findings, the diff against the last build. No digging through run folders or opening
    reports one by one. Triage findings, then export a report to share.
 
 The agent is Claude Code or any MCP client. The repo ships [skills](.claude/skills/) that teach it each job, and
 an [MCP server](docs/SETUP.md#agents-mcp) so it can query the map instead of exploring the app again.
+
+## Get started
+
+Built and tested on **macOS** (Apple silicon). To crawl you need an Android emulator or device (`adb`, from Android
+Studio), or for iOS (beta) Xcode with a booted Simulator; `appscreenmap setup` checks the rest and says what's missing.
+
+**1. Install**
+
+```bash
+git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
+make install           # the engine, the dashboard and the `appscreenmap` command (needs uv and Bun)
+```
+
+After the first release this becomes one line, no clone needed:
+`curl -fsSL https://github.com/MKS-01/appscreenmap/releases/latest/download/install.sh | sh`.
+
+**2. Set up**
+
+```bash
+appscreenmap setup     # installs what's missing, then checks adb, devices, simulators and idb
+```
+
+**3. Start**
+
+```bash
+appscreenmap           # the terminal home, with the dashboard open in your browser
+```
+
+The terminal home shows what's connected, whether the latest run is ready to ship (crashes, accessibility,
+performance, security) and the one next step worth taking: `x` runs it. With no runs yet, `x` maps the Playground
+sample app and the crawl fills in live. Every command also works on its own (`appscreenmap crawl --apk app.apk`,
+`appscreenmap a11y <run> --report`, `appscreenmap --help`). `appscreenmap update` keeps a release install current; from a checkout, `git pull && make install`.
+
+## Continue with your agent
+
+The terminal home tells you where things stand; the work itself is meant to be handed to an agent.
+
+1. **Open a session next to it.** Press `t` in the terminal home for a new terminal window in the same folder, then
+   start Claude Code with `claude`. The repo's [skills](.claude/skills/) teach it every job below, and `CLAUDE.md`
+   holds the project rules.
+2. **Ask in plain language**, or hand it the next step the terminal home suggests:
+
+   > *Map the Playground and review the map.*
+   > *Audit accessibility on the latest run at WCAG 2.2 AA and triage the findings.*
+   > *Crawl the new build and compare it with the last run.*
+   > *The last crawl merged two screens. Fix it and crawl again.*
+
+3. **Watch it land.** The agent's crawl shows up live on the terminal home's crawl tab and in the dashboard, and its
+   audits update the readiness panel as soon as they're written. Review, triage and export in the dashboard.
+
+Any other MCP client can use the maps too: `claude mcp add appscreenmap -- appscreenmap mcp` registers the
+[MCP server](docs/SETUP.md#agents-mcp) (find a screen, get the route to it, go there on the device, read findings).
 
 ### What the agent handles
 
@@ -98,9 +149,12 @@ an [MCP server](docs/SETUP.md#agents-mcp) so it can query the map instead of exp
 | **iOS setup** | Builds the app, boots the simulator, diagnoses a crawl that maps too little | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
 | **Tests** | Generates a [Maestro](https://maestro.mobile.dev) flow per screen; more E2E tools can be added | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
 
+More: [setup and every command](docs/SETUP.md), [how the crawl and audits work](docs/ARCHITECTURE.md), the
+[`map.json` format](docs/MAP_SCHEMA.md) and the [roadmap](docs/PLAN.md); the sample app is in [`samples/`](samples/README.md).
+
 ## The dashboard
 
-`appscreenmap serve` opens a viewer on your `runs/` folder. It has no backend and updates live while a crawl runs.
+`appscreenmap` opens it on your `runs/` folder (`appscreenmap serve` does just that). It has no backend and updates live while a crawl runs.
 
 - **Insights**: the overview. One scored audit per row (accessibility, performance, stability, coverage and
   release readiness), sorted by what needs you first, each with charts and findings, the fix and its official source.
@@ -130,68 +184,6 @@ To work on the viewer, see [`apps/viewer/README.md`](apps/viewer/README.md).
 
 The WCAG report is written after every crawl, is one file you can attach to a ticket, and treats anything that
 needs a person or a device as *Not tested*, never as a pass. It is evidence, not a conformance claim.
-
-## Prerequisites
-
-AppScreenMap is built and tested on **macOS** (Apple silicon) for now; other platforms may work but aren't tested.
-
-| You need | For | Notes |
-|---|---|---|
-| Python 3.11+ and [uv](https://docs.astral.sh/uv/) | everything | `make setup` installs the engine (a uv workspace) |
-| [Bun](https://bun.sh) | the dashboard | `make setup` installs it, `make viewer` builds it once; `serve` won't start without it |
-| Android: `adb` (platform-tools) and an emulator or USB device | Android crawls | Android Studio's SDK has both |
-| Android build-tools (`aapt2`) | app details, activity coverage, the security manifest checks | recommended; `doctor` finds it in your SDK |
-| iOS: macOS, Xcode, a booted Simulator, and [idb](https://fbidb.io) | iOS crawls (beta) | `brew install facebook/fb/idb-companion` and `uv tool install fb-idb`; the app must be a simulator `.app`, not an `.ipa` |
-| An AI agent: Claude Code or any MCP client | the hands-off flow | optional: every command also runs by hand |
-| [Maestro](https://maestro.mobile.dev), [Frida](https://frida.re) | running the generated flows; the dynamic security check | optional |
-
-## Quick start
-
-Ask your agent, or run it yourself:
-
-```bash
-git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
-make setup                                       # Python (uv) and TypeScript (Bun) workspaces
-make viewer                                      # build the dashboard, one time
-uv run appscreenmap-engine doctor                       # checks the prerequisites above, says what is missing
-uv run appscreenmap-engine crawl --apk path/to/app.apk  # Android: install + map
-uv run appscreenmap-engine serve                        # open the dashboard
-```
-
-`make cli` builds the `appscreenmap` binary (`apps/cli/dist/appscreenmap`): run it with no arguments for a terminal
-home with the dashboard, device status, your runs (live while a crawl runs) and agent prompts in one place; every other
-command works as above, plus `setup`, `update`, `paths` and `clean`. With the first release, installing will be one line
-(`curl … install.sh | sh`, see [`apps/cli`](apps/cli/README.md)).
-On the iOS Simulator (beta): `crawl --platform ios --app path/to/YourApp.app`. The Playground sample app ships in
-[`samples/`](samples/); `samples/demo.sh` crawls it so the dashboard has something to show.
-
-More: [setup and every command](docs/SETUP.md), [how the crawl and audits work](docs/ARCHITECTURE.md), the
-[`map.json` format](docs/MAP_SCHEMA.md) and the [roadmap](docs/PLAN.md); the sample app is in [`samples/`](samples/README.md).
-
-## Inside the repo
-
-One product, built as a monorepo: `apps/` are what you run, `packages/` are the building blocks. Python is a
-[uv](https://docs.astral.sh/uv/) workspace and TypeScript a [Bun](https://bun.sh) workspace; `make` covers both
-(`make setup`, `make check`, `make viewer`, `make demo`).
-
-| Folder | What it is |
-|---|---|
-| [`apps/cli`](apps/cli/) | The `appscreenmap` binary: a terminal home that runs the dashboard, and the front door to the engine (macOS) |
-| [`apps/engine`](apps/engine/) | The Python engine: crawl, audits and exports behind every command, and the MCP server |
-| [`apps/viewer`](apps/viewer/) | The dashboard (React + Vite) |
-| [`packages/core`](packages/core/) | The `map.json` model, screen identity, crawl config and run folders |
-| [`packages/drivers`](packages/drivers/) | Android over `adb`, the iOS Simulator over `simctl` and `idb` |
-| [`packages/crawler`](packages/crawler/) | The crawl loop, path replay and load timing |
-| [`packages/a11y`](packages/a11y/) | The WCAG 2.2 checks and the WCAG report |
-| [`packages/security`](packages/security/) | The security scanner, its rule catalogue and the Frida hook |
-| [`packages/reports`](packages/reports/) | Crawl health and performance reports |
-| [`packages/regression`](packages/regression/) | `verify` and the visual diff between builds |
-| [`packages/exporters`](packages/exporters/) | Maestro flows and the Mermaid graph |
-| [`packages/design-tokens`](packages/design-tokens/) | Colour, type and motion for the dashboard and the reports |
-| [`samples`](samples/) | The Playground sample app (Android; an iOS version is planned) and `demo.sh` |
-
-Each package has its own README and tests (shared test helpers live in `packages/testkit`). How the pieces fit
-and depend on each other: [`docs/MONOREPO.md`](docs/MONOREPO.md).
 
 ## License
 
