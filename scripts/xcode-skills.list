@@ -1,0 +1,5 @@
+# Apple's agent skills, exported from the installed Xcode (`xcrun agent skills export`). One name per line.
+# They carry no license, so they are NOT committed: the copies in .claude/skills/ are git-ignored and each
+# contributor runs `make skills-xcode` on a Mac with Xcode 27+. Add a name here to pick up another one.
+audit-xcode-security-settings
+uikit-app-modernization

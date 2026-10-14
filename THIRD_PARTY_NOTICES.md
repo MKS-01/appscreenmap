@@ -204,3 +204,8 @@ ideas, not code, with them.
   of the Playground: screenshots, view hierarchies and reports. The form values are dummy data (for example
   `demo@playground.dev`), and passwords appear only as `${APP_PASSWORD}` placeholders. Device screenshots can show
   Android or iOS system UI such as the status bar and keyboard; those belong to Google and Apple.
+
+## Android skills
+
+`.claude/skills/` holds unchanged copies of skills from <https://github.com/android/skills> (Google LLC, Apache-2.0; each folder carries
+the license). `scripts/android-skills.lock` lists them and the commit they were synced at; `make skills-check` / `make skills-sync` keep them current.

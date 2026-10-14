@@ -22,3 +22,7 @@ runs/
 
 # Claude Code (personal settings; project skills in .claude/skills are committed)
 .claude/settings.local.json
+
+# Apple's Xcode agent skills: no license, synced locally (make skills-xcode), never committed
+.claude/skills/audit-xcode-security-settings/
+.claude/skills/uikit-app-modernization/
