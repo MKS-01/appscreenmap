@@ -20,10 +20,10 @@ def _fake_run(d: Path, package="dev.example.reader", started="2026-10-13T01:00:0
 
 
 def test_new_run_dir_groups_by_project(tmp_path: Path):
-    d = new_run_dir(tmp_path, "dev.mks.duskread")
-    assert d.parent == tmp_path / "duskread" and d.name.startswith("duskread-")
-    d2 = new_run_dir(tmp_path, "dev.mks.duskread", name="v2 build", project="DuskRead App")
-    assert d2.parent.name == "duskread-app" and d2.name.startswith("v2-build-")
+    d = new_run_dir(tmp_path, "dev.appscreenmap.playground")
+    assert d.parent == tmp_path / "playground" and d.name.startswith("playground-")
+    d2 = new_run_dir(tmp_path, "dev.appscreenmap.playground", name="v2 build", project="Playground App")
+    assert d2.parent.name == "playground-app" and d2.name.startswith("v2-build-")
 
 
 def test_index_and_resolution_cover_nested_and_legacy_runs(tmp_path: Path):

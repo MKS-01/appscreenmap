@@ -19,7 +19,7 @@
    "None"
   ],
   "role_description": "application",
-  "AXLabel": "DuskRead",
+  "AXLabel": "Reader",
   "AXUniqueId": null,
   "pid": 14292,
   "AXFrame": "{{0, 0}, {402, 874}}"
@@ -45,7 +45,7 @@
   "AXValue": null,
   "role": "AXStaticText",
   "title": null,
-  "AXLabel": "Hello, MKS",
+  "AXLabel": "Good evening",
   "help": null,
   "AXUniqueId": null,
   "pid": 14292

@@ -3,7 +3,7 @@
 Runs are grouped per project (one folder per app):
 
     runs/index.json
-    runs/<project>/<run-id>/map.json      e.g. runs/duskread/duskread-20261013-015149/
+    runs/<project>/<run-id>/map.json      e.g. runs/playground/playground-v1-20261013-031007/
 
 Run ids stay flat and unique, so URLs keep the form /runs/<run-id>/… and the server resolves
 them to the project folder. Older flat runs (runs/<run-id>/map.json) are still found.
@@ -26,7 +26,7 @@ def slug(s: str) -> str:
 
 
 def project_for(package: str, project: str | None = None) -> str:
-    """Default project folder: the last part of the package name (dev.mks.duskread → duskread)."""
+    """Default project folder: the last part of the package name (dev.appscreenmap.playground → playground)."""
     return slug(project or package.rsplit(".", 1)[-1])
 
 

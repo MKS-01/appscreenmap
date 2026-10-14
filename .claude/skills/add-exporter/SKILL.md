@@ -69,7 +69,7 @@ affiliated") and use the tool's name descriptively only ("exports Appium tests")
 
 ## Verify for real
 
-Generate for the duskread sample (`runs/duskread/<run-id>`), run the output with the actual tool on the emulator
+Generate for the Playground sample (`runs/playground/<run-id>`), run the output with the actual tool on the emulator
 for at least the launch screen and one three-step path, and say in your report which tool version you used. If you
 couldn't run it, say that plainly: "generated, not executed."
 

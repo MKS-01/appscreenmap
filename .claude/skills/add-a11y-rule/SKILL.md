@@ -64,7 +64,7 @@ uv run pytest -q packages/a11y/tests/test_a11y.py && uv run ruff check && uv run
 
 ## 5. Check it on a real crawl
 
-Run `uv run appscreenmap a11y runs/duskread/<run-id> --level AAA` on a local run of a sample app (`samples/demo.sh` makes one).
+Run `uv run appscreenmap a11y runs/playground/<run-id> --level AAA` on a local run of a sample app (`samples/demo.sh` makes one).
 Check every new hit by looking at the screenshot and bounds. If more than about 1 in 5 hits is
 wrong, tighten the rule or downgrade it to `review`/`info` before shipping.
 

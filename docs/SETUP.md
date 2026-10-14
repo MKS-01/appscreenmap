@@ -58,18 +58,14 @@ tapped, and that is itself a finding. Setup and debugging: the
 
 ## Sample apps
 
-Two sample apps ship in [`samples/`](../samples/). Crawl results are not committed (`runs/` is git-ignored), so run
-`samples/demo.sh` to map them and give `appscreenmap serve` something to show:
-
-- **Playground**: built so every screen triggers a known feature, with v1 and v2 builds for release comparisons.
-- **DuskRead**: a real Kotlin Multiplatform app, crawled on Android (Compose) and on the iOS Simulator (SwiftUI).
-
-`samples/demo.sh` re-runs every scenario (`samples/demo.sh ios` for only the iOS one); see
+The **Playground** sample app ships in [`samples/`](../samples/): built so every screen triggers a known feature, with
+v1 and v2 builds for release comparisons (an iOS version is planned). Crawl results are not committed (`runs/` is
+git-ignored), so run `samples/demo.sh` to map it and give `appscreenmap serve` something to show; see
 [`samples/README.md`](../samples/README.md).
 
 ## Commands
 
-All run as `uv run appscreenmap <command>`; `<run>` is a run folder such as `runs/duskread/<run-id>`.
+All run as `uv run appscreenmap <command>`; `<run>` is a run folder such as `runs/playground/<run-id>`.
 
 | Command | What it does |
 |---|---|
@@ -134,7 +130,7 @@ already has everything a generator needs.
 ## CI: verify a new build
 
 ```bash
-uv run appscreenmap verify runs/duskread/<run-id> --apk app-release.apk
+uv run appscreenmap verify runs/playground/<run-id> --apk app-release.apk
 ```
 
 `verify` replays every screen's path from a fresh launch on the new build (longest paths first). A path fails when

@@ -32,7 +32,7 @@ Keep each layer ignorant of the ones after it.
 
 1. Tests first where possible, with synthetic hierarchies in `packages/testkit/src/appscreenmap/testkit/helpers.py`. No device in unit tests.
 2. `uv run pytest -q && uv run ruff check && uv run ruff format`.
-3. If behavior on a device changed, run a real crawl of duskread (`crawl-app` skill) and compare
+3. If behavior on a device changed, run a real crawl of the Playground (`crawl-app` skill) and compare
    `appscreenmap report` with the previous run.
 4. Docs: README (user-facing), `docs/MAP_SCHEMA.md` (data), `docs/PLAN.md` (roadmap status),
    `examples/appscreenmap.toml` (options).

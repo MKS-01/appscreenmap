@@ -14,9 +14,10 @@ uv run appscreenmap doctor
 Everything except the web viewer build must show ✔. If several devices are connected, pass
 `--serial`.
 
-**Target app:** use **duskread** (`dev.mks.duskread`) unless the user names another app.
-Don't crawl stock emulator apps for testing. The duskread APK is built at
-`../duskread/androidApp/build/outputs/apk/debug/androidApp-debug.apk`.
+**Target app:** use the **Playground** sample (`dev.appscreenmap.playground`) unless the user names another app.
+Don't crawl stock emulator apps for testing. Its APKs are committed (`samples/playground-app/apk/playground-v1.apk`,
+`-v2.apk`) and its config is `samples/playground-app/appscreenmap.toml`, which reads the sign-in password from
+`$APP_PASSWORD` (any dummy value; `samples/demo.sh` uses `playground-demo`).
 
 **Clean slate:** `--clear-data` wipes app data, so the map starts from the first-run state
 (onboarding, empty lists). Use it unless the user wants their current data mapped.
@@ -26,7 +27,8 @@ Don't crawl stock emulator apps for testing. The duskread APK is built at
 Run in the background so the user can follow along and stop it:
 
 ```bash
-uv run appscreenmap crawl --package dev.mks.duskread --clear-data --max-steps 200 \
+APP_PASSWORD=playground-demo uv run appscreenmap crawl --apk samples/playground-app/apk/playground-v1.apk \
+  --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 200 \
   > <scratchpad>/crawl.log 2>&1        # run_in_background: true
 ```
 
@@ -52,13 +54,14 @@ boot a simulator (Xcode 27 replaced Simulator.app with Device Hub), then:
 
 ```bash
 uv run appscreenmap doctor    # lists booted simulators, idb and idb_companion
-uv run appscreenmap crawl --platform ios --app path/to/DuskRead.app --clear-data --max-steps 150
+uv run appscreenmap crawl --platform ios --app path/to/YourApp.app --clear-data --max-steps 150
 ```
 
 It reads the accessibility tree (what VoiceOver sees) and taps through `idb`; a control with no accessibility label or
 identifier is invisible to the crawler, which is itself the finding. A tree with no content (in-app browser, system
 sheet) counts as leaving the app: the crawl restarts the app instead of pressing Back. Runs go to `runs/<app>-ios/`.
-Needs `brew install facebook/fb/idb-companion` and `uv tool install fb-idb`. DuskRead (`../duskread/iosApp`) is the sample.
+Needs `brew install facebook/fb/idb-companion` and `uv tool install fb-idb`. There's no iOS sample in the repo yet (a SwiftUI
+Playground with the same scenarios is planned), so use the user's own simulator build.
 
 Useful flags: `--apk <file>` (installs first), `--max-minutes`, `--settle 1.2` (slow apps),
 `--config examples/appscreenmap.toml` (test credentials in `[inputs]`, extra `blocked_text`).

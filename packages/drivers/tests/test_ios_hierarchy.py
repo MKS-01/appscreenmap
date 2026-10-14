@@ -1,4 +1,4 @@
-"""iOS accessibility tree → analyzer input. Uses a real tree recorded from DuskRead on an iPhone 17 simulator."""
+"""iOS accessibility tree → analyzer input. Uses a real tree recorded from a reading app on an iPhone 17 simulator (names neutralised)."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from appscreenmap.drivers.base import DriverError
 from appscreenmap.drivers.ios import IosSimulatorDriver
 from appscreenmap.drivers.ios_hierarchy import idb_to_xml, is_out_of_process
 
-HOME = json.loads((Path(__file__).parent / "fixtures" / "duskread-ios-home.json").read_text())
-BUNDLE = "dev.mks.duskread"
+HOME = json.loads((Path(__file__).parent / "fixtures" / "ios-reader-home.json").read_text())
+BUNDLE = "com.example.reader"
 
 
 def _tree(**kw):
@@ -27,8 +27,8 @@ def test_buttons_become_clickable_with_their_accessibility_label():
         assert by_text[label].clickable, label
         assert by_text[label].cls == "android.widget.Button"
     # plain text is not tappable
-    assert not by_text["Hello, MKS"].clickable
-    assert by_text["Hello, MKS"].cls == "android.widget.TextView"
+    assert not by_text["Good evening"].clickable
+    assert by_text["Good evening"].cls == "android.widget.TextView"
 
 
 def test_bounds_are_points_clipped_to_the_screen_and_offscreen_nodes_dropped():
@@ -95,7 +95,7 @@ def test_an_in_app_browser_has_a_tree_of_one_node():
 
 
 def test_a_control_with_no_accessibility_element_is_simply_absent():
-    """DuskRead's floating bottom bar: four icon buttons drawn on screen, none in the tree (found on a simulator,
+    """The app's floating bottom bar: four icon buttons drawn on screen, none in the tree (found on a simulator,
     Oct 2026). The crawler cannot tap what VoiceOver cannot see; the analyzer reports the screen as having no nav."""
     in_bar = [n for n in HOME if n["type"] == "Button" and 795 <= n["frame"]["y"] <= 850]
     assert in_bar == []  # only card text lies under the bar; no tab buttons are exposed
@@ -129,7 +129,7 @@ class Fake:
         if "launchctl" in joined:
             return (
                 "9001\t0\tUIKitApplication:com.apple.mobilecal[dad3][rb-legacy]\n"
-                f"{HOME[0]['pid']}\t0\tUIKitApplication:dev.mks.duskread[abcd][rb-legacy]\n"
+                f"{HOME[0]['pid']}\t0\tUIKitApplication:com.example.reader[abcd][rb-legacy]\n"
             )
         return ""
 
@@ -156,7 +156,7 @@ def test_driver_sends_taps_through_idb_in_points():
 def test_driver_refuses_an_ipa_and_several_simulators():
     d = IosSimulatorDriver(run=Fake(HOME))
     with pytest.raises(DriverError, match="ipa"):
-        d.install("DuskRead.ipa")
+        d.install("Reader.ipa")
 
     class Two(Fake):
         def __call__(self, args, **kw):
@@ -237,20 +237,20 @@ def test_crash_log_finds_a_new_report_for_the_launched_app(tmp_path, monkeypatch
     class Info(Fake):
         def __call__(self, args, **kw):
             if "appinfo" in args:
-                return '{ CFBundleExecutable = DuskRead; CFBundleIdentifier = "dev.mks.duskread"; }'
+                return '{ CFBundleExecutable = Reader; CFBundleIdentifier = "com.example.reader"; }'
             return super().__call__(args, **kw)
 
     d = IosSimulatorDriver(run=Info(HOME))
     d.launch(BUNDLE)
-    (reports / "DuskRead-2026-10-13-120000.ips").write_text("old crash")
-    old = reports / "DuskRead-2026-10-13-120000.ips"
+    (reports / "Reader-2026-10-13-120000.ips").write_text("old crash")
+    old = reports / "Reader-2026-10-13-120000.ips"
     import os
     import time
 
     os.utime(old, (time.time() - 3600, time.time() - 3600))
     d.clear_crash_log()
     assert d.crash_log() == ""  # the old report predates the mark
-    (reports / "DuskRead-2026-10-13-130000.ips").write_text('{"exception": "EXC_BAD_ACCESS"}')
+    (reports / "Reader-2026-10-13-130000.ips").write_text('{"exception": "EXC_BAD_ACCESS"}')
     log = d.crash_log()
     assert (
         log.startswith(f"Process: {BUNDLE},") and "EXC_BAD_ACCESS" in log

@@ -96,7 +96,7 @@ and exportable like the built-in ones (format in [MAP_SCHEMA.md](MAP_SCHEMA.md))
 ```
 runs/
   index.json                  all runs, newest first, grouped by project
-  <project>/<run-id>/         e.g. runs/duskread/duskread-20261013-015149/
+  <project>/<run-id>/         e.g. runs/playground/playground-v1-20261013-031007/
     map.json                  screens, elements, transitions, events, stats (live during the crawl)
     trace.jsonl               one line per step
     screens/                  s001.png (full), s001.jpg (thumbnail), s001.xml (hierarchy)
@@ -133,7 +133,7 @@ packages/
   exporters/        appscreenmap.exporters: Maestro flows, Mermaid
   design-tokens/    tokens.css (@appscreenmap/design-tokens): colour, type, space, motion
   testkit/          dev-only test helpers (synthetic hierarchies, fake device), the package-layer check
-samples/            Playground and DuskRead APKs, sources, iOS build script and demo.sh
+samples/            the Playground sample app (APKs + source) and demo.sh
 runs/               crawl output (git-ignored, generated locally)
 docs/               SETUP, ARCHITECTURE, MONOREPO (layout + migration), PLAN, MAP_SCHEMA (data contract)
 examples/           sample config

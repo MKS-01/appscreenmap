@@ -5,7 +5,7 @@ the iOS driver translates what VoiceOver sees into the same shape: class names t
 `resource-id` from the accessibility identifier, `bounds` in points. Everything downstream then works unchanged.
 
 What iOS exposes is what an assistive-technology user gets, so the tree is also an accessibility signal: a control
-with no label or identifier simply isn't there (see tests/test_ios_hierarchy.py: the DuskRead floating tab bar).
+with no label or identifier simply isn't there (see tests/test_ios_hierarchy.py: the floating tab bar).
 """
 
 from __future__ import annotations

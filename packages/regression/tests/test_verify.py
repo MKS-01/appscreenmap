@@ -146,7 +146,7 @@ def _edit_map(run_dir, fn):
 
 
 def test_screens_sharing_a_path_are_skipped_not_failed(base):
-    # Two screens behind the same steps: which one opens depends on app state (seen on duskread: two
+    # Two screens behind the same steps: which one opens depends on app state (seen on a real app: two
     # 'FOLLOWING' states behind Following → Done). Replaying the path can't pick between them.
     _edit_map(base, lambda s: s["About"].update(reach_path=s["Settings"]["reach_path"]))
     rep = verify_run(base, FakeDriver(FakeApp(APP, APP_NAV)), log=lambda *a: None)
@@ -156,7 +156,7 @@ def test_screens_sharing_a_path_are_skipped_not_failed(base):
 
 
 def test_step_on_an_element_the_crawl_saw_only_later_is_state_dependent(base):
-    # duskread: '14:59 / OPEN' only exists while a focus timer runs (started by an earlier tap that
+    # a real app: '14:59 / OPEN' only exists while a focus timer runs (started by an earlier tap that
     # stayed on the same screen). The base capture of the screen doesn't have it, so a fresh launch
     # can't replay the path: skip with evidence instead of failing an unchanged build.
     def timer_step(s):
