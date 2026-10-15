@@ -17,6 +17,7 @@ test:         ## Python tests (no device needed)
 lint:         ## ruff lint + format check, as CI runs them
 	uv run ruff check
 	uv run ruff format --check
+	bun .claude/skills/design-system/scripts/type-guard.ts
 
 fmt:          ## fix lint and formatting
 	uv run ruff check --fix

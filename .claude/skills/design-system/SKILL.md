@@ -20,7 +20,7 @@ verification), and `apps/viewer/DESIGN.md` is the viewer's component reference.
 | `scripts/contrast.ts` (this skill) | Contrast check for every text and status token on every surface. |
 
 Mockups the system was designed from: the canvas "AppScreenMap redesign"
-(https://claude.ai/artifact/4SFYfivAGfxggUnZyrvKKq): Insights overview, an audit page, phone width, foundations.
+(https://claude.ai/artifact/4SFYfivAGfxggUnZyrvKKq): Insights overview, an audit page, phone width, foundations, and the "Colour and type" board (every token as it is today and the proposed font-size migration).
 
 ### Who uses the tokens
 
@@ -55,6 +55,7 @@ Mockups the system was designed from: the canvas "AppScreenMap redesign"
 
 | Token | Size | Use |
 |---|---|---|
+| `--text-display` | 40 | One big score number per page |
 | `--text-3xl` | 28–34 | One page headline (a plain question beats a label: "Is Playground ready to ship?") |
 | `--text-2xl` | 26 | View title (h1) |
 | `--text-xl` | 19 | Section title (h2), weight 600, `--tracking-tight` |
@@ -63,8 +64,11 @@ Mockups the system was designed from: the canvas "AppScreenMap redesign"
 | `--text-base` | 13 | Secondary body, table cells, summaries in `--dim` |
 | `--text-sm` | 12 | Meta, captions |
 | `--text-xs` | 11 | Mono kickers (`UPPERCASE`, `--tracking-label`), tags, axis labels |
+| `--text-2xs` | 8 | Diagram labels only (map card title bars, SVG export): drawn at overview zoom, never running text |
 
 Big numbers use proportional figures; `tabular-nums` only in aligned columns.
+
+`bun .claude/skills/design-system/scripts/type-guard.ts` counts raw `font-size`, `font-weight`, `line-height` and `letter-spacing` values in the viewer CSS and fails when the count rises above `type-baseline.json`: new code uses the tokens, and the baseline only goes down (`--update` after a migration). A glyph drawn as text (an arrow, a star) keeps its px size and is marked `/* glyph */`; `line-height: 1` is allowed.
 
 ## Values
 
