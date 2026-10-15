@@ -1,4 +1,4 @@
-"""Static evidence from an APK: the manifest checks (via aapt2) plus the secret scan."""
+"""Static evidence from an APK: the manifest checks (via aapt2), the secret scan and the dex code checks."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from pathlib import Path
 
 from appscreenmap.drivers.apkinfo import find_aapt2
 
+from .code import scan_code
 from .manifest import manifest_findings, parse_manifest, parse_network_config, resource_file
 from .secrets import scan_secrets
 
@@ -22,7 +23,7 @@ def _aapt(aapt2: str, *args: str) -> str:
 
 def scan_apk(apk: str | Path) -> dict:
     """Static evidence from an APK: {"ran": [...], "notes": [...], "findings": [...]}."""
-    ev: dict = {"ran": ["static"], "notes": [], "findings": scan_secrets(apk)}
+    ev: dict = {"ran": ["static"], "notes": [], "findings": scan_secrets(apk) + scan_code(apk)}
     aapt2 = find_aapt2()
     if not aapt2:
         ev["notes"].append(

@@ -1,8 +1,8 @@
 # Security rules: the full catalogue
 
 Machine-readable twin: `packages/security/src/appscreenmap/security/rules.json` (validated by `rules.py`; a test fails if a rule is
-missing here). Status is **ready** for a rule that `appscreenmap security` checks (the manifest, hard-coded-secret, data-at-rest and Frida-log
-rules, Android) and **planned** for the rest, which the viewer shows as "not set up". "Detect" says how a rule is checked and what
+missing here). Status is **ready** for a rule that `appscreenmap security` checks (Android: manifest, dex code, secrets, data at rest, Frida
+log; iOS: Info.plist, privacy manifest, secrets with `--app`) and **planned** for the rest, which the viewer shows as "not set up". "Detect" says how a rule is checked and what
 you can do by hand. Every source is official.
 
 Severity: **error** = fix before release, **warning** = fix or justify, **info** = a decision to make on purpose.
@@ -15,20 +15,27 @@ Severity: **error** = fix before release, **warning** = fix or justify, **info**
 | `cleartext-traffic` | Android | warning | manifest `android:usesCleartextTraffic=true`, or a network security config with `cleartextTrafficPermitted=true` | [Cleartext communications](https://developer.android.com/privacy-and-security/risks/cleartext-communications) · [Network security configuration](https://developer.android.com/privacy-and-security/security-config) |
 | `debuggable` | Android | **error** | manifest `android:debuggable=true` on a release build | [android:debuggable](https://developer.android.com/privacy-and-security/risks/android-debuggable) |
 | `allow-backup` | Android | warning | `android:allowBackup` true or absent, without `dataExtractionRules` / `fullBackupContent` | [Security recommendations for backups](https://developer.android.com/privacy-and-security/risks/backup-best-practices) |
+| `task-hijacking` | Android | warning | manifest `android:allowTaskReparenting=true` on an activity; `minSdkVersion` below 30 (no OS patch) is advice in the fix, not a finding | [StrandHogg Attack / Task Affinity Vulnerability](https://developer.android.com/privacy-and-security/risks/strandhogg) |
+| `custom-permission-weak` | Android | warning | a `<permission>` in the manifest whose `android:protectionLevel` is `normal` (or absent) or `dangerous` | [Custom Permissions](https://developer.android.com/privacy-and-security/risks/custom-permissions) |
 | `ats-exceptions` | iOS | warning | `plutil -p App.app/Info.plist`: `NSAppTransportSecurity` with `NSAllowsArbitraryLoads` or `NSExceptionDomains` | [Preventing insecure network connections](https://developer.apple.com/documentation/security/preventing-insecure-network-connections) |
 | `privacy-manifest-missing` | iOS | warning | no `PrivacyInfo.xcprivacy` in the `.app` (or in an embedded SDK that needs one) | [Privacy manifest files](https://developer.apple.com/documentation/bundleresources/privacy-manifest-files) |
 
 ## Static scan of the compiled code (evidence: decompiled output; no app run)
 
 Android: `jadx -d out app.apk`, then search `out/sources` and `out/resources`. iOS: `strings` over the app binary and a
-grep of the bundle's plists and resources.
+grep of the bundle's plists and resources. `appscreenmap security` does the Android part without decompiling: it matches exact
+strings (method and class names) in the `classes*.dex` files, so every hit is a **candidate**: it shows the code references the API,
+not that the call is unsafe, and bundled SDKs are included. Read the source before calling it a bug.
 
 | Rule | Platform | Severity | Detect | Source |
 |---|---|---|---|---|
 | `hardcoded-secret` | both | **error** | high-entropy strings and known key shapes (AWS `AKIA…`, `AIza…`, `-----BEGIN … PRIVATE KEY-----`, `Bearer …`, `password=`) in code and resources; each hit is reviewed, not auto-failed | [Hardcoded Cryptographic Secrets](https://developer.android.com/privacy-and-security/risks/hardcoded-cryptographic-secrets) |
-| `webview-js-interface` | Android | warning | `addJavascriptInterface(`, `setJavaScriptEnabled(true)` where the WebView loads a non-constant URL | [WebView – Native bridges](https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges) |
-| `insecure-trust-manager` | Android | **error** | an `X509TrustManager` whose `checkServerTrusted` is empty; a `HostnameVerifier` returning `true`; `onReceivedSslError` calling `proceed()` | [Unsafe X509TrustManager](https://developer.android.com/privacy-and-security/risks/unsafe-trustmanager) · [Unsafe HostnameVerifier](https://developer.android.com/privacy-and-security/risks/unsafe-hostname) |
-| `weak-crypto` | Android | warning | `Cipher.getInstance("DES…" / "…/ECB/…" / "RC4")`, `MessageDigest.getInstance("MD5" / "SHA-1")` near credentials, a constant `IvParameterSpec` | [Broken or risky cryptographic algorithm](https://developer.android.com/privacy-and-security/risks/broken-cryptographic-algorithm) |
+| `webview-js-interface` | Android | warning | the dex references `addJavascriptInterface`; by hand: `addJavascriptInterface(`, `setJavaScriptEnabled(true)` where the WebView loads a non-constant URL | [WebView – Native bridges](https://developer.android.com/privacy-and-security/risks/insecure-webview-native-bridges) |
+| `insecure-trust-manager` | Android | **error** | the scanner finds the accept-all hostname verifier (`ALLOW_ALL_HOSTNAME_VERIFIER`, `AllowAllHostnameVerifier`); by hand also look for an `X509TrustManager` whose `checkServerTrusted` is empty, a `HostnameVerifier` returning `true`, `onReceivedSslError` calling `proceed()` | [Unsafe X509TrustManager](https://developer.android.com/privacy-and-security/risks/unsafe-trustmanager) · [Unsafe HostnameVerifier](https://developer.android.com/privacy-and-security/risks/unsafe-hostname) |
+| `weak-crypto` | Android | warning | the strings `DES`, `DES/…`, `RC4` (warning) and `MD5`, `SHA-1` (info: fine for a checksum, not for security) in the dex, as the page names these algorithms | [Broken or risky cryptographic algorithm](https://developer.android.com/privacy-and-security/risks/broken-cryptographic-algorithm) |
+| `sticky-broadcast` | Android | warning | the dex references `sendStickyBroadcast` or `sendStickyOrderedBroadcast` | [Sticky Broadcasts](https://developer.android.com/privacy-and-security/risks/sticky-broadcast) |
+| `webview-file-access` | Android | warning | the dex references `setAllowFileAccessFromFileURLs` or `setAllowUniversalAccessFromFileURLs` (warning), `setAllowFileAccess` (info); read the call to see whether it passes `false` | [WebViews – Unsafe File Inclusion](https://developer.android.com/privacy-and-security/risks/webview-unsafe-file-inclusion) |
+| `dynamic-code-loading` | Android | info | the dex references `dalvik/system/DexClassLoader` or `InMemoryDexClassLoader` | [Dynamic code loading](https://developer.android.com/privacy-and-security/risks/dynamic-code-loading) |
 | `sensitive-logging` | Android | info | `Log.*` calls whose arguments name a token, password or personal field | [Log Info Disclosure](https://developer.android.com/privacy-and-security/risks/log-info-disclosure) |
 
 ## Dynamic run (evidence: the app instrumented while it runs; needs frida)

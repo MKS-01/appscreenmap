@@ -36,7 +36,7 @@ appscreenmap crawl --apk app.apk   # explore the app, then run `appscreenmap` to
 ```
 
 > [!NOTE]
-> **Early alpha.** Commands and flags may change. iOS is beta. Adaptive UI review is planned, and the security audit covers 8 of its 14 rules (see [Roadmap](#roadmap)).
+> **Early alpha.** Commands and flags may change. iOS is beta. Adaptive UI review is planned, and the security audit covers 18 of its 19 rules (see [Roadmap](#roadmap)).
 
 ## Why
 
@@ -138,7 +138,7 @@ Mermaid graph (`map.mmd`), a one-file WCAG report (`a11y-report.html`, evidence 
 | `report <run>` | Crawl health: wasted steps, merged screens |
 | `a11y <run> --report` | WCAG 2.2 checks and report |
 | `perf <run>` | Load time, jank, cold start |
-| `security <run> --apk app.apk` | Manifest, secrets and data-at-rest checks (Android) |
+| `security <run> --apk app.apk` | Manifest, code, secrets and data-at-rest checks (`--app` for an iOS build) |
 | `verify` | Replay paths on a new build; exit codes for CI |
 | `serve` · `mcp` | Dashboard · MCP server |
 
@@ -151,7 +151,7 @@ Details in [docs/PLAN.md](docs/PLAN.md).
 | Planned | What it will do | Today |
 |---|---|---|
 | **Adaptive UI review** | Crawl at phone, tablet and foldable window sizes (compact, medium, expanded width classes) and check each layout against Android's adaptive-layout guidance | Only manifest orientation locks and the crawl's window class are real; shows as "sample data" in the dashboard |
-| **Security audit, remaining rules** | WebView native bridge, TLS validation switched off, weak crypto, sensitive logging; iOS App Transport Security and privacy manifest | `appscreenmap security` works on Android today: manifest flags, exported components, hard-coded secrets, data at rest, and runtime pinning and cleartext checks with a Frida log (8 of 14 rules). See the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
+| **Security audit, remaining rule** | Sensitive data in logs (`sensitive-logging`), and confirming code findings instead of only matching strings | `appscreenmap security` works today on Android (`--apk`) and iOS (`--app`): manifest and Info.plist flags, risky API use in the code, hard-coded secrets, data at rest, and runtime pinning and cleartext checks from a Frida log (18 of 19 rules). See the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
 
 Also planned: platform-change checks per Android/iOS release and store-readiness checks (target SDK deadlines).
 
