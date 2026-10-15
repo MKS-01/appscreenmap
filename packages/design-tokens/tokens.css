@@ -76,6 +76,7 @@
   --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
+  --text-2xs: 8px; /* diagram labels only: map card title bars, drawn at overview zoom */
   --text-xs: 11px; /* mono kickers, axis labels, tags */
   --text-sm: 12px; /* meta, captions */
   --text-base: 13px; /* secondary body, table cells */

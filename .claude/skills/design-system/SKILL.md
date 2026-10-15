@@ -62,9 +62,12 @@ Mockups the system was designed from: the canvas "AppScreenMap redesign"
 | `--text-md` | 14 | Body |
 | `--text-base` | 13 | Secondary body, table cells, summaries in `--dim` |
 | `--text-sm` | 12 | Meta, captions |
+| `--text-2xs` | 8 | Diagram labels only (map card title bars, SVG export): drawn at overview zoom, never running text |
 | `--text-xs` | 11 | Mono kickers (`UPPERCASE`, `--tracking-label`), tags, axis labels |
 
 Big numbers use proportional figures; `tabular-nums` only in aligned columns.
+
+`bun .claude/skills/design-system/scripts/type-guard.ts` counts raw `font-size`, `font-weight`, `line-height` and `letter-spacing` values in the viewer CSS and fails when the count rises above `type-baseline.json`: new code uses the tokens, and the baseline only goes down (`--update` after a migration).
 
 ## Values
 

@@ -37,6 +37,8 @@ export interface StoryLane {
 const THEME = { bg: "#ffffff", card: "#f6f7f9", line: "#c9ced6", text: "#1a1d23", dim: "#646b78", accent: "#0a62c9", edge: "#8a92a0", faint: "#b4bac4" };
 const FONT = "Geist, Inter, Helvetica, Arial, sans-serif";
 const MONO = "Geist Mono, Menlo, Consolas, monospace";
+// Font sizes mirror the --text-* tokens in packages/design-tokens/tokens.css (an SVG file cannot use CSS variables).
+const TEXT = { "2xs": 8, xs: 11, sm: 12, lg: 16, "2xl": 26 };
 export const HDR_H = 14;
 const MARGIN = 80;
 const HEAD_H = 70;
@@ -63,8 +65,8 @@ function card(c: Card, badge: string, withHeader: boolean): string {
   if (withHeader) {
     const chars = Math.max(6, Math.floor((c.w - 40) / 4.9));
     parts.push(
-      `<text x="${c.x + 8}" y="${c.y + 11}" font-family="${esc(FONT)}" font-size="8" font-weight="600" fill="${THEME.text}">${esc(clip(c.star ? `★ ${c.title}` : c.title, chars))}</text>`,
-      `<text x="${c.x + c.w - 8}" y="${c.y + 11}" text-anchor="end" font-family="${esc(MONO)}" font-size="7.5" fill="${THEME.accent}">${esc(badge)}</text>`,
+      `<text x="${c.x + 8}" y="${c.y + 11}" font-family="${esc(FONT)}" font-size="${TEXT["2xs"]}" font-weight="600" fill="${THEME.text}">${esc(clip(c.star ? `★ ${c.title}` : c.title, chars))}</text>`,
+      `<text x="${c.x + c.w - 8}" y="${c.y + 11}" text-anchor="end" font-family="${esc(MONO)}" font-size="${TEXT["2xs"]}" fill="${THEME.accent}">${esc(badge)}</text>`,
     );
   }
   // Flow cards: the 1.5px border sits outside the header and the screenshot, as in the viewer.
@@ -77,7 +79,7 @@ function card(c: Card, badge: string, withHeader: boolean): string {
   } else {
     parts.push(
       `<rect x="${ix}" y="${iy}" width="${iw}" height="${c.img}" fill="none" stroke="${THEME.line}" stroke-dasharray="4 4"/>`,
-      `<text x="${ix + iw / 2}" y="${iy + c.img / 2}" text-anchor="middle" font-family="${esc(FONT)}" font-size="11" fill="${THEME.dim}">${ext ? "left the app" : "no screenshot"}</text>`,
+      `<text x="${ix + iw / 2}" y="${iy + c.img / 2}" text-anchor="middle" font-family="${esc(FONT)}" font-size="${TEXT.xs}" fill="${THEME.dim}">${ext ? "left the app" : "no screenshot"}</text>`,
     );
   }
   parts.push("</g>");
@@ -89,8 +91,8 @@ function frame(head: Head, width: number, height: number, body: string): string 
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
     `<title>${esc(head.title)}</title>`,
     `<rect width="${width}" height="${height}" fill="${THEME.bg}"/>`,
-    `<text x="${MARGIN}" y="${MARGIN - 8}" font-family="${esc(FONT)}" font-size="26" font-weight="600" fill="${THEME.text}">${esc(head.title)}</text>`,
-    `<text x="${MARGIN}" y="${MARGIN + 18}" font-family="${esc(MONO)}" font-size="12" fill="${THEME.dim}">${esc(head.subtitle)}</text>`,
+    `<text x="${MARGIN}" y="${MARGIN - 8}" font-family="${esc(FONT)}" font-size="${TEXT["2xl"]}" font-weight="600" fill="${THEME.text}">${esc(head.title)}</text>`,
+    `<text x="${MARGIN}" y="${MARGIN + 18}" font-family="${esc(MONO)}" font-size="${TEXT.sm}" fill="${THEME.dim}">${esc(head.subtitle)}</text>`,
     body,
     "</svg>\n",
   ].join("\n");
@@ -120,7 +122,7 @@ export function flowSvg(cards: Card[], links: Link[], dir: "LR" | "TB", variant:
         const text = clip(l.label, 28);
         const w = text.length * 6.2 + 12;
         out += `<rect x="${(lx - w / 2).toFixed(1)}" y="${(ly - 10).toFixed(1)}" width="${w.toFixed(1)}" height="20" rx="5" fill="${THEME.bg}" stroke="${THEME.line}"/>`;
-        out += `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="middle" font-family="${esc(FONT)}" font-size="11" fill="${THEME.dim}">${esc(text)}</text>`;
+        out += `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="middle" font-family="${esc(FONT)}" font-size="${TEXT.xs}" fill="${THEME.dim}">${esc(text)}</text>`;
       }
       return out;
     })
@@ -139,8 +141,8 @@ export function storySvg(lanes: StoryLane[], head: Head, rowWidth = 1500): strin
   const parts: string[] = [];
   for (const lane of lanes) {
     parts.push(
-      `<text x="${MARGIN}" y="${y + 16}" font-family="${esc(FONT)}" font-size="16" font-weight="600" fill="${THEME.text}">${esc(lane.title)}</text>`,
-      `<text x="${MARGIN + 12 + lane.title.length * 8.6}" y="${y + 16}" font-family="${esc(MONO)}" font-size="11" fill="${THEME.dim}">${esc(`${lane.label} · ${lane.cards.length} screens`)}</text>`,
+      `<text x="${MARGIN}" y="${y + 16}" font-family="${esc(FONT)}" font-size="${TEXT.lg}" font-weight="600" fill="${THEME.text}">${esc(lane.title)}</text>`,
+      `<text x="${MARGIN + 12 + lane.title.length * 8.6}" y="${y + 16}" font-family="${esc(MONO)}" font-size="${TEXT.xs}" fill="${THEME.dim}">${esc(`${lane.label} · ${lane.cards.length} screens`)}</text>`,
     );
     y += 34;
     let x = MARGIN;
@@ -156,8 +158,8 @@ export function storySvg(lanes: StoryLane[], head: Head, rowWidth = 1500): strin
       parts.push(card(placed, c.id, false));
       const chars = Math.max(8, Math.floor(c.w / 6.4));
       parts.push(
-        `<text x="${x + 8}" y="${y + 16 + c.img + 16}" font-family="${esc(FONT)}" font-size="12" font-weight="600" fill="${THEME.text}">${esc(clip(c.star ? `★ ${c.title}` : c.title, chars))}</text>`,
-        `<text x="${x + 8}" y="${y + 16 + c.img + 33}" font-family="${esc(MONO)}" font-size="10" fill="${THEME.dim}">${esc(clip(`${c.id}${c.sub ? " " + c.sub : ""}`, chars + 2))}</text>`,
+        `<text x="${x + 8}" y="${y + 16 + c.img + 16}" font-family="${esc(FONT)}" font-size="${TEXT.sm}" font-weight="600" fill="${THEME.text}">${esc(clip(c.star ? `★ ${c.title}` : c.title, chars))}</text>`,
+        `<text x="${x + 8}" y="${y + 16 + c.img + 33}" font-family="${esc(MONO)}" font-size="${TEXT.xs}" fill="${THEME.dim}">${esc(clip(`${c.id}${c.sub ? " " + c.sub : ""}`, chars + 2))}</text>`,
       );
       x += c.w + 24;
       maxX = Math.max(maxX, x - 24 - MARGIN);

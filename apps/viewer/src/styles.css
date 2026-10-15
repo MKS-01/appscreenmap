@@ -848,7 +848,7 @@ pre.code {
   align-items: center;
   gap: 4px;
   border-bottom: 1px solid var(--border);
-  font-size: 8px;
+  font-size: var(--text-2xs);
   line-height: 1;
 }
 .snode .hdr .t {
@@ -860,7 +860,7 @@ pre.code {
   text-overflow: ellipsis;
 }
 .snode .hdr .sid {
-  font-size: 7.5px;
+  font-size: var(--text-2xs);
   flex-shrink: 0;
 }
 .snode img,
