@@ -16,6 +16,7 @@ import {
 } from "@xyflow/react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runFile } from "../api";
+import { downloadText, flowSvg, loadShots, storySvg, type Card } from "../exportSvg";
 import { ScreenLink, Thumb } from "../components/common";
 import { Icon, type IconName } from "../components/Icon";
 import { discoveryTree, storyLanes, tidyLayout, type DiscoveryTree } from "../mapLayout";
@@ -30,11 +31,13 @@ type Variant = "tree" | "graph" | "story";
 type Links = "paths" | "all";
 
 // Cards show the whole screenshot at the device's own aspect ratio (shotBox), under a one-line header.
-const HDR_H = 22;
+const HDR_H = 14;
 const SHOT_AREA = 30000;
+const CARD_BORDER = 3; // 1.5px on each side: the screenshot is that much narrower than the card
 const nodeSize = (s: Screen | undefined) => {
   const b = shotBox(s, SHOT_AREA);
-  return { w: b.w, h: b.h + HDR_H, img: b.h };
+  const img = Math.round((b.w - CARD_BORDER) * b.ratio); // exact device aspect at the width it is drawn
+  return { w: b.w, h: img + HDR_H + CARD_BORDER, img };
 };
 
 const VARIANTS: { id: Variant; label: string; icon: IconName; hint: string }[] = [
@@ -64,7 +67,7 @@ const ScreenNodeView = memo(function ScreenNodeView({ data }: NodeProps<ScreenNo
     .filter(Boolean)
     .join(" ");
   return (
-    <div className={cls} style={{ "--w": `${size.w}px`, "--ih": `${size.img}px` } as React.CSSProperties}>
+    <div className={cls} style={{ "--w": `${size.w}px`, "--ar": `${screen.width || 1080} / ${screen.height || 2400}` } as React.CSSProperties}>
       <Handle type="target" position={dir === "LR" ? Position.Left : Position.Top} style={{ opacity: 0 }} />
       <div
         className="hdr"
@@ -154,6 +157,68 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
   }, [selected]);
   const extraLinks = map.transitions.filter((t) => t.from !== t.to && tree.parent.get(t.to) !== t.from).length;
 
+  // Export the layout as it is on screen: node positions and links come from React Flow, the storyboard from its lanes.
+  const rf = useReactFlow();
+  const [exporting, setExporting] = useState(false);
+  const exportSvg = async () => {
+    setExporting(true);
+    try {
+      const shots = await loadShots(run, visible);
+      const app = map.run.app;
+      const name = variant === "story" ? "storyboard" : variant;
+      const head = {
+        title: `${app.label || app.package} · ${map.run.id}`,
+        subtitle: `${visible.length} screens · ${name}${variant !== "story" ? ` · ${dir === "TB" ? "top to bottom" : "left to right"}` : ""}`,
+      };
+      let svg: string;
+      if (variant === "story") {
+        const lanes = storyLanes(tree).map((lane) => ({
+          title: byId.get(lane.hub)?.title ?? lane.hub,
+          label: lane.label,
+          cards: lane.items.flatMap(({ id }) => {
+            const s = byId.get(id);
+            if (!s) return [];
+            const box = shotBox(s, 34000);
+            const via = tree.via.get(id);
+            return [
+              {
+                id,
+                title: s.title,
+                kind: s.kind,
+                w: box.w + 16,
+                h: 0,
+                img: box.h,
+                data: shots.get(id) ?? null,
+                sub: id === lane.hub ? "" : `via ${via?.label || byId.get(tree.parent.get(id) ?? "")?.title || "?"}`,
+                star: !!notes[id]?.star,
+              },
+            ];
+          }),
+        }));
+        svg = storySvg(lanes, head);
+      } else {
+        const cards: Card[] = rf.getNodes().flatMap((n) => {
+          const s = (n.data as { screen?: Screen }).screen;
+          if (!s) return [];
+          const size = nodeSize(s);
+          return [{ id: s.id, title: s.title, kind: s.kind, x: n.position.x, y: n.position.y, w: size.w, h: size.h, img: size.img, data: shots.get(s.id) ?? null, star: !!notes[s.id]?.star }];
+        });
+        const links = rf.getEdges().map((e) => ({
+          from: e.source,
+          to: e.target,
+          label: typeof e.label === "string" ? e.label : undefined,
+          discovery: !e.style?.strokeDasharray,
+        }));
+        svg = flowSvg(cards, links, dir, variant, head);
+      }
+      downloadText(`${map.run.id}-${name}.svg`, svg);
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : "Could not export the map.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="map-wrap">
       <div className="map-main">
@@ -226,6 +291,14 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
           </select>
           </div>
           <input type="search" placeholder="Find screen…" aria-label="Find screen" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <button
+            className="btn"
+            onClick={exportSvg}
+            disabled={exporting}
+            title="Download this layout as one SVG, with full-size screenshots. Opens in a browser; drag it into Figma. It can show the app's real data, so check it before sharing."
+          >
+            <Icon name="download" size={14} /> {exporting ? "Exporting…" : "Export SVG"}
+          </button>
           <button
             className={`btn map-options-toggle ${optionsOpen ? "on" : ""}`}
             aria-expanded={optionsOpen}

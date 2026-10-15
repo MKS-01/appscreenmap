@@ -14,11 +14,20 @@ from appscreenmap.core.model import load_map
 from appscreenmap.core.runs import update_index
 from appscreenmap.drivers.android import AdbDriver
 from appscreenmap.exporters.export import export_run
+from appscreenmap.exporters.svg import LAYOUTS, THEMES, write_map_svg
 from appscreenmap.regression.verify import format_verify, required_secrets, update_baselines, verify_run
 from appscreenmap.regression.visual import diff_runs
 
 
 def cmd_export(args) -> int:
+    if args.svg:
+        try:
+            path = write_map_svg(args.run, args.layout, not args.thumbs, args.theme, args.output)
+        except (OSError, ValueError, KeyError) as e:
+            print(f"Could not write the SVG: {e}", file=sys.stderr)
+            return 2
+        print(f"{path} ({path.stat().st_size // 1024} KB). Open it in a browser, or drag it into Figma.")
+        return 0
     res = export_run(args.run)
     print(f"{res['flows']} Maestro flows, Mermaid: {res['mermaid']}")
     return 0
@@ -92,8 +101,23 @@ def cmd_verify(args) -> int:
 
 
 def register(sub) -> None:
-    s = sub.add_parser("export", help="regenerate Maestro flows and Mermaid for a run")
+    s = sub.add_parser(
+        "export", help="regenerate Maestro flows and Mermaid for a run, or draw the map as one SVG"
+    )
     s.add_argument("run")
+    s.add_argument(
+        "--svg",
+        action="store_true",
+        help="write the whole map as one SVG (opens in a browser, imports into Figma)",
+    )
+    s.add_argument("--layout", choices=LAYOUTS, default="tree", help="SVG layout (default: tree)")
+    s.add_argument("--theme", choices=sorted(THEMES), default="light", help="SVG colours (default: light)")
+    s.add_argument(
+        "--thumbs",
+        action="store_true",
+        help="SVG: embed the small thumbnails instead of the full screenshots",
+    )
+    s.add_argument("-o", "--output", help="SVG: where to write it (default: <run>/map-<layout>.svg)")
     s.set_defaults(fn=cmd_export)
 
     s = sub.add_parser("diff", help="visual diff of two runs (e.g. two builds)")
