@@ -842,13 +842,13 @@ pre.code {
 }
 /* One-line header: title + id, so the screenshot gets the space. Full details live in the side panel. */
 .snode .hdr {
-  height: 22px;
-  padding: 0 7px;
+  height: 14px;
+  padding: 0 5px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   border-bottom: 1px solid var(--border);
-  font-size: 10.5px;
+  font-size: 8px;
   line-height: 1;
 }
 .snode .hdr .t {
@@ -860,14 +860,15 @@ pre.code {
   text-overflow: ellipsis;
 }
 .snode .hdr .sid {
-  font-size: 9.5px;
+  font-size: 7.5px;
   flex-shrink: 0;
 }
 .snode img,
 .snode .noshot {
   display: block;
   width: 100%;
-  height: var(--ih); /* exact device aspect: nothing cropped */
+  height: auto;
+  aspect-ratio: var(--ar); /* exact device aspect whatever the card border: nothing cropped or stretched */
   object-fit: cover;
   background: var(--panel-2);
 }

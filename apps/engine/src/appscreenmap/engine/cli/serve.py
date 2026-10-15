@@ -1,4 +1,4 @@
-"""Serve the maps: `serve` (the web viewer and the notes endpoint) and `mcp` (agents, over stdio)."""
+"""Serve the maps: `serve` (the web viewer, the notes endpoint and SVG export) and `mcp` (agents, over stdio)."""
 
 from __future__ import annotations
 
@@ -8,9 +8,12 @@ import os
 import sys
 import webbrowser
 from pathlib import Path
+from urllib.parse import parse_qs, unquote
 
 from appscreenmap.core import notes
+from appscreenmap.core.model import load_map
 from appscreenmap.core.runs import resolve_run, update_index
+from appscreenmap.exporters.svg import LAYOUTS, THEMES, map_svg
 
 
 def _web_dist() -> Path | None:
@@ -52,7 +55,40 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             return str(self.web_root / "index.html")  # SPA fallback
         return str(target)
 
+    def _run_dir(self, key: str) -> Path | None:
+        """A run by `<project>/<run-id>` or by its flat id; never outside the runs folder."""
+        direct = (self.runs_root / key).resolve()
+        if self.runs_root.resolve() in direct.parents and (direct / "map.json").is_file():
+            return direct
+        return resolve_run(self.runs_root, key.rsplit("/", 1)[-1])
+
+    def _export_svg(self) -> None:
+        """GET /export/<run>.svg?layout=tree|graph|storyboard&theme=light|dark&thumbs=1: the map as one SVG file."""
+        path, _, query = self.path.partition("?")
+        key = unquote(path[len("/export/") :])
+        opts = {k: v[0] for k, v in parse_qs(query).items()}
+        layout = {"story": "storyboard"}.get(opts.get("layout", "tree"), opts.get("layout", "tree"))
+        theme = opts.get("theme", "light")
+        if not key.endswith(".svg") or layout not in LAYOUTS or theme not in THEMES:
+            return self.send_error(400)
+        run_dir = self._run_dir(key[: -len(".svg")])
+        if run_dir is None:
+            return self.send_error(404)
+        try:
+            body = map_svg(load_map(run_dir), run_dir, layout, opts.get("thumbs") != "1", theme).encode()
+        except (OSError, ValueError, KeyError) as e:
+            return self.send_error(422, str(e)[:100])
+        self.send_response(200)
+        self.send_header("Content-Type", "image/svg+xml")
+        self.send_header("Content-Disposition", f'attachment; filename="{run_dir.name}-{layout}.svg"')
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
+        if self.path.startswith("/export/"):
+            return self._export_svg()
         if self.path.split("?", 1)[0] == "/runs/index.json":
             update_index(self.runs_root)
         super().do_GET()

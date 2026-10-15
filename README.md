@@ -141,6 +141,7 @@ Mermaid graph (`map.mmd`), a one-file WCAG report (`a11y-report.html`, evidence 
 | `perf <run>` | Load time, jank, cold start |
 | `security <run> --apk app.apk` | Manifest, code, secrets and data-at-rest checks (`--app` for an iOS build) |
 | `store [run] --apk app.apk` · `--app App.ipa` | Target / compile / min SDK (Android) or build SDK and deployment target (iOS) against Google Play and App Store rules, with every deadline in the next 365 days. A crawl writes it too |
+| `export <run> --svg` | The whole map as one SVG (`--layout tree\|graph\|storyboard`, `--theme light\|dark`): opens in a browser, drag it into Figma |
 | `verify` | Replay paths on a new build; exit codes for CI |
 | `serve` · `mcp` | Dashboard · MCP server |
 

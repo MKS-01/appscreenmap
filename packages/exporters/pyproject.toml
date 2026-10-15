@@ -1,7 +1,7 @@
 [project]
 name = "appscreenmap-exporters"
 version = "0.1.0"
-description = "AppScreenMap exporters: tests and diagrams generated from map.json (Maestro flows, Mermaid)."
+description = "AppScreenMap exporters: tests and diagrams generated from map.json (Maestro flows, Mermaid, SVG map)."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
