@@ -22,7 +22,8 @@ for (const f of files) {
       const m = new RegExp(`(?:^|[\\s{;])${p}:\\s*([^;}]+)`).exec(line);
       if (!m) continue;
       const v = m[1].trim();
-      if (v.startsWith("var(") || v === "inherit" || v === "normal" || v === "0") continue; // a token, or no value of its own
+      if (v.startsWith("var(") || v === "inherit" || v === "normal" || v === "0" || (p === "line-height" && v === "1")) continue; // a token, or no value of its own
+      if (line.includes("/* glyph */") || line.includes("/* fixed")) continue; // an icon or arrow drawn as text, or a line height tied to a fixed-size box: px on purpose
       counts[f][p]++;
       if (list) rawLines.push(`${f}:${i + 1}  ${p}: ${v}`);
     }

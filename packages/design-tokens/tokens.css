@@ -85,6 +85,7 @@
   --text-xl: 19px; /* section titles (h2) */
   --text-2xl: 26px; /* view titles (h1) */
   --text-3xl: clamp(28px, 4vw, 34px); /* page headline */
+  --text-display: 40px; /* one big score number per page */
 
   --weight-regular: 400;
   --weight-medium: 500;
