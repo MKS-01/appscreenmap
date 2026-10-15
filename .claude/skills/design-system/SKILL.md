@@ -20,7 +20,7 @@ verification), and `apps/viewer/DESIGN.md` is the viewer's component reference.
 | `scripts/contrast.ts` (this skill) | Contrast check for every text and status token on every surface. |
 
 Mockups the system was designed from: the canvas "AppScreenMap redesign"
-(https://claude.ai/artifact/4SFYfivAGfxggUnZyrvKKq): Insights overview, an audit page, phone width, foundations.
+(https://claude.ai/artifact/4SFYfivAGfxggUnZyrvKKq): Insights overview, an audit page, phone width, foundations, and the "Colour and type" board (every token as it is today and the proposed font-size migration).
 
 ### Who uses the tokens
 
@@ -62,8 +62,8 @@ Mockups the system was designed from: the canvas "AppScreenMap redesign"
 | `--text-md` | 14 | Body |
 | `--text-base` | 13 | Secondary body, table cells, summaries in `--dim` |
 | `--text-sm` | 12 | Meta, captions |
-| `--text-2xs` | 8 | Diagram labels only (map card title bars, SVG export): drawn at overview zoom, never running text |
 | `--text-xs` | 11 | Mono kickers (`UPPERCASE`, `--tracking-label`), tags, axis labels |
+| `--text-2xs` | 8 | Diagram labels only (map card title bars, SVG export): drawn at overview zoom, never running text |
 
 Big numbers use proportional figures; `tabular-nums` only in aligned columns.
 

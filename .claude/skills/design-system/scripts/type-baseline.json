@@ -1,8 +1,8 @@
 {
   "apps/viewer/src/styles.css": {
-    "font-size": 82,
-    "font-weight": 32,
+    "font-size": 50,
+    "font-weight": 9,
     "line-height": 21,
-    "letter-spacing": 21
+    "letter-spacing": 18
   }
 }
