@@ -6,8 +6,8 @@
 
 <p align="center">
   <strong>Your app's screens and routes, mapped by crawling it. No SDK, no test IDs, no source.</strong><br>
-  Point it at a build. It crawls on an Android emulator or iOS Simulator, then exports every screen and transition<br>
-  as plain files, Maestro flows, a Mermaid graph and an SVG map for your tests, audits, CI and AI agent.
+  Point it at a build. It crawls on an Android emulator or iOS Simulator and maps every screen and route,<br>
+  as plain files, exports for your tests and CI, and an MCP server your AI agent can query.
 </p>
 
 <p align="center">
@@ -15,6 +15,7 @@
   <img src="https://img.shields.io/badge/Android-supported-0a0a0a?style=flat-square&logo=android&logoColor=white" alt="Android">
   <img src="https://img.shields.io/badge/iOS_Simulator-beta-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="iOS Simulator, beta">
   <img src="https://img.shields.io/badge/Python-3.11+-0a0a0a?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
+  <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP-server-0a0a0a?style=flat-square&logo=modelcontextprotocol&logoColor=white" alt="MCP server"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0a0a0a?style=flat-square" alt="MIT License"></a>
   <a href="https://claude.com/claude-code"><img src="https://img.shields.io/badge/Built_with-Claude-0a0a0a?style=flat-square&logo=anthropic&logoColor=white" alt="Built with Claude"></a>
 </p>
@@ -24,6 +25,7 @@
   <a href="#get-started">Get started</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#use-it-with-an-agent">Agent</a> ·
+  <a href="#mcp-server">MCP</a> ·
   <a href="#dashboard">Dashboard</a> ·
   <a href="docs/SETUP.md">Docs</a>
 </p>
@@ -54,6 +56,7 @@ build you already ship and writes it down, so the answer is a file you can query
 | **Exports you can use** | Maestro flows (one per screen), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
 | **WCAG 2.2 and performance audits** | Every screen checked, with the fix and an official source |
 | **A CI gate** | `verify` replays every path on a new build and fails the job if one breaks |
+| **An MCP server for your agent** | Your agent knows the app without re-exploring it: find a screen, get the route, go there |
 
 And it asks nothing of your app:
 
@@ -61,7 +64,7 @@ And it asks nothing of your app:
   Compose, React Native, SwiftUI), even with almost no resource ids.
 - **Deterministic.** No model calls in the crawl: same build and config, same map, so a regression is a diff.
 - **Local and safe.** Nothing leaves your machine. It stays in the app and never taps log out, delete or pay.
-- **Agent-native.** An MCP server and [skills](.claude/skills/) for Claude Code or any MCP client.
+- **Agent-native.** A local [MCP server](#mcp-server) and [skills](.claude/skills/) for Claude Code or any MCP client.
 
 ## Get started
 
@@ -103,12 +106,7 @@ Press `t` in the terminal home for a new terminal in the same folder, run `claud
 > *Crawl the new build and compare it with the last run.*
 > *The last crawl merged two screens. Fix it and crawl again.*
 
-Its work shows up live in the dashboard. Any MCP client can query the maps too (find a screen, get the route,
-drive the device there, read findings):
-
-```bash
-claude mcp add appscreenmap -- appscreenmap mcp
-```
+Its work shows up live in the dashboard.
 
 | Job | Skill |
 |---|---|
@@ -117,6 +115,43 @@ claude mcp add appscreenmap -- appscreenmap mcp
 | iOS Simulator setup | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
 | Store deadlines (Play target API, App Store SDK) | [`store-requirements`](.claude/skills/store-requirements/SKILL.md) |
 | Test export | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
+
+## MCP server
+
+> *You:* How do I reach Settings?<br>
+> *Agent → `route("Settings")`:* From launch: tap **Profile**, then tap **Settings**. Here is the Maestro flow.<br>
+> *You:* Take the emulator there.<br>
+> *Agent → `go_to_screen("Settings")` → `where_am_i()`:* Done, the device is on Settings.
+
+`appscreenmap mcp` serves your mapped runs to any MCP client (Claude Code, Claude Desktop, Cursor, VS Code, …). The
+map becomes the agent's memory of the app, so it answers from the map instead of exploring the app again. It is a
+local stdio server: it reads `runs/` on your machine and talks to your emulator or Simulator, with no account, no
+API key and no network calls.
+
+```bash
+claude mcp add appscreenmap -- appscreenmap mcp
+```
+
+Other clients take the same command in their MCP config:
+
+```json
+{ "mcpServers": { "appscreenmap": { "command": "appscreenmap", "args": ["mcp"] } } }
+```
+
+Options: `--runs <dir>` (default `./runs`), `--run <run-id>` (default: the latest finished run), `--serial <device>`.
+
+| Tool | Answers | Kind |
+|---|---|---|
+| `list_runs`, `list_screens`, `find_screens` | What has been mapped; which screen is "Settings" or has a "Save" button | read-only |
+| `get_screen`, `screenshot` | One screen: elements and where each leads, how to reach it, findings, load time, image | read-only |
+| `route` | Steps to a screen, from launch or another screen (with the Maestro flow) | read-only |
+| `a11y_findings`, `perf_summary` | Which screens fail which WCAG 2.2 criteria; which are slow | read-only |
+| `where_am_i` | Which mapped screen the device shows now | read-only |
+| `go_to_screen` | Drive the device to a screen along its route | drives the device |
+| `crawl`, `crawl_status` | Map an app (or a new build) in the background, and follow it | drives the device |
+
+Tools carry MCP annotations (`readOnlyHint`, `destructiveHint`), so clients can ask before the two that drive the
+device. More in [docs/SETUP.md](docs/SETUP.md#agents-mcp).
 
 ## Dashboard
 
@@ -171,8 +206,7 @@ Apple's Xcode 27 skills with `make skills-xcode`.
 | Adaptive UI review | 🚧 Coming soon | Check every screen at phone, tablet and foldable sizes |
 | Release change checks | 🚧 Coming soon | Flag what each new Android and iOS release means for your app |
 
-> [!NOTE]
-> This is an early draft. The rules in each section will be updated over time.
+Audit rules (WCAG, security, Play and App Store) are updated as the official guidance changes.
 
 ## License
 
