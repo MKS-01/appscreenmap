@@ -12,12 +12,9 @@
 
 <p align="center">
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml/badge.svg" alt="CI"></a>
-  <img src="https://img.shields.io/badge/Android-supported-0a0a0a?style=flat-square&logo=android&logoColor=white" alt="Android">
-  <img src="https://img.shields.io/badge/iOS_Simulator-beta-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="iOS Simulator, beta">
-  <img src="https://img.shields.io/badge/Python-3.11+-0a0a0a?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/Android_·_iOS-0a0a0a?style=flat-square" alt="Android and iOS">
   <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP-server-0a0a0a?style=flat-square&logo=modelcontextprotocol&logoColor=white" alt="MCP server"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0a0a0a?style=flat-square" alt="MIT License"></a>
-  <a href="https://claude.com/claude-code"><img src="https://img.shields.io/badge/Built_with-Claude-0a0a0a?style=flat-square&logo=anthropic&logoColor=white" alt="Built with Claude"></a>
 </p>
 
 <p align="center">
