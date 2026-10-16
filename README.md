@@ -5,7 +5,7 @@
 <h1 align="center">AppScreenMap</h1>
 
 <p align="center">
-  <strong>Every screen in your app, mapped. No SDK, no test IDs, no source.</strong><br>
+  <strong>A map of your mobile app, built by crawling it. No SDK, no test IDs, no source.</strong><br>
   Point it at a build on an Android emulator or iOS Simulator. You get plain files, ready-to-run test flows,<br>
   WCAG and performance audits, a CI gate, and an MCP server your AI agent can query.
 </p>
