@@ -6,8 +6,8 @@
 
 <p align="center">
   <strong>Your app's screens and routes, mapped by crawling it. No SDK, no test IDs, no source.</strong><br>
-  Point it at a build. It explores on an emulator and writes every screen and transition as plain files<br>
-  your tests, audits, CI and AI agent can use.
+  Point it at a build. It crawls on an Android emulator or iOS Simulator, then exports every screen and transition<br>
+  as plain files, Maestro flows, a Mermaid graph and an SVG map for your tests, audits, CI and AI agent.
 </p>
 
 <p align="center">
@@ -16,6 +16,7 @@
   <img src="https://img.shields.io/badge/iOS_Simulator-beta-0a0a0a?style=flat-square&logo=apple&logoColor=white" alt="iOS Simulator, beta">
   <img src="https://img.shields.io/badge/Python-3.11+-0a0a0a?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0a0a0a?style=flat-square" alt="MIT License"></a>
+  <a href="https://claude.com/claude-code"><img src="https://img.shields.io/badge/Built_with-Claude-0a0a0a?style=flat-square&logo=anthropic&logoColor=white" alt="Built with Claude"></a>
 </p>
 
 <p align="center">
@@ -36,7 +37,7 @@ appscreenmap crawl --apk app.apk   # explore the app, then run `appscreenmap` to
 ```
 
 > [!NOTE]
-> **Early alpha.** Commands and flags may change. iOS is beta. Adaptive UI review is planned, and the security audit covers 18 of its 19 rules (see [Roadmap](#roadmap)).
+> **Early alpha.** Commands and flags may change. iOS is beta. Adaptive UI review is planned, and the security audit covers 18 of its 19 rules (see [Feature status](#feature-status)).
 
 ## Why
 
@@ -49,7 +50,8 @@ build you already ship and writes it down, so the answer is a file you can query
 | **A complete screen inventory** | Know what is in the build, including screens nobody remembers |
 | **Routes to every screen** | "How do I reach Settings?" is a lookup, for you and for your agent |
 | **A diff between builds** | Added, removed and changed screens before release, not after |
-| **Generated Maestro flows** | A starting E2E suite, one flow per screen |
+| **Crawl on Android and iOS** | One command explores the build on an emulator or Simulator, no scripting |
+| **Exports you can use** | Maestro flows (one per screen), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
 | **WCAG 2.2 and performance audits** | Every screen checked, with the fix and an official source |
 | **A CI gate** | `verify` replays every path on a new build and fails the job if one breaks |
 
@@ -151,17 +153,29 @@ After pulling new code, run `make install` again to rebuild the `appscreenmap` c
 [android/skills](https://github.com/android/skills) stay current with `make skills-check` and `make skills-sync`, and
 Apple's Xcode 27 skills with `make skills-xcode`.
 
-## Roadmap
+## Feature status
 
-Details in [docs/PLAN.md](docs/PLAN.md).
-
-| Planned | What it will do | Today |
+| Feature | Status | What you get |
 |---|---|---|
-| **Adaptive UI review** | Crawl at phone, tablet and foldable window sizes (compact, medium, expanded width classes) and check each layout against Android's adaptive-layout guidance | Only manifest orientation locks and the crawl's window class are real; shows as "sample data" in the dashboard |
-| **Security audit, remaining rule** | Sensitive data in logs (`sensitive-logging`), and confirming code findings instead of only matching strings | `appscreenmap security` works today on Android (`--apk`) and iOS (`--app`): manifest and Info.plist flags, risky API use in the code, hard-coded secrets, data at rest, and runtime pinning and cleartext checks from a Frida log (18 of 19 rules). See the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
+| Android crawl and screen map | ✅ Ready | Every screen and route from an emulator or device, without leaving your app |
+| Dashboard | ✅ Ready | Map, screens, crawl replay and build compare, live while it crawls |
+| Accessibility audit | ✅ Ready | WCAG 2.2 findings with screenshots, fixes and a shareable report |
+| Performance | ✅ Ready | Load time per screen, jank and cold start |
+| `verify` CI gate | ✅ Ready | Replays every path on a new build and fails the job if one breaks |
+| Exports | ✅ Ready | Maestro flows, Mermaid graph and a one-file SVG of the map |
+| MCP server and agent skills | ✅ Ready | Ask your AI agent to map, audit and compare |
+| Store readiness | ✅ Ready | Play and App Store SDK deadlines for the next 365 days |
+| iOS Simulator crawl | 🧪 Beta | Same map on iOS; see the [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) skill |
+| Security audit | 🧪 Beta | 18 of 19 rules on Android and iOS builds; see the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
+| Sensitive data in logs | 🚧 Coming soon | The last security rule, plus confirmed code findings instead of string matches |
+| Adaptive UI review | 🚧 Coming soon | Check every screen at phone, tablet and foldable sizes |
+| Release change checks | 🚧 Coming soon | Flag what each new Android and iOS release means for your app |
 
-Also planned: platform-change checks per Android/iOS release. Store readiness (target SDK and build SDK deadlines) is built: `appscreenmap store`.
+> [!NOTE]
+> This is an early draft. The rules in each section will be updated over time.
 
 ## License
 
-[MIT](LICENSE) © 2026 MKS and AppScreenMap contributors.
+Open source under the [MIT License](LICENSE). © 2026 MKS and AppScreenMap contributors.
+
+Built with [Claude Code](https://claude.com/claude-code).
