@@ -76,6 +76,7 @@ appscreenmap                         # terminal home + dashboard
 No app handy? Press `x` in the terminal home to map the [Playground](samples/README.md) sample app.
 Output is a run folder of plain files (`map.json`, `screens/`, `flows/`, `a11y.json`, `perf.json`, reports);
 `map.json` is a versioned contract, see [docs/MAP_SCHEMA.md](docs/MAP_SCHEMA.md).
+`appscreenmap --help` lists every command; after pulling new code, run `make install` again.
 
 ## AI agent and MCP
 
@@ -168,29 +169,6 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the details.
 Export Markdown or CSV from the dashboard, or take the files straight from the run: test flows (`flows/`, Maestro format), a
 Mermaid graph (`map.mmd`), a one-file WCAG report (`a11y-report.html`, evidence not a conformance claim), and
 `map.json` / `a11y.json` / `perf.json` for your own tooling.
-
-## Commands
-
-| Command | Does |
-|---|---|
-| `crawl --apk app.apk` | Install and explore (`--clear-data` for first run, `--config` for logins) |
-| `report <run>` | Crawl health: wasted steps, merged screens |
-| `a11y <run> --report` | WCAG 2.2 checks and report |
-| `perf <run>` | Load time, jank, cold start |
-| `security <run> --apk app.apk` | Manifest, code, secrets and data-at-rest checks (`--app` for an iOS build) |
-| `store [run] --apk app.apk` · `--app App.ipa` | Target / compile / min SDK (Android) or build SDK and deployment target (iOS) against Google Play and App Store rules, with every deadline in the next 365 days. A crawl writes it too |
-| `export <run> --svg` | The whole map as one SVG (`--layout tree\|graph\|storyboard`, `--theme light\|dark`): opens in a browser, drag it into Figma |
-| `diff <run> <run>` | Visual diff of two runs: added, removed and changed screens |
-| `verify <run> --apk new.apk` | Replay every path on a new build; exit codes for CI |
-| `merge --into <canvas> <run>` | Add a run to the app's canvas as a scenario |
-| `doctor` · `logs` | Check adb, devices and tools · follow what every command is doing |
-| `serve` · `mcp` | Dashboard · MCP server |
-
-Run as `appscreenmap <command>`. More: `appscreenmap --help`, [docs/SETUP.md](docs/SETUP.md).
-
-After pulling new code, run `make install` again to rebuild the `appscreenmap` command. The agent skills from Google's
-[android/skills](https://github.com/android/skills) stay current with `make skills-check` and `make skills-sync`, and
-Apple's Xcode 27 skills with `make skills-xcode`.
 
 ## Feature status
 
