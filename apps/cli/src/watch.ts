@@ -148,3 +148,54 @@ export function duration(seconds: number): string {
   if (s < 3600) return `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
   return `${Math.floor(s / 3600)}h ${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}m`;
 }
+
+// ── activity log ─────────────────────────────────────────────────────────────
+// runs/.logs/activity.jsonl: one event per line for every engine command, whoever started it (see
+// packages/core/.../activity.py). The logs tab follows it.
+
+export const SOURCES = ["agent", "cli", "mcp", "ci"] as const;
+export type Source = (typeof SOURCES)[number];
+
+export interface ActivityEvent {
+  t: string;
+  cmd: string;
+  run: string | null;
+  source: string;
+  level: "info" | "warn" | "error";
+  msg: string;
+  kind?: "start" | "end";
+}
+
+export interface ActivityFilter {
+  source?: Source;
+  problems?: boolean; // warnings and errors only
+}
+
+export const activityPath = (runsRoot: string) => join(runsRoot, ".logs", "activity.jsonl");
+
+export function parseActivity(lines: string[]): ActivityEvent[] {
+  const out: ActivityEvent[] = [];
+  for (const line of lines) {
+    try {
+      const r = JSON.parse(line) as Partial<ActivityEvent>;
+      if (typeof r.msg !== "string" || typeof r.t !== "string") continue;
+      const level = r.level === "warn" || r.level === "error" ? r.level : "info";
+      out.push({
+        t: r.t, cmd: String(r.cmd ?? "?"), run: r.run ?? null, source: String(r.source ?? "cli"), level, msg: r.msg,
+        ...(r.kind === "start" || r.kind === "end" ? { kind: r.kind } : {}),
+      });
+    } catch {
+      // a line still being written
+    }
+  }
+  return out;
+}
+
+export function filterActivity(events: ActivityEvent[], f: ActivityFilter): ActivityEvent[] {
+  return events.filter((e) => (!f.source || e.source === f.source) && (!f.problems || e.level !== "info"));
+}
+
+/** The last `shown` events that pass the filter, oldest first. Reads the end of the file only. */
+export function readActivity(runsRoot: string, f: ActivityFilter = {}, shown = 12): ActivityEvent[] {
+  return filterActivity(parseActivity(tail(activityPath(runsRoot), 600, 262_144)), f).slice(-shown);
+}

@@ -10,10 +10,22 @@ from pathlib import Path
 
 from appscreenmap.a11y.checks import audit_run
 from appscreenmap.a11y.report import write_reports
+from appscreenmap.core import activity
 from appscreenmap.core.merge import merge_runs
 from appscreenmap.core.runs import project_for, slug, update_index
 from appscreenmap.exporters.export import export_run
 from appscreenmap.reports.perf import summarize as summarize_perf
+
+
+def _carry_logs(sources: list[Path], out_dir: Path) -> None:
+    """The canvas keeps every run's log: the canvas's own first, then each added run's, under a header."""
+    parts = []
+    for src in sources:
+        log = src / activity.RUN_LOG
+        if log.is_file():
+            parts.append(f"── {src.name} ──\n{log.read_text(errors='replace')}")
+    if parts:
+        (out_dir / activity.RUN_LOG).write_text("".join(parts))
 
 
 def cmd_merge(args) -> int:
@@ -46,6 +58,7 @@ def cmd_merge(args) -> int:
         shutil.rmtree(out_dir, ignore_errors=True)
         print(f"merge failed: {e}", file=sys.stderr)
         return 2
+    _carry_logs(sources, out_dir)
     export_run(out_dir)
     audit = audit_run(out_dir)
     write_reports(out_dir)
@@ -58,6 +71,7 @@ def cmd_merge(args) -> int:
         for r in runs:
             if r.resolve() != out_dir.resolve():
                 shutil.rmtree(r)
+    activity.bind_run(out_dir)
     update_index(runs_root)
     st = data["stats"]
     verb = "added to" if canvas else "merged into"

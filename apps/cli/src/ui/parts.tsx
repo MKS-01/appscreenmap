@@ -6,7 +6,7 @@ import { runnable, type Suggestion } from "../content";
 import { a11yVerdict, crashVerdict, perfVerdict, securityVerdict, type Readiness, type Verdict } from "../readiness";
 import { ago, type RunSummary } from "../runs";
 import { C } from "../theme";
-import { budgetUsed, duration, type Progress } from "../watch";
+import { budgetUsed, duration, type ActivityEvent, type ActivityFilter, type Progress } from "../watch";
 
 export type Tone = "good" | "warn" | "bad" | "faint" | "dim";
 
@@ -232,6 +232,37 @@ export function LogTail({ title, lines, status }: { title: string; lines: string
           {l}
         </Text>
       ))}
+    </Box>
+  );
+}
+
+/** The activity log: what every command is doing, whoever started it. Time in the label column, then who, what, and
+ * the line; a warning or error says so in a word. */
+export function ActivityList({ events, filter, path }: { events: ActivityEvent[]; filter: ActivityFilter; path: string }) {
+  const showing = [filter.source ?? "everyone", filter.problems ? "warnings and errors" : "all lines"].join(" · ");
+  return (
+    <Box flexDirection="column">
+      <Field label="LOGS">
+        <Text color={C.dim}>{showing}</Text>
+        <Text color={C.faint}>   {path}</Text>
+      </Field>
+      {events.length ? (
+        events.map((e, i) => {
+          const tone = e.level === "error" ? C.bad : e.level === "warn" ? C.warn : e.kind ? C.dim : C.text;
+          return (
+            <Text key={i} wrap="truncate-end">
+              <Text color={C.faint}>{e.t.slice(11, 19).padEnd(LABEL_W)}</Text>
+              <Text color={C.dim}>{e.source.padEnd(6)}{e.cmd.padEnd(10)}</Text>
+              {e.level !== "info" && <Text color={tone} bold>{e.level.toUpperCase().padEnd(6)}</Text>}
+              <Text color={tone}>{e.msg}</Text>
+            </Text>
+          );
+        })
+      ) : (
+        <Text color={C.faint} wrap="truncate-end">
+          {" ".repeat(LABEL_W)}nothing yet: crawls, scans and audits show up here as they run, whoever starts them
+        </Text>
+      )}
     </Box>
   );
 }

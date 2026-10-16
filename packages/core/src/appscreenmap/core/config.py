@@ -221,13 +221,15 @@ class CrawlConfig:
                 return value
         return self.default_input
 
-    def missing_secrets(self, env=os.environ) -> list[str]:
-        """Environment variables named by input placeholders that aren't set."""
+    def secret_names(self) -> list[str]:
+        """Every environment variable an input or playbook value names as a `${NAME}` placeholder."""
         values = [*self.inputs.values(), self.default_input]
         values += [str(s.get("value", "")) for steps in self.playbook.values() for s in steps]
-        names = {n for v in values for n in placeholders(v)} - set(
-            accounts.ACCOUNT_VARS
-        )  # the saved account supplies these
+        return sorted({n for v in values for n in placeholders(v)})
+
+    def missing_secrets(self, env=os.environ) -> list[str]:
+        """Environment variables named by input placeholders that aren't set."""
+        names = set(self.secret_names()) - set(accounts.ACCOUNT_VARS)  # the saved account supplies these
         return sorted(n for n in names if n not in env)
 
     def uses_account(self) -> bool:

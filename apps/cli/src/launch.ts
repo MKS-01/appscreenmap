@@ -31,7 +31,7 @@ export function launch(engine: Engine, s: Suggestion, runsRoot: string, cwd: str
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..*/, "").replace("T", "-");
   const log = join(logs, `${s.engine?.[0] ?? "command"}-${stamp}.log`);
   const fd = openSync(log, "a");
-  const proc = Bun.spawn(cmd, { cwd, env: { ...process.env, ...s.env }, stdin: "ignore", stdout: fd, stderr: fd });
+  const proc = Bun.spawn(cmd, { cwd, env: { ...process.env, APPSCREENMAP_SOURCE: "cli", ...s.env }, stdin: "ignore", stdout: fd, stderr: fd });
   closeSync(fd); // the child keeps its own copy
   const item = { label: s.cmd, log, proc };
   started.add(item);
