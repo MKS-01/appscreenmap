@@ -1,17 +1,18 @@
-"""Serve the maps: `serve` (the web viewer, the notes and run-delete endpoints, SVG export) and `mcp` (agents, over
-stdio)."""
+"""Serve the maps: `serve` (the web viewer, the notes and run-delete endpoints, SVG export, the activity log) and
+`mcp` (agents, over stdio)."""
 
 from __future__ import annotations
 
 import functools
 import http.server
+import json
 import os
 import sys
 import webbrowser
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from appscreenmap.core import notes
+from appscreenmap.core import activity, notes
 from appscreenmap.core.model import load_map
 from appscreenmap.core.runs import RunDeleteError, delete_run, resolve_run, update_index
 from appscreenmap.exporters.svg import LAYOUTS, THEMES, map_svg
@@ -34,6 +35,7 @@ def _web_dist() -> Path | None:
 class _Handler(http.server.SimpleHTTPRequestHandler):
     runs_root: Path
     web_root: Path
+    activity: activity.ActivityReader
 
     def translate_path(self, path: str) -> str:
         clean = path.split("?", 1)[0].split("#", 1)[0]
@@ -87,9 +89,71 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
         self.wfile.write(body)
 
+    def _json(self, data: dict, code: int = 200) -> None:
+        body = json.dumps(data, ensure_ascii=False).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+        self.wfile.write(body)
+
+    def _activity_api(self) -> None:
+        """The activity log, read-only (see core/activity.py):
+        GET /api/activity/live                  what is running now, and what finished in the last few seconds
+        GET /api/logs/sessions?q=&source=&cmd=&run=&level=&status=&limit=   command runs that match, newest first
+        GET /api/logs/session?id=&from=&q=&level=                           one command run's lines (from index `from`)
+        """
+        path, _, query = self.path.partition("?")
+        opts = {k: v[0] for k, v in parse_qs(query).items()}
+        level = opts.get("level", "")
+        if level and level not in activity.LEVELS:
+            return self.send_error(400, "level is info, warn or error")
+        events = self.activity.events()
+        if path == "/api/activity/live":
+            ss = activity.sessions(events)
+            return self._json(
+                {
+                    "has_logs": self.activity.exists(),
+                    "running": [activity.summary(s) for s in reversed(ss) if s["status"] == "running"],
+                    "recent": [activity.summary(s) for s in reversed(ss) if s["recent"]],
+                }
+            )
+        if path == "/api/logs/sessions":
+            try:
+                limit = max(1, min(int(opts.get("limit", 100)), 500))
+            except ValueError:
+                return self.send_error(400, "limit is a number")
+            keys = ("q", "source", "cmd", "run", "status")
+            return self._json(
+                activity.search(events, level=level, limit=limit, **{k: opts.get(k, "") for k in keys})
+            )
+        if path == "/api/logs/session":
+            s = next((s for s in activity.sessions(events) if s["id"] == opts.get("id")), None)
+            if s is None:
+                return self.send_error(404, "no such command run")
+            try:
+                start = max(0, int(opts.get("from", 0)))
+            except ValueError:
+                return self.send_error(400, "from is a number")
+            rows = [events[i] for i in s["events"][start:]]
+            q = opts.get("q", "")
+            return self._json(
+                {
+                    "session": activity.summary(s),
+                    "events": [
+                        {**r, "match": bool(q or level) and activity.matches(r, q, level)} for r in rows
+                    ],
+                    "next": len(s["events"]),
+                }
+            )
+        return self.send_error(404)
+
     def do_GET(self):
         if self.path.startswith("/export/"):
             return self._export_svg()
+        if self.path.startswith(("/api/activity/", "/api/logs/")):
+            return self._activity_api()
         if self.path.split("?", 1)[0] == "/runs/index.json":
             update_index(self.runs_root)
         super().do_GET()
@@ -161,7 +225,11 @@ def cmd_serve(args) -> int:
     runs_root = Path(args.runs).resolve()
     runs_root.mkdir(parents=True, exist_ok=True)
     update_index(runs_root)
-    handler = type("Handler", (_Handler,), {"runs_root": runs_root, "web_root": dist})
+    handler = type(
+        "Handler",
+        (_Handler,),
+        {"runs_root": runs_root, "web_root": dist, "activity": activity.ActivityReader(runs_root)},
+    )
     server = http.server.ThreadingHTTPServer(
         (args.host, args.port), functools.partial(handler, directory=str(dist))
     )

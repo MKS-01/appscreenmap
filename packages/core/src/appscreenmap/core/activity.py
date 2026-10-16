@@ -6,7 +6,8 @@ agent, the MCP server, CI). Once a command knows its run, the same lines go to t
 travels with the run. `appscreenmap logs` and the terminal home follow the stream live.
 
 An event: {"t", "cmd", "run", "source", "level", "msg", "pid"} plus "kind": "start" | "end" on the first and last
-event of a command. Secrets (the values behind `${NAME}` placeholders, the test account's password, and any
+event of a command, and "exit" (the exit code) on the last. The dashboard reads the stream as sessions, one per
+command run (`ActivityReader`, `sessions`). Secrets (the values behind `${NAME}` placeholders, the test account's password, and any
 environment variable that looks like a password, token or key) are masked in the terminal output, the stream and
 the run log. The stream rotates at MAX_BYTES, keeping one older file.
 """
@@ -18,6 +19,7 @@ import json
 import os
 import re
 import threading
+import time
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -115,7 +117,7 @@ class ActivityLog:
             if early:
                 self._append(self._run_log, "".join(early))
 
-    def event(self, msg: str, level: str = "info", kind: str | None = None) -> None:
+    def event(self, msg: str, level: str = "info", kind: str | None = None, code: int | None = None) -> None:
         msg = self.mask(_ANSI_RE.sub("", msg)).rstrip()
         row = {
             "t": datetime.now(UTC).isoformat(timespec="milliseconds"),
@@ -128,6 +130,8 @@ class ActivityLog:
         }
         if kind:
             row["kind"] = kind
+        if code is not None:
+            row["exit"] = code
         text = f"{row['t'][11:19]} {msg}\n"
         with self._lock:
             self._rotate()
@@ -264,3 +268,155 @@ def read_events(path: str | Path, offset: int = 0) -> tuple[list[dict], int]:
         except ValueError:
             continue
     return events, offset + end
+
+
+# ── reading, for the dashboard ───────────────────────────────────────────────
+RECENT_S = 15  # a finished command stays in the live view this long
+_EXIT_RE = re.compile(r"exit (-?\d+)\b")
+
+
+class ActivityReader:
+    """The stream (rotated file first, then the current one) as parsed events, re-reading only what was appended."""
+
+    def __init__(self, runs_root: str | Path):
+        self.path = stream_path(runs_root)
+        self.old = self.path.with_name(self.path.name + ".1")
+        self._events: list[dict] = []
+        self._offset = 0
+        self._old_sig: tuple | None = None
+        self._lock = threading.Lock()  # the dashboard server reads from several threads
+
+    def _sig(self) -> tuple | None:
+        try:
+            st = self.old.stat()
+            return (st.st_size, st.st_mtime_ns)
+        except OSError:
+            return None
+
+    def events(self) -> list[dict]:
+        """A snapshot: later appends don't change the list a caller holds."""
+        with self._lock:
+            return list(self._refresh())
+
+    def _refresh(self) -> list[dict]:
+        sig = self._sig()
+        try:
+            size = self.path.stat().st_size
+        except OSError:
+            size = 0
+        if sig != self._old_sig or size < self._offset:  # rotated since the last read: start over
+            self._old_sig, self._offset = sig, 0
+            self._events = read_events(self.old)[0] if sig else []
+        new, self._offset = read_events(self.path, self._offset)
+        self._events.extend(new)
+        return self._events
+
+    def exists(self) -> bool:
+        return self.path.is_file() or self.old.is_file()
+
+
+def _alive(pid: int | None) -> bool:
+    if not pid:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _ts(t: str) -> float:
+    try:
+        return datetime.fromisoformat(t).timestamp()
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def sessions(events: list[dict], alive=_alive, now: float | None = None) -> list[dict]:
+    """One record per command run, oldest first: who ran what on which run, when, how it ended, and its lines.
+
+    status: running (no end yet, process alive) · done (exit 0) · failed (exit ≠ 0) · interrupted (no end, and
+    the process is gone: killed, or its start/end rotated away)."""
+    out: list[dict] = []
+    open_: dict[int, dict] = {}
+    for i, e in enumerate(events):
+        pid = e.get("pid") or 0
+        s = open_.get(pid)
+        if e.get("kind") == "start" or s is None:
+            s = {
+                "id": f"{pid}-{re.sub(r'[^0-9]', '', e.get('t', ''))}",  # URL-safe
+                "cmd": e.get("cmd", "?"),
+                "source": e.get("source", "cli"),
+                "run": e.get("run"),
+                "pid": pid,
+                "start": e.get("t", ""),
+                "end": None,
+                "exit": None,
+                "command": e.get("msg", "") if e.get("kind") == "start" else "",
+                "events": [],
+            }
+            out.append(s)
+            open_[pid] = s
+        s["events"].append(i)
+        s["run"] = e.get("run") or s["run"]
+        if e.get("kind") == "end":
+            code = e.get("exit")
+            if code is None and (m := _EXIT_RE.match(e.get("msg") or "")):  # written before "exit" was a field
+                code = int(m.group(1))
+            s["end"], s["exit"] = e.get("t"), code
+            open_.pop(pid, None)
+    now = time.time() if now is None else now
+    for s in out:
+        rows = [events[i] for i in s["events"]]
+        lines = [r for r in rows if not r.get("kind")]
+        s["lines"] = len(lines)
+        s["warnings"] = sum(r.get("level") == "warn" for r in lines)
+        s["errors"] = sum(r.get("level") == "error" for r in lines)
+        s["last"] = lines[-1]["msg"] if lines else ""
+        s["last_t"] = rows[-1].get("t", "")
+        if s["end"] is not None:
+            s["status"] = "done" if s["exit"] == 0 else "failed"
+        elif alive(s["pid"]):
+            s["status"] = "running"
+        else:
+            s["status"] = "interrupted"
+        s["recent"] = s["status"] != "running" and now - _ts(s["last_t"]) <= RECENT_S
+    return out
+
+
+def summary(s: dict) -> dict:
+    return {k: v for k, v in s.items() if k != "events"}
+
+
+def matches(e: dict, q: str = "", level: str = "") -> bool:
+    if level and LEVELS.index(e.get("level") if e.get("level") in LEVELS else "info") < LEVELS.index(level):
+        return False
+    return not q or q.lower() in (e.get("msg") or "").lower()
+
+
+def search(
+    events: list[dict],
+    q: str = "",
+    source: str = "",
+    cmd: str = "",
+    run: str = "",
+    level: str = "",
+    status: str = "",
+    limit: int = 100,
+    alive=_alive,
+) -> dict:
+    """Sessions that match, newest first, each with how many of its lines match and the first one."""
+    found = []
+    for s in reversed(sessions(events, alive)):
+        if (source and s["source"] != source) or (cmd and s["cmd"] != cmd) or (run and s["run"] != run):
+            continue
+        if status and s["status"] != status:
+            continue
+        rows = [events[i] for i in s["events"] if not events[i].get("kind")]
+        hits = [r for r in rows if matches(r, q, level)] if (q or level) else rows
+        if (q or level) and not hits and not (q and q.lower() in s["command"].lower()):
+            continue
+        found.append({**summary(s), "matches": len(hits), "snippet": hits[0]["msg"] if hits else ""})
+    return {"sessions": found[:limit], "total": len(found)}

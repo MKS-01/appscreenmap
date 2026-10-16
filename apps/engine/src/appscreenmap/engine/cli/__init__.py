@@ -51,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
             code = _run(args)
         finally:
             took = f"{time.monotonic() - t0:.1f}s"
-            log.event(f"exit {code} after {took}", "info" if code == 0 else "error", kind="end")
+            log.event(f"exit {code} after {took}", "info" if code == 0 else "error", kind="end", code=code)
     return code
 
 

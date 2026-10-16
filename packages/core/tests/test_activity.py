@@ -101,3 +101,71 @@ def test_read_events_follows_appends_and_rotation(tmp_path):
     path.write_text('{"msg": "new"}\n')  # rotated underneath us: read the new file from the top
     ev, _ = activity.read_events(path, off)
     assert [e["msg"] for e in ev] == ["new"]
+
+
+def _ev(pid, t, msg, kind=None, **kw):
+    e = {"t": f"2026-10-16T12:00:{t:02d}.000+00:00", "cmd": "crawl", "run": None, "source": "agent", "level": "info"}
+    e.update(msg=msg, pid=pid, **kw)
+    if kind:
+        e["kind"] = kind
+    return e
+
+
+def test_sessions_group_a_command_run_and_say_how_it_ended():
+    events = [
+        _ev(1, 0, "appscreenmap crawl --apk a.apk", "start"),
+        _ev(2, 1, "appscreenmap security run", "start", cmd="security", source="cli"),
+        _ev(1, 2, "new screen s001", run="p-1"),
+        _ev(2, 3, "! no network security config", level="warn", cmd="security", source="cli", run="p-1"),
+        _ev(2, 4, "exit 1 after 0.2s", "end", level="error", cmd="security", source="cli", run="p-1", exit=1),
+        _ev(3, 5, "orphan line: its start rotated away"),
+    ]
+    ss = activity.sessions(events, alive=lambda pid: pid == 1, now=_ts_of(events[-1]) + 5)
+    crawl, sec, orphan = ss
+    assert crawl["status"] == "running" and crawl["run"] == "p-1" and crawl["command"].endswith("a.apk")
+    assert crawl["lines"] == 1 and crawl["last"] == "new screen s001" and not crawl["recent"]
+    assert sec["status"] == "failed" and sec["exit"] == 1 and sec["warnings"] == 1 and sec["recent"]
+    assert orphan["status"] == "interrupted" and orphan["command"] == ""
+    assert activity.sessions(events, alive=lambda p: False)[0]["status"] == "interrupted"  # killed, no end
+    old = [_ev(4, 0, "appscreenmap perf", "start"), _ev(4, 1, "exit 0 after 0.0s", "end")]  # no "exit" field yet
+    assert activity.sessions(old)[0]["status"] == "done"
+
+
+def _ts_of(e):
+    from datetime import datetime
+
+    return datetime.fromisoformat(e["t"]).timestamp()
+
+
+def test_search_finds_runs_by_text_level_and_who():
+    events = [
+        _ev(1, 0, "appscreenmap crawl", "start"),
+        _ev(1, 1, "new screen Settings"),
+        _ev(1, 2, "exit 0 after 1s", "end", exit=0),
+        _ev(2, 3, "appscreenmap security", "start", cmd="security", source="cli"),
+        _ev(2, 4, "! cleartext traffic allowed", level="warn", cmd="security", source="cli"),
+        _ev(2, 5, "exit 0 after 1s", "end", cmd="security", source="cli", exit=0),
+    ]
+    no = lambda p: False
+    everything = activity.search(events, alive=no)
+    assert [s["cmd"] for s in everything["sessions"]] == ["security", "crawl"]  # newest first
+    hit = activity.search(events, q="settings", alive=no)["sessions"]
+    assert [s["cmd"] for s in hit] == ["crawl"] and hit[0]["snippet"] == "new screen Settings"
+    assert [s["cmd"] for s in activity.search(events, level="warn", alive=no)["sessions"]] == ["security"]
+    assert activity.search(events, source="agent", alive=no)["total"] == 1
+    assert activity.search(events, status="failed", alive=no)["total"] == 0
+
+
+def test_reader_reads_only_whats_new_and_follows_rotation(tmp_path):
+    log = activity.ActivityLog(tmp_path, "crawl", env={}, max_bytes=10_000)
+    reader = activity.ActivityReader(tmp_path)
+    assert reader.events() == [] and not reader.exists()
+    log.line("one")
+    log.line("two")
+    assert [e["msg"] for e in reader.events()] == ["one", "two"]
+    log.line("three")
+    assert [e["msg"] for e in reader.events()] == ["one", "two", "three"]
+    path = activity.stream_path(tmp_path)
+    path.rename(path.with_name(path.name + ".1"))  # rotated: the old lines come from .1, new ones after
+    log.line("four")
+    assert [e["msg"] for e in reader.events()] == ["one", "two", "three", "four"]

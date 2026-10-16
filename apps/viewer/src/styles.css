@@ -4606,3 +4606,314 @@ a.bars-label,
     transition: none;
   }
 }
+
+/* ── activity log: top-bar chip, live drawer, Logs page ─────────────────── */
+.badge.interrupted {
+  color: var(--st-pending);
+}
+.live-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 30px;
+  padding: 0 var(--space-2) 0 4px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--dim);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  max-width: 280px;
+  transition:
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    background-color var(--dur-fast) ease;
+}
+.live-chip .badge {
+  border: 0;
+}
+.live-chip-what {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.live-chip.on {
+  border-color: var(--accent-28);
+  background: var(--accent-08);
+  color: var(--text);
+}
+.live-chip:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) and (pointer: fine) {
+  .live-chip:hover {
+    color: var(--text);
+    border-color: var(--faint);
+  }
+}
+.crumb-link {
+  color: var(--dim);
+  border-left: 1px solid var(--line-hi);
+  padding-left: var(--space-2);
+}
+
+.dock {
+  flex-shrink: 0;
+  height: min(38vh, 400px);
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line-hi);
+  background: var(--panel);
+  animation: dock-in var(--dur-ui) var(--ease-out);
+}
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.dock-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.dock-head .spacer {
+  flex: 1;
+}
+.dock-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.dock-meta a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dock-cmd {
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-bottom: 1px solid var(--line);
+}
+
+.log-lines {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-2) 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  background: var(--bg);
+}
+.log-line {
+  display: flex;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  color: var(--text);
+}
+.log-line.start,
+.log-line.end {
+  color: var(--dim);
+}
+.log-line.warn {
+  color: var(--warn);
+}
+.log-line.error {
+  color: var(--bad);
+}
+.log-line.match {
+  background: var(--accent-08);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.log-t {
+  flex-shrink: 0;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+.log-lvl {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  padding-top: 1px;
+}
+.log-msg {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.log-empty {
+  padding: var(--space-3) var(--space-4);
+  color: var(--faint);
+}
+
+.logs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.logs-filters input[type="search"] {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.log-sessions {
+  border-top: 1px solid var(--line);
+}
+.log-session {
+  border-bottom: 1px solid var(--line);
+}
+.log-session-row {
+  display: grid;
+  grid-template-columns: 14px 132px minmax(0, 1fr) 84px 64px 120px 112px;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-2);
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .log-session-row:hover {
+    background: var(--panel);
+  }
+}
+.log-caret {
+  color: var(--faint);
+  transform: rotate(-90deg);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.log-session.open .log-caret {
+  transform: none;
+}
+.log-when,
+.log-dur {
+  color: var(--dim);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.log-what {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.log-cmdline,
+.log-snippet {
+  font-size: var(--text-xs);
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.log-snippet {
+  color: var(--dim);
+}
+.log-who {
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+.log-counts {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-xs);
+}
+.log-counts .bad {
+  color: var(--bad);
+}
+.log-counts .warn {
+  color: var(--warn);
+}
+.log-session-row .badge {
+  justify-self: end;
+}
+.log-session-body {
+  padding: 0 0 var(--space-3) calc(14px + var(--space-3) + var(--space-2));
+}
+.log-session-body .log-lines {
+  max-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+.log-session-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+}
+.log-more {
+  padding: var(--space-3) var(--space-2);
+}
+
+@media (max-width: 900px) {
+  .log-session-row {
+    grid-template-columns: 14px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "caret what status"
+      "caret meta meta";
+    row-gap: var(--space-1);
+  }
+  .log-caret {
+    grid-area: caret;
+  }
+  .log-what {
+    grid-area: what;
+  }
+  .log-session-row .badge {
+    grid-area: status;
+  }
+  .log-when {
+    grid-area: meta;
+  }
+  .log-who,
+  .log-dur,
+  .log-counts {
+    display: none;
+  }
+  .log-session-body {
+    padding-left: 0;
+  }
+  .dock {
+    height: min(46vh, 400px);
+  }
+  .dock-head {
+    flex-wrap: wrap;
+    padding: var(--space-2) var(--space-3);
+  }
+  .live-chip-what {
+    display: none;
+  }
+  .live-chip {
+    padding-right: 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dock {
+    animation: dock-fade var(--dur-ui) ease;
+  }
+  .live-chip:active {
+    transform: none;
+  }
+  .log-caret {
+    transition: none;
+  }
+}
+@keyframes dock-fade {
+  from {
+    opacity: 0;
+  }
+}

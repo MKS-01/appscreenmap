@@ -1,36 +1,59 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLive, type Live } from "./activity";
 import { runKey, useIndex, useMap } from "./api";
+import { ActivityDock, LiveChip } from "./components/Activity";
 import { ErrorBox, Loading, Logo, StatusBadge } from "./components/common";
 import { PlatformCtx, platformOf } from "./a11y";
 import { href, useRoute, type Route } from "./router";
+import { useStored } from "./storage";
 import A11y from "./views/A11y";
 import Compare from "./views/Compare";
 import DesignSystem from "./views/DesignSystem";
 import HowItWorks from "./views/HowItWorks";
 import Insights from "./views/Insights";
+import Logs from "./views/Logs";
 import MapView from "./views/MapView";
 import Replay from "./views/Replay";
 import Runs from "./views/Runs";
 import ScreenDetail from "./views/ScreenDetail";
 import Screens from "./views/Screens";
 
+/** What the top bar needs to show the live chip and the Logs link. */
+interface Activity {
+  live: Live | null;
+  dock: boolean;
+  toggleDock: () => void;
+}
+
 export default function App() {
   const route = useRoute();
+  const { live } = useLive();
+  const [dock, setDock] = useStored("activity.dock", false);
+  // The drawer shows only around a running command: it appears with one (if it was left open) and stays until
+  // closed, so a finished run's last lines don't vanish under you. With nothing running, it stays hidden.
+  const active = !!(live?.running.length || live?.recent.length);
+  const [held, setHeld] = useState(false);
+  useEffect(() => {
+    if (dock && active) setHeld(true);
+  }, [dock, active]);
+  const activity: Activity = { live, dock: dock && (active || held), toggleDock: () => (setDock(!activity.dock), setHeld(!activity.dock)) };
+  const page = route.page === "how" ? <HowItWorks /> : route.page === "design" ? <DesignSystem /> : route.page === "logs" ? <Logs query={route.query} /> : <Runs />;
   return (
     <div className="app">
       {route.page === "run" ? (
-        <RunShell route={route} />
+        <RunShell route={route} activity={activity} />
       ) : (
         <>
-          <TopBar route={route} />
-          <div className="main">{route.page === "how" ? <HowItWorks /> : route.page === "design" ? <DesignSystem /> : <Runs />}</div>
+          <TopBar route={route} activity={activity} />
+          <div className="main">{page}</div>
         </>
       )}
+      {activity.dock && live && route.page !== "logs" && <ActivityDock live={live} onClose={() => (setDock(false), setHeld(false))} />}
     </div>
   );
 }
 
-function TopBar({ route, children }: { route: Route; children?: React.ReactNode }) {
+function TopBar({ route, activity, children }: { route: Route; activity: Activity; children?: React.ReactNode }) {
   return (
     <header className="topbar">
       <a className="brand" href="#/">
@@ -38,9 +61,15 @@ function TopBar({ route, children }: { route: Route; children?: React.ReactNode 
       </a>
       {children}
       <div className="spacer" />
+      <LiveChip live={activity.live} open={activity.dock} onToggle={activity.toggleDock} />
       <a className={`toplink ${route.page === "runs" ? "active" : ""}`} href="#/">
         Runs
       </a>
+      {activity.live?.has_logs && (
+        <a className={`toplink logs ${route.page === "logs" ? "active" : ""}`} href="#/logs">
+          Logs
+        </a>
+      )}
       <a className={`toplink how ${route.page === "how" ? "active" : ""}`} href="#/how">
         How it works
       </a>
@@ -48,7 +77,7 @@ function TopBar({ route, children }: { route: Route; children?: React.ReactNode 
   );
 }
 
-function RunShell({ route }: { route: Route }) {
+function RunShell({ route, activity }: { route: Route; activity: Activity }) {
   const run = route.run!;
   const { data, error } = useMap(run);
   const { data: index } = useIndex();
@@ -83,12 +112,17 @@ function RunShell({ route }: { route: Route }) {
 
   return (
     <>
-      <TopBar route={route}>
+      <TopBar route={route} activity={activity}>
         <span className="crumb">
           <span className="faint">/</span>
           <b>{app?.label ?? run}</b>
           {app?.version && <span className="faint">v{app.version}</span>}
           {data && <StatusBadge status={data.run.status} />}
+          {data && activity.live?.has_logs && (
+            <a className="crumb-link small" href={`#/logs?run=${encodeURIComponent(data.run.id)}`}>
+              Log
+            </a>
+          )}
         </span>
       </TopBar>
       <nav className="tabs">
