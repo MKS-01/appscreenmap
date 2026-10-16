@@ -5,9 +5,9 @@
 <h1 align="center">AppScreenMap</h1>
 
 <p align="center">
-  <strong>A map of your mobile app, built by crawling it. No SDK, no test IDs, no source.</strong><br>
+  <strong>Map and audit any mobile app by crawling it, from your AI agent over MCP. No SDK, no test IDs, no source.</strong><br>
   Point it at a build on an Android emulator or iOS Simulator. You get plain files, ready-to-run test flows,<br>
-  WCAG and performance audits, a CI gate, and an MCP server your AI agent can query.
+  WCAG and performance audits, a CI gate, and a live dashboard to browse it all.
 </p>
 
 <p align="center">
