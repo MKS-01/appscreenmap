@@ -17,18 +17,29 @@ export interface DiscoveryTree {
   order: string[]; // pre-order: parents before children, siblings by discovery time
 }
 
-export function discoveryTree(map: AppMapData, visible: Screen[]): DiscoveryTree {
+/** Tree edits that change the shape: screens taken out (their children move up), screens moved under another,
+ *  and relabelled links (keyed by the child). */
+export interface ShapeEdits {
+  deleted: Set<string>;
+  parents: Record<string, string | null>; // null: a root of its own
+  labels?: Record<string, string>;
+}
+
+export function discoveryTree(map: AppMapData, visible: Screen[], edits?: ShapeEdits): DiscoveryTree {
   const ids = new Set(visible.map((s) => s.id));
   const byId = new Map(visible.map((s) => [s.id, s]));
+  const hidden = edits?.deleted ?? new Set<string>();
+  const everyone = new Map(map.screens.map((s) => [s.id, s]));
   const root = rootScreen(map)?.id;
   const parent = new Map<string, string>();
   const via = new Map<string, { label: string; kind: string }>();
+  const moved = new Set<string>(); // screens moved to be a root of their own
 
   const firstTransition = (from: string, to: string) =>
     map.transitions.filter((t) => t.from === from && t.to === to).sort((a, b) => a.step - b.step)[0];
 
-  for (const s of visible) {
-    if (s.id === root || s.origin === "launch" || s.origin === "unknown") continue;
+  // The screen the crawler was on when it first reached `s`, and how, among the screens in `known`.
+  const found = (s: Screen, known: Set<string>) => {
     let p: string | undefined;
     let label = "";
     let kind = "";
@@ -38,20 +49,51 @@ export function discoveryTree(map: AppMapData, visible: Screen[]): DiscoveryTree
       label = last.label;
     } else {
       // External or path-less screens: the earliest transition into them.
-      const t = map.transitions.filter((x) => x.to === s.id && x.from !== s.id && ids.has(x.from)).sort((a, b) => a.step - b.step)[0];
+      const t = map.transitions.filter((x) => x.to === s.id && x.from !== s.id && known.has(x.from)).sort((a, b) => a.step - b.step)[0];
       if (t) [p, label, kind] = [t.from, t.label, t.kind];
+    }
+    return { p, label, kind };
+  };
+  const allIds = new Set(everyone.keys());
+
+  for (const s of visible) {
+    if (s.id === root) continue;
+    const want = edits?.parents[s.id];
+    if (want === null) {
+      moved.add(s.id);
+      continue;
+    }
+    if (s.origin === "launch" && want === undefined) continue;
+    if (s.origin === "unknown" && want === undefined) continue;
+    let { p, label, kind } = found(s, hidden.size ? new Set([...ids, ...hidden]) : ids);
+    if (want) [p, label, kind] = [want, firstTransition(want, s.id)?.label ?? "", ""];
+    // A screen taken out of the tree: its children hang off whatever it hung off (its own move included).
+    for (let n = 0; p && hidden.has(p) && n < 100; n++) {
+      const up = everyone.get(p);
+      const moved = edits?.parents[p];
+      p = moved !== undefined ? (moved ?? undefined) : up ? found(up, allIds).p : undefined;
     }
     if (!p || !ids.has(p) || p === s.id) continue;
     parent.set(s.id, p);
-    via.set(s.id, { label, kind: kind || firstTransition(p, s.id)?.kind || "" });
+    via.set(s.id, { label: edits?.labels?.[s.id] ?? label, kind: kind || firstTransition(p, s.id)?.kind || "" });
   }
+  // A move that would put a screen under its own descendant is dropped (the UI refuses it too).
+  const cyclic = (id: string) => {
+    for (let at = parent.get(id), n = 0; at && n < 500; at = parent.get(at), n++) if (at === id) return true;
+    return false;
+  };
+  for (const s of visible)
+    if (parent.has(s.id) && cyclic(s.id)) {
+      parent.delete(s.id);
+      via.delete(s.id);
+    }
 
   const children = new Map<string, string[]>();
   for (const [c, p] of parent) children.set(p, [...(children.get(p) ?? []), c]);
   const born = (id: string) => byId.get(id)?.first_step ?? 0;
   for (const list of children.values()) list.sort((a, b) => born(a) - born(b));
 
-  const entry = new Set(visible.filter((s) => s.id === root || s.origin === "launch").map((s) => s.id));
+  const entry = new Set(visible.filter((s) => s.id === root || s.origin === "launch" || moved.has(s.id)).map((s) => s.id));
   const orphan = new Set(visible.filter((s) => !entry.has(s.id) && !parent.has(s.id)).map((s) => s.id));
   const byBirth = (a: Screen, b: Screen) => a.first_step - b.first_step;
   const roots = [

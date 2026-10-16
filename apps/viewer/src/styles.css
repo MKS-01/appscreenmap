@@ -4120,3 +4120,412 @@ a.bars-label,
     transform: none;
   }
 }
+
+/* ── map editing: toolbar, comment pins, threads ───────────────────────── */
+.map-canvas.tool-comment .react-flow__pane,
+.map-canvas.tool-comment .react-flow__node {
+  cursor: crosshair;
+}
+.map-canvas.tool-move .react-flow__node,
+.map-canvas.tool-rename .react-flow__node,
+.map-canvas.tool-delete .react-flow__node {
+  cursor: pointer;
+}
+.react-flow__node.node-move-from .snode {
+  outline: 2px dashed var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-lg);
+}
+.map-canvas.tool-add .react-flow__pane,
+.map-canvas.tool-add .react-flow__node {
+  cursor: copy;
+}
+.map-canvas.tool-rename .react-flow__edge {
+  cursor: text;
+}
+/* A screen added on the map that the crawl has not found: dashed, no screenshot. */
+.snode.planned {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+.snode .noshot {
+  display: grid;
+  place-items: center;
+}
+.snode .planned-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--accent);
+}
+/* Tree: the card a dragged screen would go under. */
+.snode.drop {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-lg);
+}
+.tree-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tree-edit-field {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.tree-edit-field select {
+  min-width: 0;
+}
+.cm-row:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.btn.small {
+  min-height: 26px;
+  padding: 0 10px;
+}
+.edit-bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+}
+.edit-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+.edit-tools {
+  display: flex;
+  gap: 2px;
+}
+.edit-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--dim);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+.edit-tool:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.edit-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.edit-tool.on {
+  background: var(--accent-14);
+  color: var(--accent);
+  border-color: var(--accent-28);
+}
+@media (hover: hover) and (pointer: fine) {
+  .edit-tool:hover:not(:disabled):not(.on) {
+    background: var(--panel-2);
+    color: var(--text);
+  }
+}
+.edit-tool kbd {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+.edit-count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+.edit-tool.on .edit-count {
+  color: var(--accent);
+}
+.edit-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 2px;
+  background: var(--line);
+}
+.edit-hint {
+  padding: 5px 10px;
+  font-size: var(--text-sm);
+  color: var(--dim);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+.edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(360px, 100%);
+  max-height: 40vh;
+  overflow: auto;
+  padding: 10px;
+  box-shadow: var(--shadow-lg);
+}
+.edit-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--text-sm);
+}
+.edit-reset {
+  align-self: flex-end;
+}
+.edit-toast {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 14px;
+  font-size: var(--text-sm);
+  background: var(--panel-2);
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+@container map-main (max-width: 760px) {
+  .edit-tool-label,
+  .edit-tool kbd {
+    display: none;
+  }
+}
+
+.cm-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+}
+.cm-layer > * {
+  pointer-events: auto;
+}
+/* A pin is a speech-bubble teardrop whose tip sits on the spot it marks. */
+.cm-pin {
+  --pin: var(--accent);
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  transform: translate(0, -100%);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid var(--bg);
+  border-radius: 50% 50% 50% 0;
+  background: var(--pin);
+  color: var(--on-accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  cursor: grab;
+  touch-action: none;
+  transition: box-shadow var(--dur-fast) ease;
+}
+.cm-pin.bad {
+  --pin: var(--bad);
+}
+.cm-pin.warn {
+  --pin: var(--warn);
+}
+.cm-pin.info {
+  --pin: var(--info);
+}
+.cm-pin.active {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.cm-pin.resolved {
+  background: var(--panel-2);
+  border-color: var(--line-hi);
+  color: var(--good);
+}
+.cm-pin:active {
+  cursor: grabbing;
+}
+.cm-pop,
+.rename-box {
+  position: absolute;
+  z-index: 9;
+  padding: 12px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rename-box {
+  flex-direction: row;
+  align-items: center;
+  width: 280px;
+  padding: 8px;
+}
+.cm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cm-head .kicker {
+  margin: 0;
+}
+.cm-head-actions {
+  display: flex;
+  gap: 2px;
+}
+.cm-status {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.cm-status.good {
+  color: var(--good);
+}
+.cm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.cm-tag {
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--dim);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  cursor: pointer;
+}
+.cm-tag.on {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-14);
+}
+.cm-tag.bad.on {
+  border-color: var(--bad);
+  background: var(--bad-14);
+}
+.cm-tag.warn.on {
+  border-color: var(--warn);
+  background: var(--warn-14);
+}
+.cm-tag.info.on {
+  border-color: var(--info);
+  background: var(--info-14);
+}
+.cm-input {
+  width: 100%;
+  padding: 7px 9px;
+  resize: vertical;
+  font: inherit;
+  font-size: var(--text-base);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-md);
+}
+.cm-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.cm-text,
+.cm-reply {
+  margin: 0;
+  font-size: var(--text-base);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cm-reply {
+  padding-left: 10px;
+  border-left: 2px solid var(--line-hi);
+  color: var(--dim);
+}
+.cm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.cm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cm-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 8px;
+  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+.cm-row.on {
+  border-color: var(--accent);
+  background: var(--accent-08);
+}
+@media (hover: hover) and (pointer: fine) {
+  .cm-row:hover {
+    background: var(--panel-2);
+  }
+}
+.cm-row-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cm-row-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+.cm-chip {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--accent);
+}
+.cm-chip.bug {
+  color: var(--bad);
+}
+.cm-chip.copy {
+  color: var(--warn);
+}
+.cm-chip.question {
+  color: var(--info);
+}
+@media (prefers-reduced-motion: reduce) {
+  .edit-tool,
+  .cm-pin {
+    transition: none;
+  }
+}
