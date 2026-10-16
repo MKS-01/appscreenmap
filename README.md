@@ -33,7 +33,7 @@ appscreenmap crawl --apk app.apk   # explore the app, then run `appscreenmap` to
 ```
 
 > [!NOTE]
-> **Early alpha.** Commands and flags may change. iOS and the security audit (18 of 19 rules) are beta (see [Feature status](#feature-status)).
+> **Early alpha:** the project is under active development and commands may change ([status](#feature-status)).
 
 ## Why
 
