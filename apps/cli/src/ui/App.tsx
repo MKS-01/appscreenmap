@@ -12,11 +12,13 @@ import { readRuns, runUrl, type RunSummary } from "../runs";
 import { MAP_SCHEMA_VERSION } from "../schema";
 import { copy, openTerminal } from "../system";
 import { C } from "../theme";
-import { readProgress, runEvents, tail, type Progress } from "../watch";
-import { Field, LABEL_W, Live, LogTail, ReadinessPanel, RunRow, SuggestionList, statusTone, type Tone } from "./parts";
+import { readActivity, readProgress, runEvents, SOURCES, tail, type ActivityEvent, type ActivityFilter, type Progress } from "../watch";
+import { ActivityList, Field, LABEL_W, Live, LogTail, ReadinessPanel, RunRow, SuggestionList, statusTone, type Tone } from "./parts";
 
 export const MAP_SCHEMA = MAP_SCHEMA_VERSION;
-const TABS = ["home", "crawl", "runs", "agent"] as const;
+const TABS = ["home", "crawl", "runs", "agent", "logs"] as const;
+const LOGS_TAB = 4;
+const LOG_LINES = 12;
 const POLL_MS = 1000;
 
 const stripAnsi = (s: string) => s.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "");
@@ -36,7 +38,7 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
   const { exit } = useApp();
   const { stdout } = useStdout();
   const [tab, setTab] = useState(0);
-  const [sel, setSel] = useState([0, 0, 0, 0]);
+  const [sel, setSel] = useState([0, 0, 0, 0, 0]);
   const [flash, setFlash] = useState<{ text: string; tone: Tone } | null>(null);
   const [runs, setRuns] = useState<RunSummary[]>(() => readRuns(runsRoot));
   const [readiness, setReadiness] = useState<Readiness | null>(() => (runs[0] ? readReadiness(runsRoot, runs[0]) : null));
@@ -48,6 +50,8 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
   const [launchedExit, setLaunchedExit] = useState<string | null>(null);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [update, setUpdate] = useState<string | null>(null);
+  const [logFilter, setLogFilter] = useState<ActivityFilter>({});
+  const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const prevRuns = useRef(runs);
 
   const inCheckout = useMemo(() => existsSync(join(cwd, "samples", "playground-app", "apk", "playground-v1.apk")), [cwd]);
@@ -84,6 +88,15 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
     return () => clearInterval(timer);
   }, []);
 
+  // The activity log, while the logs tab is open: every engine command, from here, an agent, MCP or CI.
+  useEffect(() => {
+    if (tab !== LOGS_TAB) return;
+    const read = () => setActivity(readActivity(runsRoot, logFilter, LOG_LINES));
+    read();
+    const timer = setInterval(read, POLL_MS);
+    return () => clearInterval(timer);
+  }, [tab, logFilter]);
+
   // Output of a command started here, until it records a run (or for good, if it doesn't record one).
   useEffect(() => {
     if (!launched) return;
@@ -110,7 +123,7 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
     readiness,
     inCheckout,
   });
-  const lengths = [0, crawlItems.length, runs.length, AGENT.length];
+  const lengths = [0, crawlItems.length, runs.length, AGENT.length, 0];
   const current = sel[tab] ?? 0;
   const launchedRunning = launched !== null && launchedExit === null;
   const copyCmd = (cmd: string) => (copy(cmd) ? say(`copied: ${cmd}`) : say(`no clipboard tool here; run: ${cmd}`, "warn"));
@@ -147,6 +160,18 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
       if (!n) return;
       return setSel((s) => s.map((v, i) => (i === tab ? (v + (key.downArrow ? 1 : n - 1)) % n : v)));
     }
+    if (input === "l") return setTab(LOGS_TAB);
+    if (tab === LOGS_TAB && input === "f") {
+      const i = logFilter.source ? SOURCES.indexOf(logFilter.source) + 1 : 0;
+      const source = SOURCES[i];
+      setLogFilter((f) => ({ ...f, source }));
+      return say(`logs from ${source ?? "everyone"}`, "faint");
+    }
+    if (tab === LOGS_TAB && input === "w") {
+      setLogFilter((f) => ({ ...f, problems: !f.problems }));
+      return say(logFilter.problems ? "logs: all lines" : "logs: warnings and errors only", "faint");
+    }
+    if (tab === LOGS_TAB && input === "c") return copyCmd("appscreenmap logs");
     if (input === "c") {
       const cmd = selectedCmd();
       return cmd ? copyCmd(cmd) : undefined;
@@ -194,6 +219,7 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
     1: <>{key("x")} run · {key("s")} stop · {key("c")} copy</>,
     2: <>{key("↵")} open · {key("c")} copy</>,
     3: <>{key("t")} terminal · {key("c")} copy</>,
+    4: <>{key("f")} who · {key("w")} warnings · {key("c")} copy</>,
   };
 
   return (
@@ -323,6 +349,9 @@ export function App({ version, engine, dashboard, dashboardError, opened, runsRo
               <SuggestionList items={AGENT} sel={current} />
             </Box>
           </Box>
+        )}
+        {tab === LOGS_TAB && (
+          <ActivityList events={activity} filter={logFilter} path={`${runsShown}/.logs/activity.jsonl`} />
         )}
       </Box>
 

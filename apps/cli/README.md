@@ -48,13 +48,14 @@ binaries, the engine's wheels, `viewer-<version>.tar.gz` and `install.sh`. `make
 
 | Key | In the terminal home |
 |---|---|
-| `←` `→` (or `1`–`4`) | home · crawl · runs · agent |
+| `←` `→` (or `1`–`5`) | home · crawl · runs · agent · logs |
 | `↑` `↓` | select a command or a run |
 | `c` | copy the selected command (home: the next step) |
 | `x` / `s` | home: run the next step; crawl: run the selected command here (output in `runs/.logs/`) / stop it like Ctrl-C (the run is saved as `stopped`) |
 | `↵` | home: open the latest run in the dashboard; runs: the selected one; elsewhere: copy |
 | `o` | open the dashboard |
 | `t` | open a new terminal window here for an agent session (macOS Terminal, iTerm2; elsewhere it copies `cd <dir>`) |
+| `l` | the logs tab; there `f` cycles who started it (agent, cli, mcp, ci), `w` shows warnings and errors only, `c` copies `appscreenmap logs` |
 | `r` / `q` | refresh / quit (stops what this CLI started: a crawl saves first, then the dashboard) |
 
 **Live crawls.** The Crawl tab follows whichever crawl is running in the runs folder, started here or by an agent in
@@ -63,6 +64,12 @@ and outcomes (new screen, known, same screen, left the app, crash). It reads wha
 (`runs/index.json`, the run's `map.json` and `trace.jsonl`) once a second, so no engine change or event stream is
 needed. A run starting or finishing shows on the bottom line from any tab. In a source checkout the first Crawl entry
 is a ready-to-run Playground crawl.
+
+**Logs.** The Logs tab follows `runs/.logs/activity.jsonl`, where every engine command (crawl, security, a11y, store,
+perf, verify, merge, …) writes its output line by line, tagged with who started it: you here (`cli`), an AI agent
+(`agent`), the MCP server (`mcp`) or CI (`ci`). Each run also keeps its own lines in `log.txt`. Secrets are masked.
+From any terminal, `appscreenmap logs` follows the same stream (`--source agent`, `--cmd security`, `--level warn`,
+`--run <id>`, `--no-follow`, `--json`).
 
 **The dashboard** is the engine's `serve` (viewer, `runs/`, the notes endpoint), run in the background: one
 implementation of that contract, in the engine. A dashboard already running on the port is reused; a busy port moves

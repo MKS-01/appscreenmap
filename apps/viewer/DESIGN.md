@@ -87,6 +87,9 @@ tabular-nums` for stats). Scale: display (`.how-title`, `.hero-title`) → `h1` 
 | Totals | `.ins-totals`, `.ins-total` | Hairline-separated number cells; colour only on numbers that need you |
 | Calendar | `Calendar` in `Insights.tsx`, `.cal` | Store/platform deadlines on a time axis with a TODAY marker, four label lanes with stems; a list below 700px |
 | Requirements | `.req-grid`, `.req-col` | One column per store/platform; met / due / blocked / upcoming / not-checked glyphs (`status-*` icons) |
+| Live chip | `LiveChip`, `.live-chip` (`components/Activity.tsx`) | Top bar, only while a command runs or just ended: status word + "crawl · AI agent". Toggles the drawer (`aria-pressed`); never opens it by itself |
+| Activity drawer | `ActivityDock`, `.dock` | Bottom of the shell, outside `.main` (so it shrinks the page, never covers it). Live tail of the running command; hidden when idle, on the Logs page, and after a reload with nothing running |
+| Log lines | `LogLines`, `.log-lines`, `.log-line.warn/.error/.match` | Mono, time in the gutter, WARN/ERROR as a word; sticks to the bottom while following unless scrolled up; a search result opens at its first match |
 | Device frame | `.ins-phone` | A crawl screenshot at its real aspect ratio, 1px `--line-hi` frame, 3–4px inset |
 
 Reuse before inventing. If a new pattern appears twice, add it here and to `#/design`.

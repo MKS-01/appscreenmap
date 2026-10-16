@@ -12,7 +12,7 @@ from pathlib import Path
 
 from appscreenmap.a11y.checks import audit_run
 from appscreenmap.a11y.report import write_reports
-from appscreenmap.core import __version__, accounts, locales
+from appscreenmap.core import __version__, accounts, activity, locales
 from appscreenmap.core.config import CrawlConfig
 from appscreenmap.core.model import AppMap
 from appscreenmap.core.runs import new_run_dir, update_index
@@ -243,6 +243,7 @@ def cmd_crawl(args) -> int:
             file=sys.stderr,
         )
         return 2
+    activity.add_secrets(os.environ.get(n) for n in cfg.secret_names())
     ios = bool(args.app) or args.platform == "ios"
     if ios:
         cfg.measure_load = (
@@ -256,6 +257,7 @@ def cmd_crawl(args) -> int:
     if cfg.uses_account():
         acct = accounts.load_or_create(package, cfg.account_email)
         os.environ.update(accounts.env_for(acct))
+        activity.add_secrets([acct["password"]])
         print(
             f"test account: {acct['email']} ({'new, saved to' if acct['new'] else 'reusing'} {acct['path']}; "
             f"status {acct['status']})"
@@ -270,6 +272,7 @@ def cmd_crawl(args) -> int:
     # Android and iOS builds of one app have different screens: keep their runs in separate project folders.
     project = args.project or (f"{package.rsplit('.', 1)[-1]}-ios" if ios else None)
     run_dir = new_run_dir(runs_root, package, args.name, project)
+    activity.bind_run(run_dir)
     run = {
         "id": run_dir.name,
         "status": "running",

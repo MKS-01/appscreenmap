@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import type { LogEvent } from "../activity";
+import { LogLines } from "../components/Activity";
 import { CopyButton, Stat, StatusBadge } from "../components/common";
 import { Icon, type IconName } from "../components/Icon";
 import { Bars, Columns, Meter, SampleTag, Split } from "../insights/charts";
@@ -59,6 +61,13 @@ function Block({ title, note, children }: { title: string; note?: string; childr
     </section>
   );
 }
+
+const SAMPLE_LOG: LogEvent[] = [
+  { t: "2026-10-16T12:04:31Z", cmd: "crawl", run: null, source: "agent", level: "info", msg: "  new screen s004: 'Settings' [MainActivity] list,toggles" },
+  { t: "2026-10-16T12:04:33Z", cmd: "crawl", run: null, source: "agent", level: "warn", msg: "  ! no safety words for the language 'xx'" },
+  { t: "2026-10-16T12:04:35Z", cmd: "crawl", run: null, source: "agent", level: "info", msg: "  new screen s005: 'About' [MainActivity]", match: true },
+  { t: "2026-10-16T12:04:36Z", cmd: "crawl", run: null, source: "agent", level: "error", msg: "device error: adb: device offline" },
+];
 
 export default function DesignSystem() {
   const [replay, setReplay] = useState(0);
@@ -217,6 +226,20 @@ export default function DesignSystem() {
             <span>
               <SampleTag />
             </span>
+          </div>
+        </div>
+      </Block>
+
+      <Block title="Activity log" note="components/Activity.tsx: the top-bar chip (only while a command runs), and log lines (drawer, Logs page)">
+        <div className="col" style={{ gap: 12 }}>
+          <span>
+            <button className="live-chip" aria-pressed={false}>
+              <StatusBadge status="running" />
+              <span className="live-chip-what">crawl · AI agent</span>
+            </button>
+          </span>
+          <div className="panel" style={{ overflow: "hidden" }}>
+            <LogLines events={SAMPLE_LOG} />
           </div>
         </div>
       </Block>

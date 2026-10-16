@@ -13,6 +13,7 @@ from __future__ import annotations
 import functools
 import heapq
 import json
+import os
 import re
 import subprocess
 import sys
@@ -502,7 +503,13 @@ class MapTools:
             cmd += ["--serial", serial or self.serial]
         log = logs / f"{job}.log"
         with log.open("w") as fh:
-            proc = subprocess.Popen(cmd, stdout=fh, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+            proc = subprocess.Popen(
+                cmd,
+                stdout=fh,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                env={**os.environ, "APPSCREENMAP_SOURCE": "mcp"},  # tagged in the activity log
+            )
         self._jobs[job] = {"proc": proc, "log": log, "started": time.time()}
         return {"job": job, "log": str(log), "status": "running"}
 

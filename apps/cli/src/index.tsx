@@ -27,7 +27,9 @@ const HELP = `appscreenmap ${version}: map every screen of a mobile app
       --runs                also finished runs older than --older-than days (default 30)
       --dry-run  --yes  --runs-dir DIR
   appscreenmap version      CLI, engine, dashboard and map schema versions
-  appscreenmap <command>    doctor, crawl, export, diff, verify, report, perf, a11y, security, serve, mcp:
+  appscreenmap logs         follow what every command is doing, whoever started it (you, an agent, MCP, CI)
+      --source agent  --cmd crawl  --level warn  --run ID  --no-follow  --json
+  appscreenmap <command>    doctor, crawl, export, diff, verify, report, perf, a11y, security, store, merge, serve, mcp:
                             run by the engine (\`appscreenmap <command> --help\` for its options)
 `;
 

@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 //   #/                         runs
 //   #/how                      how it works
 //   #/design                   design system reference (not in the nav)
+//   #/logs?run=&open=          activity log: every command run, searchable (shown once a log exists)
 //   #/r/<run>/<tab>            map | screens | replay | insights | compare
 //   #/r/<run>/s/<screen>       screen detail
 //   #/r/<run>/compare/<base>   compare against a baseline run
 //   #/r/<run>/insights/<audit> one audit (coverage, a11y, perf, adaptive, store, platform, security, …)
 
 export interface Route {
-  page: "runs" | "how" | "design" | "run";
+  page: "runs" | "how" | "design" | "logs" | "run";
   run?: string;
   tab?: string;
   arg?: string;
@@ -23,6 +24,7 @@ export function parseHash(hash: string): Route {
   const query = new URLSearchParams(qs);
   if (parts[0] === "how") return { page: "how", query };
   if (parts[0] === "design") return { page: "design", query };
+  if (parts[0] === "logs") return { page: "logs", query };
   if (parts[0] === "r" && parts[1]) return { page: "run", run: parts[1], tab: parts[2] ?? "map", arg: parts[3], query };
   return { page: "runs", query };
 }

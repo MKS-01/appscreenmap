@@ -3,7 +3,10 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { RunSummary } from "../src/runs";
-import { budgetUsed, duration, parseProgress, parseTrace, readProgress, runEvents, tail } from "../src/watch";
+import {
+  activityPath, budgetUsed, duration, filterActivity, parseActivity, parseProgress, parseTrace, readActivity, readProgress,
+  runEvents, tail,
+} from "../src/watch";
 
 const MAP = JSON.stringify({
   run: {
@@ -72,5 +75,37 @@ describe("run events", () => {
       "finished:d",
     ]);
     expect(runEvents(after, after)).toEqual([]);
+  });
+});
+
+describe("activity log", () => {
+  const LINES = [
+    '{"t": "2026-10-16T12:00:00.000+00:00", "cmd": "crawl", "run": null, "source": "agent", "level": "info", "msg": "appscreenmap crawl", "kind": "start"}',
+    '{"t": "2026-10-16T12:00:01.000+00:00", "cmd": "crawl", "run": "p-1", "source": "agent", "level": "warn", "msg": "! no safety words"}',
+    '{"t": "2026-10-16T12:00:02.000+00:00", "cmd": "security", "run": "p-1", "source": "cli", "level": "info", "msg": "manifest: 3 findings"}',
+    '{"t": "2026-10-16T12:00:03.000+00:00", "cmd": "crawl", "run": "p-1", "source": "mcp", "level": "loud", "msg": "odd level"}',
+    '{"t": "2026-10-16T12:00:04.000+00:00", "msg": "half',
+  ];
+
+  test("parses events, skipping a line still being written", () => {
+    const ev = parseActivity(LINES);
+    expect(ev.map((e) => e.msg)).toEqual(["appscreenmap crawl", "! no safety words", "manifest: 3 findings", "odd level"]);
+    expect(ev[0]).toMatchObject({ kind: "start", run: null, source: "agent" });
+    expect(ev[3]!.level).toBe("info"); // an unknown level reads as info
+  });
+
+  test("filters by who started it and by warnings", () => {
+    const ev = parseActivity(LINES);
+    expect(filterActivity(ev, { source: "agent" }).length).toBe(2);
+    expect(filterActivity(ev, { problems: true }).map((e) => e.msg)).toEqual(["! no safety words"]);
+    expect(filterActivity(ev, { source: "cli", problems: true })).toEqual([]);
+  });
+
+  test("reads the last events from runs/.logs/activity.jsonl; empty when there is none", () => {
+    const root = mkdtempSync(join(tmpdir(), "asm-runs-"));
+    expect(readActivity(root)).toEqual([]);
+    mkdirSync(join(root, ".logs"));
+    writeFileSync(activityPath(root), LINES.slice(0, 4).join("\n") + "\n");
+    expect(readActivity(root, {}, 2).map((e) => e.msg)).toEqual(["manifest: 3 findings", "odd level"]);
   });
 });
