@@ -28,7 +28,8 @@ Never fix exploration by guessing. Each fix follows this loop:
    only where it's non-obvious.
 4. **Verify.** Run `uv run pytest -q && uv run ruff check && uv run ruff format`, then
    re-crawl the Playground with `--clear-data` and compare `report` numbers before and after
-   (steps/screen, no-ops, near-duplicates, nav failures).
+   (steps/screen, no-ops, near-duplicates, nav failures). Then add the re-run to the Playground canvas
+   (`merge --into <canvas> <run> --move`, see the `crawl-app` skill) instead of leaving a new run behind.
 
 > **iOS crawl?** Start with the `ios-simulator` skill: its table of symptoms (missing tab bar, in-app browser,
 > blank trees) separates app accessibility gaps from crawler bugs before you change any code.

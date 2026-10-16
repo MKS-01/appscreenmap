@@ -46,6 +46,10 @@ export interface Screen {
   id: string;
   kind: "app" | "external" | "crash";
   title: string;
+  /** The screen's own title when titles.json replaced it for display. */
+  title_local?: string;
+  /** Viewer only: a screen added on the map (notes.json edits.added) that the crawl has not found. */
+  planned?: boolean;
   activity: string | null;
   package: string | null;
   signature: string;

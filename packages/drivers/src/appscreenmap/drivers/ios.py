@@ -38,6 +38,7 @@ class IosSimulatorDriver:
         self._size: tuple[int, int] | None = None
         self._crash_mark = time.time()
         self._executable: dict[str, str] = {}
+        self.locale = ""  # language the app is launched in, "" = the simulator's
 
     # ── process plumbing ────────────────────────────────────────────────────
 
@@ -172,9 +173,25 @@ class IosSimulatorDriver:
         m = re.search(r"CFBundleShortVersionString\s*=\s*\"?([^\";\n]+)", out)
         return m.group(1).strip() if m else None
 
+    def get_app_locales(self, bundle_id: str) -> str:
+        return self.locale
+
+    def set_app_locales(self, bundle_id: str, tags: str) -> bool:
+        """iOS has no per-app language setting: the app is relaunched with -AppleLanguages. Always applies."""
+        tags = tags.replace("_", "-").strip()
+        if not re.fullmatch(r"[A-Za-z0-9\-]*", tags):
+            raise DriverError(f"not a language tag: {tags!r}")
+        self.locale = tags
+        return True
+
+    def _locale_args(self) -> list[str]:
+        if not self.locale:
+            return []
+        return ["-AppleLanguages", f"({self.locale})", "-AppleLocale", self.locale.replace("-", "_")]
+
     def launch(self, bundle_id: str, activity: str | None = None) -> dict:
         self._remember_executable(bundle_id)
-        out = self._simctl("launch", self.udid, bundle_id, timeout=60)
+        out = self._simctl("launch", self.udid, bundle_id, *self._locale_args(), timeout=60)
         return {"pid": out.strip().rsplit(" ", 1)[-1]}
 
     def force_stop(self, bundle_id: str) -> None:

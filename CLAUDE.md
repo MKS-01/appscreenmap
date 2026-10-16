@@ -51,6 +51,11 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   that presses BACK or opens other apps to recover.
 - Every exploration fix gets a synthetic regression test (`packages/crawler/tests/`, or `packages/core/tests/` for
   screen identity) before re-crawling.
+- One canvas per app, by default. Every crawl or re-run of an app ends in that app's one canvas: crawl, then
+  `appscreenmap merge --into <canvas> <run> --labels "<flow>" --move` adds it as a scenario in place (same id and
+  folder; notes, comments and tree edits kept) and removes the run's own folder, so no extra run is left behind. The
+  app's first run becomes its canvas. Start a separate run or a new canvas only when the developer asks for one. Ask
+  before `--clear-data` (it logs the emulator out) and before deleting a canvas.
 - No git tags or releases until asked.
 
 ## Commands

@@ -76,3 +76,56 @@ def test_a11y_triage_rejects_bad_values(run_dir, a11y):
     doc = {"appscreenmap_notes": 1, "notes": {}, "a11y": a11y}
     with pytest.raises(notes.NotesError):
         notes.save(run_dir, json.dumps(doc).encode())
+
+
+def test_comments_and_edits_are_validated_and_kept():
+    doc = {
+        "appscreenmap_notes": 1,
+        "notes": {},
+        "comments": {
+            "c1": {
+                "id": "c1",
+                "x": 10,
+                "y": 20,
+                "screen": "s003",
+                "tag": "bug",
+                "text": "Wrong title",
+                "replies": [{"text": "fixed in v2", "created": "2026-10-16"}, {"text": " "}],
+            },
+            "c2": {"id": "c2", "x": 1, "y": 2, "tag": "nope", "status": "weird", "text": "Loose pin"},
+        },
+        "edits": {
+            "titles": {"s002": "Privacy sheet", "s003": " "},
+            "deleted": ["s009", "s009"],
+            "parents": {"s005": None, "s006": "s001"},
+            "added": {"n-1": {"title": "Forgot password", "parent": "s003", "created": "2026-10-16"}},
+            "labels": {"s004": "Sign in", "s005": ""},
+        },
+    }
+    out = notes.validate(doc)
+    assert out["comments"]["c1"]["screen"] == "s003" and len(out["comments"]["c1"]["replies"]) == 1
+    assert (out["comments"]["c2"]["tag"], out["comments"]["c2"]["status"]) == ("flow", "open")
+    assert "screen" not in out["comments"]["c2"]
+    assert out["edits"] == {
+        "titles": {"s002": "Privacy sheet"},
+        "deleted": ["s009"],
+        "parents": {"s005": None, "s006": "s001"},
+        "added": {"n-1": {"title": "Forgot password", "parent": "s003", "created": "2026-10-16"}},
+        "labels": {"s004": "Sign in"},
+    }
+
+
+def test_a_planned_screen_needs_a_title():
+    base = {"appscreenmap_notes": 1, "notes": {}}
+    with pytest.raises(notes.NotesError, match="no title"):
+        notes.validate({**base, "edits": {"added": {"n-1": {"title": " ", "parent": None}}}})
+    with pytest.raises(notes.NotesError, match="bad parent"):
+        notes.validate({**base, "edits": {"added": {"n-1": {"title": "x", "parent": 3}}}})
+
+
+def test_a_comment_needs_text_and_numbers():
+    base = {"appscreenmap_notes": 1, "notes": {}}
+    with pytest.raises(notes.NotesError, match="no text"):
+        notes.validate({**base, "comments": {"c": {"x": 1, "y": 1, "text": " "}}})
+    with pytest.raises(notes.NotesError, match="number"):
+        notes.validate({**base, "comments": {"c": {"x": "1", "y": 1, "text": "hi"}}})

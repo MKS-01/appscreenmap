@@ -8,6 +8,51 @@ import tomllib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from . import accounts, locales
+
+# Steps a playbook may use (each a table in [[playbook.before]] / [[playbook.after]]). Exactly one action per step.
+PLAYBOOK_ACTIONS = ("tap", "tap_at", "type", "wait", "scroll", "back", "restart", "pause", "account", "entry")
+PLAYBOOK_PHASES = ("before", "after")
+
+
+def validate_playbook(playbook: dict) -> None:
+    for phase, steps in playbook.items():
+        if phase not in PLAYBOOK_PHASES:
+            raise ValueError(f"playbook phase must be one of {', '.join(PLAYBOOK_PHASES)}, got {phase!r}")
+        for i, step in enumerate(steps, 1):
+            acts = [a for a in PLAYBOOK_ACTIONS if a in step]
+            if len(acts) != 1:
+                raise ValueError(
+                    f"playbook.{phase} step {i}: use exactly one of {', '.join(PLAYBOOK_ACTIONS)}"
+                )
+            if acts[0] == "type" and "value" not in step:
+                raise ValueError(f"playbook.{phase} step {i}: `type` needs a `value`")
+            if acts[0] == "scroll" and step["scroll"] not in ("end", "down", "up", "top"):
+                raise ValueError(f"playbook.{phase} step {i}: scroll is end, down, up or top")
+            if acts[0] == "tap_at" and not (
+                isinstance(step["tap_at"], list)
+                and len(step["tap_at"]) == 2
+                and all(isinstance(v, (int, float)) and 0 <= v <= 1 for v in step["tap_at"])
+            ):
+                raise ValueError(f"playbook.{phase} step {i}: tap_at is [x, y] as fractions of the screen")
+            if acts[0] == "entry" and step["entry"] is not True:
+                raise ValueError(f"playbook.{phase} step {i}: entry can only be true")
+            if acts[0] == "account" and step["account"] != "created":
+                raise ValueError(f'playbook.{phase} step {i}: account can only be "created"')
+
+
+# What a form field of each kind gets, for the words in any language (locales.json). Same values as DEFAULT_INPUTS.
+LOCALE_INPUT_VALUES = {
+    "password": "Passw0rd!",
+    "email": "qa.tester@example.com",
+    "phone": "5551234567",
+    "postal": "94105",
+    "otp": "123456",
+    "last_name": "Tester",
+    "first_name": "Qa",
+    "search": "test",
+}
+
 DEFAULT_BLOCKED_TEXT = [
     r"\blog ?out\b",
     r"\bsign ?out\b",
@@ -30,6 +75,24 @@ DEFAULT_BLOCKED_TEXT = [
     r"\bdial\b",
     r"\breport\b",
 ]
+
+# Resource ids are mostly English even in an app shown in another language (`btn_logout`, `deleteAccount`), so they
+# are a language-free second check. A short list: ids like `call_to_action` or `report_list` must not be blocked.
+DEFAULT_BLOCKED_IDS = [
+    r"\blog ?out\b",
+    r"\bsign ?out\b",
+    r"\bdelete\b",
+    r"\bremove account\b",
+    r"\bdeactivate\b",
+    r"\buninstall\b",
+    r"\bfactory reset\b",
+    r"\bpurchase\b",
+    r"\bbuy\b",
+    r"\bsubscribe\b",
+    r"\bplace order\b",
+    r"\bpay now\b",
+]
+_ID_SPLIT_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|[_\-.:/]+")
 
 # Matched in order against "resource-id hint text content-desc" of an input (case-insensitive).
 DEFAULT_INPUTS: dict[str, str] = {
@@ -88,6 +151,10 @@ class CrawlConfig:
     launch_wait_seconds: float = 2.5
     similarity: float = 0.80
     max_list_items: int = 2
+    # Tab tour: visit every bottom-nav / tab destination once, and on each take at most `tour_taps` other action
+    # (one layer deeper), instead of exploring everything. Combine with max_depth = 2.
+    tab_tour: bool = False
+    tour_taps: int = 1
     max_scrolls: int = 3
     explore_toggles: bool = True
     long_click: bool = False
@@ -107,6 +174,15 @@ class CrawlConfig:
     # Crawl at a system font scale (e.g. 2.0 for WCAG 1.4.4 Resize Text); 0 keeps the device setting.
     font_scale: float = 0.0
     allow_permission_dialogs: bool = True
+    # The language the app is crawled in (a tag like "fr-FR", "ja", "ar"). "" keeps the device or app setting.
+    # Android sets the app's own language (Android 13+); iOS relaunches the app with that language.
+    locale: str = ""
+    # Languages whose destructive-button and form-field words are used besides English: ["all"] or codes like ["es", "ja"].
+    languages: list[str] = field(default_factory=lambda: ["all"])
+    # The email template of the saved test account ({rand} = random hex), and scripted steps run before the
+    # exploration and after it (sign up, then later tap through profile and settings and log out).
+    account_email: str = accounts.DEFAULT_EMAIL
+    playbook: dict = field(default_factory=dict)
     blocked_text: list[str] = field(default_factory=lambda: list(DEFAULT_BLOCKED_TEXT))
     inputs: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_INPUTS))
     default_input: str = "test"
@@ -115,11 +191,28 @@ class CrawlConfig:
     diff_mask_bottom: float = 0.0
 
     def __post_init__(self) -> None:
-        self._blocked = [re.compile(p, re.IGNORECASE) for p in self.blocked_text]
-        self._inputs = [(re.compile(k, re.IGNORECASE), v) for k, v in self.inputs.items()]
+        # Your own rules and English first; the other languages' words are added behind them.
+        self._blocked = [
+            re.compile(p, re.IGNORECASE)
+            for p in [*self.blocked_text, *locales.blocked_patterns(self.languages)]
+        ]
+        self._blocked_ids = [re.compile(p) for p in DEFAULT_BLOCKED_IDS]
+        rules = [(re.compile(k, re.IGNORECASE), v) for k, v in self.inputs.items()]
+        extra = [
+            (re.compile(pat, re.IGNORECASE), LOCALE_INPUT_VALUES[kind])
+            for kind, pat in locales.input_patterns(self.languages).items()
+        ]
+        # The other languages' field words go in front of the catch-all `name` rule, so "Nachname" is a last name.
+        at = next((i for i, (p, _) in enumerate(rules) if p.pattern == "name"), len(rules))
+        self._inputs = rules[:at] + extra + rules[at:]
 
     def is_blocked(self, label: str) -> bool:
         return bool(label) and any(p.search(label) for p in self._blocked)
+
+    def is_blocked_id(self, rid: str) -> bool:
+        """A resource id like `btn_logout` or `deleteAccount`, whatever language the screen is in."""
+        words = _ID_SPLIT_RE.sub(" ", rid or "").lower()
+        return bool(words.strip()) and any(p.search(words) for p in self._blocked_ids)
 
     def input_for(self, *hints: str) -> str:
         haystack = " ".join(h for h in hints if h)
@@ -130,8 +223,21 @@ class CrawlConfig:
 
     def missing_secrets(self, env=os.environ) -> list[str]:
         """Environment variables named by input placeholders that aren't set."""
-        names = {n for v in [*self.inputs.values(), self.default_input] for n in placeholders(v)}
+        values = [*self.inputs.values(), self.default_input]
+        values += [str(s.get("value", "")) for steps in self.playbook.values() for s in steps]
+        names = {n for v in values for n in placeholders(v)} - set(
+            accounts.ACCOUNT_VARS
+        )  # the saved account supplies these
         return sorted(n for n in names if n not in env)
+
+    def uses_account(self) -> bool:
+        """Does anything refer to ${ACCOUNT_EMAIL} / ${ACCOUNT_PASSWORD}, or mark the account as created?"""
+        values = [*self.inputs.values(), self.default_input]
+        steps = [s for st in self.playbook.values() for s in st]
+        values += [str(s.get("value", "")) for s in steps]
+        return any(set(placeholders(v)) & set(accounts.ACCOUNT_VARS) for v in values) or any(
+            "account" in s for s in steps
+        )
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -142,11 +248,21 @@ class CrawlConfig:
         if path:
             raw = tomllib.loads(Path(path).read_text())
             data.update(raw.get("crawl", {}))
+            if "languages" in raw.get("safety", {}):
+                data["languages"] = list(raw["safety"]["languages"])
             if "safety" in raw and "blocked_text" in raw["safety"]:
                 blocked = list(raw["safety"]["blocked_text"])
                 if raw["safety"].get("extend_defaults", True):
                     blocked = DEFAULT_BLOCKED_TEXT + blocked
                 data["blocked_text"] = blocked
+            if "account" in raw:
+                if unknown := set(raw["account"]) - {"email"}:
+                    raise ValueError(f"Unknown [account] keys: {', '.join(sorted(unknown))}")
+                if "email" in raw["account"]:
+                    data["account_email"] = raw["account"]["email"]
+            if "playbook" in raw:
+                validate_playbook(raw["playbook"])
+                data["playbook"] = {k: list(v) for k, v in raw["playbook"].items()}
             if "inputs" in raw:
                 inputs = dict(raw["inputs"])
                 data["default_input"] = inputs.pop("default", cls.default_input)

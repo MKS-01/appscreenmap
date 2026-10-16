@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import signal
 import sys
@@ -11,7 +12,7 @@ from pathlib import Path
 
 from appscreenmap.a11y.checks import audit_run
 from appscreenmap.a11y.report import write_reports
-from appscreenmap.core import __version__
+from appscreenmap.core import __version__, accounts, locales
 from appscreenmap.core.config import CrawlConfig
 from appscreenmap.core.model import AppMap
 from appscreenmap.core.runs import new_run_dir, update_index
@@ -197,6 +198,34 @@ def _store_audit(run_dir: Path, args, d, package: str, ios: bool) -> dict | None
         return None
 
 
+def _apply_locale(d, package: str, cfg: CrawlConfig, device: dict) -> dict:
+    """Put the app in `cfg.locale` (when asked), and say so when we have no safety words for the language it is shown in."""
+    shown = cfg.locale or ((device.get("settings") or {}).get("locale") or "")
+    out: dict = {"requested": cfg.locale or None, "applied": False, "before": "", "shown": shown or None}
+    if cfg.locale:
+        try:
+            out["before"] = d.get_app_locales(package)
+            out["applied"] = d.set_app_locales(package, cfg.locale)
+        except DriverError as e:
+            print(f"  could not set the app language: {e}", file=sys.stderr)
+        if out["applied"]:
+            print(f"app language: {cfg.locale}")
+        else:
+            print(
+                f"  ! could not set the app language to {cfg.locale} (Android 13+ is needed, and the app must have "
+                "that language); the crawl continues in whatever language the app shows.",
+                file=sys.stderr,
+            )
+    out["words_for_language"] = locales.covers(shown)
+    if not out["words_for_language"]:
+        print(
+            f"  ! no safety words for the language '{shown}': buttons like log out, delete or pay in that language "
+            "are not recognised. Add them under [safety] blocked_text in your config.",
+            file=sys.stderr,
+        )
+    return out
+
+
 def cmd_crawl(args) -> int:
     cfg = CrawlConfig.load(
         args.config,
@@ -205,6 +234,7 @@ def cmd_crawl(args) -> int:
         clear_data=True if args.clear_data else None,
         settle_seconds=args.settle,
         font_scale=args.font_scale,
+        locale=args.locale,
         disable_animations=False if args.keep_animations else None,
     )
     if missing := cfg.missing_secrets():
@@ -222,6 +252,14 @@ def cmd_crawl(args) -> int:
     if isinstance(setup, int):
         return setup
     d, app, package, launch = setup
+
+    if cfg.uses_account():
+        acct = accounts.load_or_create(package, cfg.account_email)
+        os.environ.update(accounts.env_for(acct))
+        print(
+            f"test account: {acct['email']} ({'new, saved to' if acct['new'] else 'reusing'} {acct['path']}; "
+            f"status {acct['status']})"
+        )
 
     original_font_scale = None
     if cfg.font_scale:
@@ -262,6 +300,12 @@ def cmd_crawl(args) -> int:
     if cfg.grant_permissions:
         d.grant_all(package)
     d.clear_crash_log()
+    original_locale = None
+    run["locale"] = _apply_locale(d, package, cfg, run["device"])
+    if run["locale"]["applied"]:
+        original_locale = run["locale"].pop("before")
+    run["locale"].pop("before", None)
+    amap.save(run_dir / "map.json")
 
     explorer = Explorer(d, package, launch, cfg, run_dir, amap)
     code = 0
@@ -302,6 +346,11 @@ def cmd_crawl(args) -> int:
         if original_font_scale is not None:
             try:
                 d.set_font_scale(original_font_scale)
+            except DriverError:
+                pass
+        if original_locale is not None:
+            try:
+                d.set_app_locales(package, original_locale)
             except DriverError:
                 pass
         run["finished_at"] = _now()
@@ -363,6 +412,11 @@ def register(sub) -> None:
         "--keep-animations",
         action="store_true",
         help="leave system animations on: load times include transitions, as a user sees them",
+    )
+    s.add_argument(
+        "--locale",
+        help="crawl the app in this language, e.g. fr-FR, ja, ar (Android 13+; iOS relaunches the app). "
+        "Pseudo-locales en-XA and ar-XB test long text and right-to-left layouts",
     )
     s.add_argument("--font-scale", type=float, help="crawl at this system font scale, e.g. 2.0 (WCAG 1.4.4)")
     s.add_argument("--project", help="project folder under runs/ (default: last part of the package)")

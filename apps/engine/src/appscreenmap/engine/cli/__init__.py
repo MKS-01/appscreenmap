@@ -8,9 +8,9 @@ import sys
 from appscreenmap.core import __version__
 from appscreenmap.drivers.base import DriverError
 
-from . import analyse, crawl, security, serve, store, verify
+from . import analyse, crawl, merge, security, serve, store, verify
 
-GROUPS = (crawl, verify, analyse, security, store, serve)  # `--help` lists the commands in this order
+GROUPS = (crawl, verify, analyse, merge, security, store, serve)  # `--help` lists the commands in this order
 
 
 def main(argv: list[str] | None = None) -> int:

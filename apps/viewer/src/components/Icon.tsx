@@ -210,6 +210,39 @@ const PATHS = {
       <path d="M16 3l-2 18" />
     </>
   ),
+  cursor: <path d="M4 3l7 17 2.5-7.5L21 10z" />,
+  plus: (
+    <>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </>
+  ),
+  pencil: (
+    <>
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+      <path d="m15 5 4 4" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </>
+  ),
+  undo: (
+    <>
+      <path d="M3 7v6h6" />
+      <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+    </>
+  ),
+  reparent: (
+    <>
+      <path d="M6 3v6a3 3 0 0 0 3 3h9" />
+      <path d="m14 8 4 4-4 4" />
+      <circle cx="6" cy="3" r="1" />
+    </>
+  ),
   x: (
     <>
       <path d="M18 6 6 18" />

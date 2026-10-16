@@ -5,10 +5,12 @@ from __future__ import annotations
 import hashlib
 import heapq
 import json
+import re
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 
+from appscreenmap.core import accounts
 from appscreenmap.core.analyzer import (
     PERMISSION_ALLOW_IDS,
     ElementInfo,
@@ -68,6 +70,7 @@ class Explorer:
         )
         self.last_new_step = 0
         self._warned_literal_password = False
+        self._in_playbook = False
         self.stop_reason: str | None = None
         (run_dir / "screens").mkdir(parents=True, exist_ok=True)
         self._trace = (run_dir / "trace.jsonl").open("a")
@@ -78,6 +81,8 @@ class Explorer:
             self.restart("start")
             if self.cur is None or self.cur.kind != "app":
                 raise CrawlAborted(f"{self.pkg} did not reach a screen of its own after launch")
+            if self.cfg.playbook.get("before"):
+                self.run_playbook("before")
             while self.budget_left():
                 if self.cur.kind != "app":
                     self.recover()
@@ -94,9 +99,191 @@ class Explorer:
                 self.navigate(target, path)
             else:
                 self.log(f"end: {self.stop_reason}")
+            if self.cfg.playbook.get("after") and self.cur is not None and self.cur.kind == "app":
+                self.run_playbook("after")
         finally:
             self._trace.close()
             self.save()
+
+    # ── playbook: scripted steps before and after the exploration ────────────
+    def run_playbook(self, phase: str) -> bool:
+        """Run the config's [[playbook.<phase>]] steps. A step that fails (and is not `optional`) ends the playbook."""
+        steps = self.cfg.playbook.get(phase) or []
+        results, ok = [], True
+        self._in_playbook = True
+        self.log(f"playbook {phase}: {len(steps)} step(s)")
+        try:
+            for n, step in enumerate(steps, 1):
+                desc = _describe(step)
+                try:
+                    done = self._play(step)
+                except DriverError as e:
+                    done = False
+                    self.log(f"  ! {e}")
+                results.append({"n": n, "step": desc, "ok": done})
+                self.trace(playbook=phase, n=n, step=desc, ok=done)
+                if not done and not step.get("optional"):
+                    ok = False
+                    self.log(f"  ! playbook {phase} stopped at step {n}: {desc}")
+                    break
+        finally:
+            self._in_playbook = False
+        self.map.run.setdefault("playbook", {})[phase] = {"ok": ok, "steps": results}
+        self.save()
+        return ok
+
+    def _play(self, step: dict) -> bool:
+        timeout = float(step.get("timeout", 10))
+        if "pause" in step:
+            time.sleep(float(step["pause"]))
+            return True
+        if "account" in step:
+            accounts.mark(self.pkg, "created")
+            self.log("  test account marked as created")
+            return True
+        if (
+            "entry" in step
+        ):  # this screen is another way in: the app opens here (e.g. once a first-launch sheet is gone)
+            cur = self.cur
+            if cur is None or cur.kind != "app":
+                return False
+            cur.origin, cur.depth, cur.reach_path = "launch", 0, []
+            self.log(f"  {cur.id} is an entry point")
+            self.save()
+            return True
+        if "restart" in step:  # relaunch the app: a logged-in app lands on its main screen
+            self.restart("playbook")
+            return self.cur is not None and self.cur.kind == "app"
+        if "tap_at" in step:  # a spot with no clickable node, e.g. a link inside a text (screen fractions)
+            fx, fy = step["tap_at"]
+            self.log(f"  playbook tap at {fx:.2f},{fy:.2f}")
+            src = self.cur
+            self.d.tap(round(fx * self.width), round(fy * self.height))
+            self.step += 1
+            time.sleep(self.cfg.settle_seconds)
+            dst, is_new = self.arrive(self.observe(), hint=src)
+            if src is not None and src.kind == "app":  # an arrow for it, from a stand-in element at that spot
+                x, y = round(fx * self.width), round(fy * self.height)
+                key, label = f"POS|{fx:.2f},{fy:.2f}", f"Tap at {fx:.2f},{fy:.2f}"
+                self._link(src, dst, is_new, key, "click", "link", label, (x - 1, y - 1, x + 1, y + 1))
+            return True
+        if "back" in step:
+            src = self.cur
+            if src is not None and "SYS|back" in src.elements:  # goes through act(): the arrow is recorded
+                return self.act(src.elements["SYS|back"], explore=False)
+            self.d.back()
+            self.step += 1
+            self.arrive(self.observe())
+            return True
+        if "scroll" in step:
+            return self._play_scroll(step["scroll"])
+        rx = re.compile(step.get("wait") or step.get("tap") or step["type"], re.IGNORECASE)
+        found = self._wait_for(rx, "input" if "type" in step else "tap" if "tap" in step else "any", timeout)
+        if "wait" in step:
+            return found is not None
+        if found is None:
+            return False
+        if "tap" in step:
+            el = next((e for e in self.cur.elements.values() if e.info.key == found.key), None)
+            if el is None:
+                return False
+            self.log(f"  playbook tap {found.label!r}")
+            return self.act(el, explore=False)
+        self._type_into(found, step["value"])
+        return True
+
+    def _link(self, src, dst, is_new, key, action, kind, label, bounds) -> None:
+        """Record an arrow for something the playbook did that has no element of its own."""
+        info = ElementInfo(
+            key=key,
+            kind=kind,
+            action=action,
+            label=label,
+            cls="",
+            rid="",
+            text="",
+            desc="",
+            hint="",
+            bounds=bounds,
+        )
+        self.record(src, Element(id="synthetic", info=info), dst, is_new, explore=False)
+
+    def _wait_for(self, rx: re.Pattern, want: str, timeout: float) -> ElementInfo | None:
+        """The first element on screen matching `rx` (clickable for tap, an input for type), polling until `timeout`."""
+        deadline = time.monotonic() + timeout
+        while True:
+            obs = self.observe()
+            if self.cur is None or self.obs is None or _xml_hash(obs) != _xml_hash(self.obs):
+                src = self.cur
+                dst, is_new = self.arrive(obs, hint=src)
+                if src is not None and dst is not src and src.kind == "app" and dst.kind == "app":
+                    # The app moved on by itself (a carousel, a page that finished loading): still an arrow.
+                    self._link(
+                        src, dst, is_new, f"AUTO|{dst.id}", "wait", "auto", "Moved on by itself", (0, 0, 0, 0)
+                    )
+            hits = [
+                i for i in self.obs.elements if _matches(i, rx) and i.kind not in ("up", "back", "scroll")
+            ]
+            if want == "tap":
+                hits = [i for i in hits if i.action in ("click", "long_click") and i.kind != "input"]
+            if (
+                want == "input"
+            ):  # a real text field first; Compose and custom views often report a plain clickable
+                hits = sorted(hits, key=lambda i: i.kind != "input")
+            if hits:
+                return hits[0]
+            if time.monotonic() >= deadline:
+                return None
+            time.sleep(0.8)
+
+    def _type_into(self, info: ElementInfo, value: str) -> None:
+        secret = bool(placeholders(value))
+        self.log(f"  playbook type into {info.label!r}{' (secret)' if secret else ''}")
+        self.d.tap(*_center(info.bounds))
+        time.sleep(0.4)
+        self.d.input_text(resolve(value))
+        self.cur.autofill.append(
+            {
+                "key": info.key,
+                "label": info.label,
+                "rid": info.rid,
+                "value": value,  # the placeholder for secrets, never the resolved value
+                "secret": secret,
+                "selector": selector_for(info),
+            }
+        )
+        self.d.hide_keyboard()
+        time.sleep(self.cfg.settle_seconds)
+        self.obs = self.observe()
+        if self.obs.package == self.pkg and (self.obs.activity or "") == (self.cur.activity or ""):
+            self.map.merge_elements(self.cur, self.obs, 0)
+
+    def _play_scroll(self, how: str) -> bool:
+        scroller = next((e for e in self.obs.elements if e.action == "scroll"), None)
+        if scroller is None:
+            return False
+        forward = how in ("end", "down")
+        last = _xml_hash(self.obs)
+        for _ in range(1 if how in ("down", "up") else 25):
+            self._swipe(scroller, forward=forward, fast=True)
+            self.obs = self.observe()
+            if _xml_hash(self.obs) == last:
+                break
+            last = _xml_hash(self.obs)
+        if how == "end":
+            self._capture_extra(self.cur, "bottom")
+        self.arrive(self.obs)
+        return True
+
+    def _capture_extra(self, screen: Screen, name: str) -> None:
+        """A second screenshot of a screen in another state (scrolled to the bottom), kept next to the first."""
+        safe = f"{screen.id.replace(':', '_')}-{name}"
+        png = self.dir / "screens" / f"{safe}.png"
+        try:
+            self.d.screenshot(png)
+            screen.captures[name] = f"screens/{safe}.png"
+        except (DriverError, OSError) as e:
+            self.log(f"  ! screenshot failed for {safe}: {e}")
 
     # ── budget / persistence ─────────────────────────────────────────────────
     def budget_left(self) -> bool:
@@ -137,6 +324,7 @@ class Explorer:
             long_click=self.cfg.long_click,
             explore_toggles=self.cfg.explore_toggles,
             is_blocked=self.cfg.is_blocked,
+            is_blocked_id=self.cfg.is_blocked_id,
         )
         if obs.package and snap.package and obs.package != snap.package:
             obs.activity = None  # the focused window belongs to another app (dialog, keyboard, …)
@@ -290,6 +478,8 @@ class Explorer:
         return screen, is_new
 
     def autofill(self, screen: Screen) -> None:
+        if self._in_playbook:
+            return  # a playbook types its own values
         assert self.obs is not None
         empty = [
             e for e in self.obs.elements if e.kind == "input" and (not e.text.strip() or e.text == e.hint)
@@ -346,8 +536,23 @@ class Explorer:
             for e in screen.pending():
                 if e.info.kind != "back":
                     e.status, e.note = "skipped", f"max depth {self.cfg.max_depth}"
+        if self.cfg.tab_tour:
+            self._limit_tour(screen)
         pending = screen.pending()
         return pending[0] if pending else None
+
+    def _limit_tour(self, screen: Screen) -> None:
+        """Tab tour: once `tour_taps` content elements were tried on a screen, the rest are left alone. Navigation
+        (tabs, bottom nav, up, back) and scrolling are never limited."""
+        structural = {"nav", "tab", "up", "back", "scroll"}
+        tried = sum(
+            1 for e in screen.elements.values() if e.status != "pending" and e.info.kind not in structural
+        )
+        if tried < self.cfg.tour_taps:
+            return
+        for e in screen.pending():
+            if e.info.kind not in structural:
+                e.status, e.note = "skipped", f"tab tour: {self.cfg.tour_taps} tap(s) per screen"
 
     def routes(self, src: Screen) -> tuple[dict[str, float], dict[str, Transition]]:
         """Dijkstra over known edges. Back/up edges cost more: where they lead depends on history."""
@@ -480,8 +685,18 @@ class Explorer:
             )
             if dst.kind == "app" and (is_new or dst.origin == "unknown") and src.origin != "unknown":
                 # First recorded way here (or a path for a screen first seen without one).
-                dst.reach_path = [*src.reach_path, *el.revealed_by, self._step(src, el)]
-                dst.depth, dst.origin = src.depth + 1, "action"
+                # A bottom-bar tab is one tap from the tab root whichever screen the bar was tapped on, so the
+                # tab's own screen hangs off the root (siblings), not off the previous tab.
+                base = self._tab_root(src) if el.info.kind == "nav" and is_new else src
+                revealed = el.revealed_by if base is src else []
+                dst.reach_path = [*base.reach_path, *revealed, self._step(base, el)]
+                # A tab tour counts a tab switch as the same level, so "one layer from each tab" means depth 1.
+                same_level = self.cfg.tab_tour and el.info.kind in ("nav", "tab")
+                dst.depth, dst.origin = base.depth + (0 if same_level else 1), "action"
+                if el.info.kind == "nav" and is_new:
+                    dst.title = (
+                        el.info.label
+                    )  # the tab's name beats whatever its header says (a date, a greeting)
             if is_new and dst.kind == "app":
                 self.last_new_step = self.step
                 self.map.mark_variant(dst, src, el)
@@ -616,7 +831,24 @@ class Explorer:
         if screen.kind == "app" and screen.origin == "unknown":
             # Launch lands here (the first screen, or a different start screen after login / restored state).
             screen.reach_path, screen.depth, screen.origin = [], 0, "launch"
+            if "bottom_nav" in screen.patterns and (tab := self._selected_tab()):
+                screen.title = tab
         self.save()
+
+    def _selected_tab(self) -> str | None:
+        """The label of the highlighted bottom-bar tab on screen now."""
+        tab = (
+            next((e for e in self.obs.elements if e.kind == "nav" and e.selected), None) if self.obs else None
+        )
+        return tab.label if tab else None
+
+    def _tab_root(self, src: Screen) -> Screen:
+        """The screen the bottom bar hangs off: the launch screen that shows it, else the screen it was tapped on."""
+        root = next(
+            (s for s in self.map.screens.values() if s.origin == "launch" and "bottom_nav" in s.patterns),
+            None,
+        )
+        return root or src
 
     def recover(self) -> None:
         """We are outside the app (external app, launcher, crash dialog): get back in."""
@@ -689,6 +921,20 @@ class Explorer:
 
 def _first_run_screen_ids(screens) -> set[str]:
     return {s.id for s in screens if s.kind == "app" and s.origin == "launch" and s.first_step <= 2}
+
+
+def _describe(step: dict) -> str:
+    action = next(
+        a
+        for a in ("tap", "tap_at", "type", "wait", "scroll", "back", "restart", "pause", "account", "entry")
+        if a in step
+    )
+    return f"{action} {step[action]!r}" if action not in ("back", "restart") else action
+
+
+def _matches(info: ElementInfo, rx: re.Pattern) -> bool:
+    rid = info.rid.rsplit("/", 1)[-1] if info.rid else ""
+    return any(rx.search(v) for v in (info.label, rid, info.text, info.desc, info.hint) if v)
 
 
 def _center(bounds) -> tuple[int, int]:

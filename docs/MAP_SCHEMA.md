@@ -24,7 +24,7 @@ runs/                              # crawl output, git-ignored (generated locall
     a11y.json                      # WCAG 2.2 crawl-level checks (see bottom); written after every crawl
     a11y-report.html               # shareable WCAG 2.2 report: self-contained (crops embedded), light/dark
     a11y-report.md                 # same report as Markdown; images in a11y/crops/*.jpg
-    notes.json                     # viewer stars/notes + a11y triage (owned by the web session, notes.py)
+    notes.json                     # viewer stars/notes, a11y triage, map comments and tree edits (notes.py)
     audits/index.json              # optional: audits this run has beyond the built-in ones (see "audits" below)
     audits/<audit-id>.json         # optional: one audit report (security, store, adaptive, …)
     audits/security-evidence.json  # written by `appscreenmap security`: the evidence behind audits/security.json
@@ -92,6 +92,7 @@ rather than building them. Paths are relative to the run directory.
     "visits": 7, "first_step": 1,
     "width": 1080, "height": 2400,
     "screenshot": "screens/s001.png", "thumb": "screens/s001.jpg", "hierarchy": "screens/s001.xml",
+    "captures": { "bottom": "screens/s001-bottom.png" },  // extra shots of the screen; {} when none
     "reach_path": [                     // replayable steps from launch; [] for the launch screen
       { "screen": "s001", "key": "…", "action": "click", "label": "Settings",
         "selector": { "id"?: "pkg:id/x", "text"?: "…", "desc"?: "…", "point": [x, y] },
@@ -229,6 +230,39 @@ of the same app. Not recorded on iOS yet: load times (`perf.json` has no screens
 `runs/index.json` rows carry the same object. `appscreenmap report` prints a one-line summary and
 **device caveats**: conditions that change what the numbers mean (emulator, power saver, low battery,
 TalkBack on, font scale, dark mode, airplane mode, preview build, low storage).
+
+## Canvases (merged runs) and `notes.json` comments and edits
+
+**Scenarios.** `appscreenmap merge <run>... [--into <canvas>]` puts several runs of one app on one canvas. The merged
+`map.json` keeps schema 1 and only adds fields: `run.scenarios[]` (`id`, `label`, `run_id`, `started_at`,
+`finished_at`, `steps`, `screens[]`, `entry[]` (the scenario's launch screens), `playbook`), `run.merged_from[]`, and a
+`scenario` id on every screen, transition and event. Screens are renumbered `s001…` (external `x:` screens are shared),
+steps keep the scenarios in order, each scenario keeps its own entry, so the viewer draws one tree per scenario.
+`--into` adds the runs to an existing canvas in place (same id and folder); its `notes.json` and `titles.json` (and
+the sources') follow the screens to their new ids. `--move` then deletes the merged runs' own folders, so an app keeps
+one canvas.
+
+**Comments and edits** live in `notes.json` next to `map.json` (`appscreenmap_notes: 1`, validated by `notes.py`), never in
+`map.json`, so the crawler's output stays the contract:
+
+```jsonc
+"comments": { "<id>": {
+  "id": "<id>", "x": 12, "y": 40,          // flow coordinates; with "screen", an offset from that card's top-left
+  "screen": "s005",                        // optional: the pin follows this screen
+  "tag": "bug | flow | copy | question", "status": "open | resolved", "text": "…",
+  "replies": [{ "text": "…", "created": "…" }], "created": "…", "updated": "…" } },
+"edits": {
+  "titles":  { "s003": "Sign-up chooser" },   // renamed screens
+  "deleted": ["s009"],                         // taken out of the tree; their children move up
+  "parents": { "s010": "s004", "s018": null }, // moved under another screen (null: a root of its own)
+  "added":   { "n-lx3k": { "title": "Forgot password", "parent": "s003", "created": "…" } }, // planned screens
+  "labels":  { "s004": "Sign in" }             // label of the tree link into a screen (from its tree parent)
+}
+```
+
+The viewer applies `edits` on top of the map (toolbar: select, comment, add, move under, rename, remove, undo; dropping
+a card on another in the Tree also moves it under). Planned screens are drawn dashed, without a screenshot, and have
+no screen page. Open comments and edits are the to-do list for fixing the flow.
 
 ## `perf.json`
 

@@ -9,6 +9,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  useViewport,
   type Edge,
   type Node,
   type NodeChange,
@@ -20,7 +21,26 @@ import { downloadText, flowSvg, loadShots, storySvg, type Card } from "../export
 import { ScreenLink, Thumb } from "../components/common";
 import { Icon, type IconName } from "../components/Icon";
 import { discoveryTree, storyLanes, tidyLayout, type DiscoveryTree } from "../mapLayout";
-import { useNotes, type RunNotes, type ScreenNote } from "../notes";
+import { useNotes, type MapComment, type RunNotes, type ScreenNote, type TreeEdits } from "../notes";
+import {
+  addPlanned,
+  Composer,
+  EditToolbar,
+  labelIn,
+  moveIn,
+  newScreenId,
+  Pin,
+  pinPoint,
+  plannedScreens,
+  removeIn,
+  renameIn,
+  Thread,
+  toCanvas,
+  TOOLS,
+  type Draft,
+  type Point,
+  type Tool,
+} from "./MapEdit";
 import { go, href, screenHref } from "../router";
 import { keys, useStored } from "../storage";
 import type { AppMapData, Screen } from "../types";
@@ -56,6 +76,7 @@ interface ScreenNodeData extends Record<string, unknown> {
   onpath?: boolean;
   dim?: boolean;
   star?: boolean;
+  drop?: boolean; // a dragged card would go under this one
 }
 type ScreenNode = Node<ScreenNodeData, "screen">;
 
@@ -63,7 +84,7 @@ const ScreenNodeView = memo(function ScreenNodeView({ data }: NodeProps<ScreenNo
   const { screen, run, dir } = data;
   const ext = screen.kind !== "app";
   const size = nodeSize(screen);
-  const cls = ["snode", ext && "ext", data.root && "root", data.orphan && "orphan", data.sel && "sel", data.onpath && !data.sel && "onpath", data.dim && "dim"]
+  const cls = ["snode", ext && "ext", data.root && "root", data.orphan && "orphan", data.sel && "sel", data.onpath && !data.sel && "onpath", data.dim && "dim", screen.planned && "planned", data.drop && "drop"]
     .filter(Boolean)
     .join(" ");
   return (
@@ -71,13 +92,17 @@ const ScreenNodeView = memo(function ScreenNodeView({ data }: NodeProps<ScreenNo
       <Handle type="target" position={dir === "LR" ? Position.Left : Position.Top} style={{ opacity: 0 }} />
       <div
         className="hdr"
-        title={`${screen.id} · ${screen.title}${ext ? " (left the app)" : data.orphan ? " (no recorded path)" : ` · depth ${screen.depth}`}`}
+        title={`${screen.id} · ${screen.title}${screen.planned ? " (planned, not crawled)" : ext ? " (left the app)" : data.orphan ? " (no recorded path)" : ` · depth ${screen.depth}`}`}
       >
         {data.star && <span className="star-mark">★</span>}
         <span className="t">{screen.title}</span>
-        <span className="sid">{ext ? "ext" : screen.id}</span>
+        <span className="sid">{ext ? "ext" : screen.planned ? "new" : screen.id}</span>
       </div>
-      {screen.thumb ? <img src={runFile(run, screen.thumb)} alt="" draggable={false} /> : <div className="noshot" />}
+      {screen.thumb ? (
+        <img src={runFile(run, screen.thumb)} alt="" draggable={false} />
+      ) : (
+        <div className="noshot">{screen.planned && <span className="planned-label">Planned</span>}</div>
+      )}
       <Handle type="source" position={dir === "LR" ? Position.Right : Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
@@ -100,7 +125,7 @@ export default function MapView(props: { run: string; map: AppMapData; focus?: s
   );
 }
 
-function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; focus?: string; layout?: string }) {
+function MapInner({ run, map: rawMap, focus, layout }: { run: string; map: AppMapData; focus?: string; layout?: string }) {
   const [prefs, setPrefs] = useStored(keys.mapPrefs, {
     variant: "tree" as Variant,
     direction: "auto" as Dir | "auto",
@@ -122,12 +147,39 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
   const changedOptions =
     (variant !== "story" ? +(direction !== "auto") + +(links !== "paths") + +showLabels : 0) + +!showExternal + +!!patternFilter;
   const [selected, setSelected] = useState<string | null>(focus ?? null);
-  const { notes } = useNotes(run);
+  const editor = useNotes(run);
+  const { notes, edits, comments } = editor;
+  // Edits made in the viewer sit on top of map.json: renamed screens, screens taken out, screens moved, planned
+  // screens added, links relabelled.
+  const map = useMemo(
+    () => ({
+      ...rawMap,
+      screens: [
+        ...rawMap.screens.map((s) => (edits.titles[s.id] ? { ...s, title: edits.titles[s.id] } : s)),
+        ...plannedScreens(edits, rawMap.screens.find((s) => s.kind === "app")),
+      ],
+    }),
+    [rawMap, edits],
+  );
+  const rawById = useMemo(() => screenMap(rawMap), [rawMap]);
+  const deleted = useMemo(() => new Set(edits.deleted), [edits.deleted]);
+  const parents = useMemo(
+    () => ({ ...Object.fromEntries(Object.entries(edits.added).map(([id, a]) => [id, a.parent])), ...edits.parents }),
+    [edits.added, edits.parents],
+  );
+  // The crawled name, for planned screens their own.
+  const titleOf = (id: string) => rawById.get(id)?.title ?? edits.added[id]?.title ?? id;
+  const [renameInSide, setRenameInSide] = useState<string | null>(null);
+  const [activeComment, setActiveComment] = useState<string | null>(null);
+  const [panTo, setPanTo] = useState<{ id: string; n: number } | null>(null);
 
   const byId = useMemo(() => screenMap(map), [map]);
   const patterns = useMemo(() => [...new Set(map.screens.flatMap((s) => s.patterns))].sort(), [map]);
-  const visible = useMemo(() => map.screens.filter((s) => showExternal || s.kind === "app"), [map, showExternal]);
-  const tree = useMemo(() => discoveryTree(map, visible), [map, visible]);
+  const visible = useMemo(() => map.screens.filter((s) => (showExternal || s.kind === "app") && !deleted.has(s.id)), [map, showExternal, deleted]);
+  const tree = useMemo(
+    () => discoveryTree(map, visible, { deleted, parents, labels: edits.labels }),
+    [map, visible, deleted, parents, edits.labels],
+  );
   // Auto direction: tall (portrait) cards pack best side by side, so lay the tree out top-down;
   // wide (landscape/tablet) cards pack best stacked, so left-to-right.
   const autoDir: Dir = useMemo(() => {
@@ -146,6 +198,9 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
   const filtering = !!patternFilter || !!q;
 
   const sel = selected ? byId.get(selected) : undefined;
+  useEffect(() => {
+    if (selected !== renameInSide) setRenameInSide(null); // only the screen just added opens with its name field
+  }, [selected, renameInSide]);
   useEffect(() => {
     if (!selected) return;
     const onKey = (e: KeyboardEvent) => {
@@ -332,12 +387,32 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
             selected={selected}
             setSelected={setSelected}
             dim={(s) => filtering && !matches(s)}
+            editor={editor}
+            titleOf={titleOf}
+            activeComment={activeComment}
+            setActiveComment={setActiveComment}
+            panTo={panTo}
           />
         )}
       </div>
       <aside className={`map-side ${sel ? "open" : ""}`} aria-label={sel ? `Screen ${sel.title}` : "Map overview"}>
         {sel ? (
-          <SidePanel run={run} map={map} screen={sel} byId={byId} note={notes[sel.id]} onClose={() => setSelected(null)} />
+          <SidePanel
+            key={sel.id}
+            run={run}
+            map={map}
+            screen={sel}
+            byId={byId}
+            note={notes[sel.id]}
+            onClose={() => setSelected(null)}
+            tree={tree}
+            visible={visible}
+            original={titleOf(sel.id)}
+            autoRename={renameInSide === sel.id}
+            onEdit={editor.edit}
+            onAdded={(id) => (setSelected(id), setRenameInSide(id))}
+            onRemoved={() => setSelected(null)}
+          />
         ) : (
           <div className="col" style={{ gap: 14 }}>
             <h2>{map.run.app.label ?? map.run.app.package}</h2>
@@ -359,6 +434,18 @@ function MapInner({ run, map, focus, layout }: { run: string; map: AppMapData; f
               <div className="badge running">
                 <span className="dot" /> live, updating as the crawl runs
               </div>
+            )}
+            {variant !== "story" && Object.keys(comments).length > 0 && (
+              <CommentList
+                comments={comments}
+                placed={(c) => !c.screen || visible.some((s) => s.id === c.screen)}
+                onPick={(c) => {
+                  setSelected(null);
+                  setActiveComment(c.id);
+                  setPanTo({ id: c.id, n: Date.now() });
+                }}
+                active={activeComment}
+              />
             )}
           </div>
         )}
@@ -383,6 +470,11 @@ function FlowCanvas({
   selected,
   setSelected,
   dim,
+  editor,
+  titleOf,
+  activeComment,
+  setActiveComment,
+  panTo,
 }: {
   run: string;
   map: AppMapData;
@@ -397,11 +489,30 @@ function FlowCanvas({
   selected: string | null;
   setSelected: (id: string | null) => void;
   dim: (s: Screen) => boolean;
+  editor: ReturnType<typeof useNotes>;
+  titleOf: (id: string) => string;
+  activeComment: string | null;
+  setActiveComment: (id: string | null) => void;
+  panTo: { id: string; n: number } | null;
 }) {
   const rf = useReactFlow();
+  const vp = useViewport();
+  const { comments, edits } = editor;
+  const [tool, setTool] = useState<Tool>("select");
+  const [showPins, setShowPins] = useState(true);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [relabel, setRelabel] = useState<string | null>(null); // the child whose incoming tree link is relabelled
+  const [moveFrom, setMoveFrom] = useState<string | null>(null);
+  const [dropOn, setDropOn] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Hand-placed positions, remembered per run, layout and direction.
   const [dragged, setDragged] = useStored<Record<string, { x: number; y: number }>>(keys.positions(run, `${variant}-${dir}`), {});
   const [live, setLive] = useState<Record<string, { x: number; y: number }>>({}); // mid-drag, not yet saved
+  // Card sizes React Flow measured. Kept on the nodes so rebuilding them (on every edit or selection) doesn't
+  // un-measure and hide every card until it is measured again.
+  const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({});
   const ids = useMemo(() => new Set(visible.map((s) => s.id)), [visible]);
 
   // Positions depend only on the discovery tree, so toggling links never moves anything.
@@ -438,7 +549,8 @@ function FlowCanvas({
       if (!el || !ns.length) return;
       const b = rf.getNodesBounds(ns);
       const pad = 28;
-      const [W, H] = [el.clientWidth - 2 * pad, el.clientHeight - 2 * pad];
+      const top = pad + 52; // the edit toolbar floats over the top edge
+      const [W, H] = [el.clientWidth - 2 * pad, el.clientHeight - pad - top];
       const zoom = Math.min(1, Math.max(0.55, Math.min(W / b.width, H / b.height)));
       const [w, h] = [b.width * zoom, b.height * zoom];
       // Along the tree's direction pin the start; across it, keep the launch screen in the middle.
@@ -447,7 +559,7 @@ function FlowCanvas({
       const ry = root ? root.position.y + (root.measured?.height ?? 0) / 2 : b.y + b.height / 2;
       const lr = dir === "LR";
       const x = w <= W ? pad + (W - w) / 2 - b.x * zoom : lr ? pad - b.x * zoom : pad + W / 2 - rx * zoom;
-      const y = h <= H ? pad + (H - h) / 2 - b.y * zoom : lr ? pad + H / 2 - ry * zoom : pad - b.y * zoom;
+      const y = h <= H ? top + (H - h) / 2 - b.y * zoom : lr ? top + H / 2 - ry * zoom : top - b.y * zoom;
       rf.setViewport({ x, y, zoom }, { duration: fitted.current ? 250 : 0 });
       fitted.current = true;
     }, 50);
@@ -467,7 +579,9 @@ function FlowCanvas({
       visible.map((s) => ({
         id: s.id,
         type: "screen",
+        className: s.id === moveFrom ? "node-move-from" : undefined,
         position: live[s.id] ?? dragged[s.id] ?? layout.get(s.id) ?? { x: 0, y: 0 },
+        measured: measured[s.id],
         data: {
           screen: s,
           run,
@@ -478,9 +592,10 @@ function FlowCanvas({
           onpath: onPath.has(s.id),
           dim: dim(s),
           star: !!notes[s.id]?.star,
+          drop: s.id === dropOn,
         },
       })),
-    [visible, live, dragged, layout, run, dir, tree.root, selected, onPath, dim, notes],
+    [visible, live, dragged, layout, run, dir, tree, selected, onPath, dim, notes, moveFrom, dropOn, measured],
   );
 
   const edges: Edge[] = useMemo(() => {
@@ -494,7 +609,7 @@ function FlowCanvas({
       const id = `${t.from}->${t.to}`;
       const g = groups.get(id);
       if (g) {
-        if (!g.labels.includes(t.label)) g.labels.push(t.label);
+        if (!g.labels.includes(t.label) && !(g.discovery && editor.edits.labels[g.to])) g.labels.push(t.label); // a label you wrote stands alone
         g.count += t.count;
         continue;
       }
@@ -513,7 +628,7 @@ function FlowCanvas({
         target: g.to,
         type: variant === "tree" ? "smoothstep" : "default",
         pathOptions: variant === "tree" ? { borderRadius: 12 } : undefined,
-        label: label && (showLabels || hot || touchesSel) ? label : undefined,
+        label: label && (showLabels || hot || touchesSel || (g.discovery && !!editor.edits.labels[g.to])) ? label : undefined,
         animated: hot,
         zIndex: hot ? 10 : touchesSel ? 5 : 0,
         style: {
@@ -527,7 +642,7 @@ function FlowCanvas({
         labelBgBorderRadius: 4,
       } as Edge;
     });
-  }, [tree, map.transitions, ids, links, selected, pathPairs, showLabels, variant]);
+  }, [tree, map.transitions, ids, links, selected, pathPairs, showLabels, variant, editor.edits.labels]);
 
   // Track positions in memory while dragging; save to storage once, when the drag ends.
   const liveRef = useRef(live);
@@ -536,8 +651,13 @@ function FlowCanvas({
     (changes: NodeChange<ScreenNode>[]) => {
       const next = { ...liveRef.current };
       const done: Record<string, { x: number; y: number }> = {};
+      const sized = changes.flatMap((c) => (c.type === "dimensions" && c.dimensions ? [[c.id, c.dimensions] as const] : []));
+      if (sized.length)
+        setMeasured((m) =>
+          sized.every(([id, d]) => m[id]?.width === d.width && m[id]?.height === d.height) ? m : { ...m, ...Object.fromEntries(sized) },
+        );
       for (const c of changes) {
-        if (c.type !== "position") continue;
+        if (c.type !== "position" || tool !== "select") continue; // other tools click cards; they never drag them
         const pos = c.position ?? next[c.id];
         if (c.dragging) {
           if (pos) next[c.id] = pos;
@@ -549,11 +669,187 @@ function FlowCanvas({
       setLive(next);
       if (Object.keys(done).length) setDragged((d) => ({ ...d, ...done }));
     },
-    [setDragged],
+    [setDragged, tool],
   );
 
+  // ── editing: tools, comments ──
+  const nodePos = useMemo(() => {
+    const m = new Map(nodes.map((n) => [n.id, n.position]));
+    return (id: string): Point | undefined => m.get(id);
+  }, [nodes]);
+  const pinned = useMemo(() => Object.values(comments).sort((a, b) => a.created.localeCompare(b.created)), [comments]);
+  const openCount = pinned.filter((c) => c.status === "open").length;
+  const size: Point = { x: canvas.current?.clientWidth ?? 0, y: canvas.current?.clientHeight ?? 0 };
+  const flowAt = (e: { clientX: number; clientY: number }) => rf.screenToFlowPosition({ x: e.clientX, y: e.clientY });
+
+  const say = (text: string, undo?: () => void) => {
+    setToast({ text, undo });
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 5000);
+  };
+  const pickTool = (t: Tool) => {
+    setTool(t);
+    setDraft(null);
+    setRenaming(null);
+    setRelabel(null);
+    setMoveFrom(null);
+    if (t !== "select") setActiveComment(null);
+  };
+  const nameOf = (id: string) => byId.get(id)?.title ?? id;
+  const below = (id: string) => {
+    const out = new Set<string>();
+    const walk = (x: string) => {
+      for (const c of tree.children.get(x) ?? []) if (!out.has(c)) (out.add(c), walk(c));
+    };
+    walk(id);
+    return out;
+  };
+  const removeScreen = (id: string) => {
+    if (id === tree.root) return say("The launch screen can't be removed");
+    const name = nameOf(id);
+    editor.edit((e) => removeIn(e, id));
+    if (selected === id) setSelected(null);
+    say(`Removed ${name}`, editor.undoEdit);
+  };
+  /** Why `id` can't go under `parent`, or null when it can. */
+  const cantMove = (id: string, parent: string) =>
+    id === tree.root ? "The launch screen stays the root" : id === parent ? "" : below(id).has(parent) ? "A screen can't go under its own child" : null;
+  const moveScreen = (id: string, parent: string | null) => {
+    editor.edit((e) => moveIn(e, id, parent));
+    say(parent ? `Moved ${nameOf(id)} under ${nameOf(parent)}` : `${nameOf(id)} is now a root of its own`, editor.undoEdit);
+    setMoveFrom(null);
+  };
+  const addScreen = (parent: string | null) => {
+    const id = newScreenId();
+    editor.edit((e) => addPlanned(e, id, parent));
+    setRenaming(id); // name it straight away
+  };
+  const clickNode = (e: React.MouseEvent, n: Node) => {
+    if (tool === "comment") {
+      const f = flowAt(e);
+      setActiveComment(null);
+      setDraft({ x: f.x - n.position.x, y: f.y - n.position.y, screen: n.id });
+    } else if (tool === "rename") (setRelabel(null), setRenaming(n.id));
+    else if (tool === "add") addScreen(n.id);
+    else if (tool === "delete") removeScreen(n.id);
+    else if (tool === "move") {
+      if (!moveFrom) {
+        if (n.id === tree.root) say("The launch screen stays the root");
+        else setMoveFrom(n.id);
+      } else {
+        const why = cantMove(moveFrom, n.id);
+        if (why === null) moveScreen(moveFrom, n.id);
+        else if (why) say(why);
+        else setMoveFrom(null);
+      }
+    } else setSelected(n.id === selected ? null : n.id);
+  };
+  const clickEdge = (_: React.MouseEvent, edge: Edge) => {
+    // Only tree links (parent → child) carry a label of their own to edit.
+    if (tool === "rename" && tree.parent.get(edge.target) === edge.source) (setRenaming(null), setRelabel(edge.target));
+  };
+  const clickPane = (e: React.MouseEvent) => {
+    if (tool === "comment") {
+      setActiveComment(null);
+      setDraft(flowAt(e));
+    } else if (tool === "add") addScreen(null);
+    else if (tool === "move" && moveFrom) moveScreen(moveFrom, null);
+    else {
+      setSelected(null);
+      setActiveComment(null);
+      setDraft(null);
+      setRenaming(null);
+      setRelabel(null);
+    }
+  };
+  // Tree: drop a card on another to move it under that one. The card goes back into the tidy layout.
+  const dropTarget = (e: React.MouseEvent, n: Node) => {
+    const c = flowAt(e); // under the pointer
+    const hit = rf
+      .getNodes()
+      .find(
+        (o) =>
+          o.id !== n.id &&
+          c.x >= o.position.x &&
+          c.x <= o.position.x + (o.measured?.width ?? 0) &&
+          c.y >= o.position.y &&
+          c.y <= o.position.y + (o.measured?.height ?? 0),
+      );
+    return hit && cantMove(n.id, hit.id) === null ? hit.id : null;
+  };
+  const reparentOnDrop = variant === "tree" && tool === "select";
+  const onNodeDrag = (e: React.MouseEvent, n: Node) => reparentOnDrop && setDropOn(dropTarget(e, n));
+  const onNodeDragStop = (e: React.MouseEvent, n: Node) => {
+    setDropOn(null);
+    const to = reparentOnDrop ? dropTarget(e, n) : null;
+    if (!to) return;
+    setDragged((d) => {
+      const next = { ...d };
+      delete next[n.id];
+      return next;
+    });
+    moveScreen(n.id, to);
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if ((e.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable]")) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+      e.preventDefault();
+      return editor.undoEdit();
+    }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    const t = TOOLS.find((x) => x.id !== "delete" && x.key.toLowerCase() === k);
+    if (t) return pickTool(t.id);
+    if (k === "escape") return (pickTool("select"), setActiveComment(null));
+    // Delete removes the selected screen, unless focus is in a popover, the toolbar or the side panel.
+    const inUi = (e.target as HTMLElement | null)?.closest?.(".cm-pop, .rename-box, .edit-bar, .map-side, .map-toolbar");
+    if ((k === "delete" || k === "backspace") && selected && !inUi) removeScreen(selected);
+  };
+  const keyRef = useRef(onKey);
+  keyRef.current = onKey;
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => keyRef.current(e);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, []);
+  // A comment picked from the side list: bring it into view.
+  useEffect(() => {
+    if (!panTo) return;
+    const c = comments[panTo.id];
+    const p = c && pinPoint(c, nodePos);
+    if (p) rf.setCenter(p.x, p.y, { zoom: Math.max(rf.getZoom(), 0.8), duration: 250 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panTo]);
+
+  const active = activeComment ? comments[activeComment] : undefined;
+  const activeAt = active ? pinPoint(active, nodePos) : null;
+  const draftAt = draft ? pinPoint(draft, nodePos) : null;
+  const renamingNode = renaming ? nodes.find((n) => n.id === renaming) : undefined;
+  // The relabel box sits halfway along the link.
+  const relabelAt = (() => {
+    const from = relabel && tree.parent.get(relabel);
+    const a = from && rf.getNode(from);
+    const b = relabel && rf.getNode(relabel);
+    if (!a || !b) return null;
+    const mid = (n: Node) => ({ x: n.position.x + (n.measured?.width ?? 0) / 2, y: n.position.y + (n.measured?.height ?? 0) / 2 });
+    const [m, n] = [mid(a), mid(b)];
+    return { x: (m.x + n.x) / 2 - 100, y: (m.y + n.y) / 2 + 30 };
+  })();
+
   return (
-    <div className="map-canvas" ref={canvas}>
+    <div className={`map-canvas tool-${tool}`} ref={canvas}>
+      <EditToolbar
+        tool={tool}
+        setTool={pickTool}
+        edits={edits}
+        canUndo={editor.canUndo()}
+        onUndo={editor.undoEdit}
+        showPins={showPins}
+        setShowPins={setShowPins}
+        openCount={openCount}
+        titleOf={titleOf}
+        onChange={editor.edit}
+      />
       {Object.keys(dragged).length > 0 && (
         <button className="btn map-reset" onClick={() => setDragged({})} title="Forget the positions you dragged screens to">
           Reset layout
@@ -564,9 +860,13 @@ function FlowCanvas({
         edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
-        onNodeClick={(_, n) => setSelected(n.id === selected ? null : n.id)}
-        onNodeDoubleClick={(_, n) => go(screenHref(run, n.id))}
-        onPaneClick={() => setSelected(null)}
+        onNodeClick={clickNode}
+        onNodeDoubleClick={(_, n) => tool === "select" && !byId.get(n.id)?.planned && go(screenHref(run, n.id))}
+        onNodeDrag={onNodeDrag}
+        onNodeDragStop={onNodeDragStop}
+        onEdgeClick={clickEdge}
+        onPaneClick={clickPane}
+        nodesDraggable={tool === "select"}
         minZoom={0.1}
         maxZoom={2}
         proOptions={{ hideAttribution: true }}
@@ -583,6 +883,163 @@ function FlowCanvas({
           maskColor="rgba(128,128,128,0.12)"
         />
       </ReactFlow>
+      <div className="cm-layer">
+        {showPins &&
+          pinned.map((c, i) => {
+            const p = pinPoint(c, nodePos);
+            if (!p) return null;
+            return (
+              <Pin
+                key={c.id}
+                n={i + 1}
+                comment={c}
+                at={toCanvas(vp, p)}
+                zoom={vp.zoom}
+                active={activeComment === c.id}
+                onToggle={() => (setDraft(null), setActiveComment(activeComment === c.id ? null : c.id))}
+                onDragEnd={(dx, dy) => editor.updateComment(c.id, { x: c.x + dx, y: c.y + dy })}
+              />
+            );
+          })}
+        {active && activeAt && (
+          <Thread
+            key={active.id}
+            comment={active}
+            at={toCanvas(vp, activeAt)}
+            size={size}
+            onUpdate={(patch: Partial<MapComment>) => editor.updateComment(active.id, patch)}
+            onReply={(text) => editor.replyComment(active.id, text)}
+            onDelete={() => {
+              const gone = active;
+              editor.deleteComment(gone.id);
+              setActiveComment(null);
+              say("Comment deleted", () => editor.restoreComment(gone));
+            }}
+            onClose={() => setActiveComment(null)}
+          />
+        )}
+        {draft && draftAt && (
+          <Composer
+            key={`${draft.screen ?? ""}${draft.x},${draft.y}`}
+            at={toCanvas(vp, draftAt)}
+            size={size}
+            anchor={draft.screen}
+            onCancel={() => setDraft(null)}
+            onPost={(text, tag) => {
+              const id = editor.addComment({ ...draft, text, tag });
+              setDraft(null);
+              setActiveComment(id);
+            }}
+          />
+        )}
+        {renaming && renamingNode && (
+          <RenameBox
+            key={renaming}
+            at={toCanvas(vp, renamingNode.position)}
+            value={byId.get(renaming)?.title ?? ""}
+            original={titleOf(renaming)}
+            label="Screen name"
+            onCancel={() => setRenaming(null)}
+            onSave={(title) => {
+              editor.edit((e) => renameIn(e, renaming, title, titleOf(renaming)));
+              setRenaming(null);
+            }}
+          />
+        )}
+        {relabel && relabelAt && (
+          <RenameBox
+            key={`link-${relabel}`}
+            at={toCanvas(vp, relabelAt)}
+            value={tree.via.get(relabel)?.label ?? ""}
+            original="Link label"
+            label={`Label of the link into ${nameOf(relabel)}`}
+            onCancel={() => setRelabel(null)}
+            onSave={(text) => {
+              editor.edit((e) => labelIn(e, relabel, text));
+              setRelabel(null);
+            }}
+          />
+        )}
+      </div>
+      {toast && (
+        <div className="edit-toast" role="status">
+          {toast.text}
+          {toast.undo && (
+            <button className="btn small" onClick={() => (toast.undo?.(), setToast(null))}>
+              Undo
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RenameBox({
+  at,
+  value,
+  original,
+  label,
+  onSave,
+  onCancel,
+}: {
+  at: Point;
+  value: string;
+  original: string;
+  label: string;
+  onSave: (t: string) => void;
+  onCancel: () => void;
+}) {
+  const [text, setText] = useState(value);
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => ref.current?.select(), []);
+  return (
+    <div className="rename-box panel" style={{ left: at.x, top: Math.max(8, at.y - 46) }} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+      <input
+        ref={ref}
+        className="cm-input"
+        aria-label={label}
+        value={text}
+        placeholder={original}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSave(text.trim());
+          if (e.key === "Escape") onCancel();
+        }}
+      />
+      <button className="btn small primary" onClick={() => onSave(text.trim())}>Save</button>
+    </div>
+  );
+}
+
+function CommentList({
+  comments,
+  placed,
+  onPick,
+  active,
+}: {
+  comments: Record<string, MapComment>;
+  placed: (c: MapComment) => boolean; // false: its screen is removed or hidden, so it has no pin
+  onPick: (c: MapComment) => void;
+  active: string | null;
+}) {
+  const byAge = Object.values(comments).sort((a, b) => a.created.localeCompare(b.created));
+  const num = new Map(byAge.map((c, i) => [c.id, i + 1])); // the number on its pin
+  const list = byAge.sort((a, b) => (a.status === b.status ? 0 : a.status === "open" ? -1 : 1));
+  return (
+    <div className="cm-list">
+      <div className="kicker">Comments · {list.filter((c) => c.status === "open").length} open</div>
+      {list.map((c) => (
+        <button key={c.id} className={`cm-row ${active === c.id ? "on" : ""}`} onClick={() => onPick(c)} disabled={!placed(c)}>
+          <span className={`cm-chip ${c.tag}`}>
+            {num.get(c.id)} · {c.tag}
+          </span>
+          <span className="cm-row-text">{c.text}</span>
+          <span className="cm-row-meta">
+            {!placed(c) ? `${c.screen} hidden` : c.status === "resolved" ? "resolved" : (c.screen ?? "canvas")}
+          </span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -629,9 +1086,9 @@ function Storyboard({
                   <button
                     key={id}
                     style={{ width: box.w }}
-                    className={`story-card ${selected === id ? "sel" : ""} ${dim(s) ? "dim" : ""} ${s.kind !== "app" ? "ext" : ""}`}
+                    className={`story-card ${selected === id ? "sel" : ""} ${dim(s) ? "dim" : ""} ${s.kind !== "app" || s.planned ? "ext" : ""}`}
                     onClick={() => setSelected(selected === id ? null : id)}
-                    onDoubleClick={() => go(screenHref(run, id))}
+                    onDoubleClick={() => !s.planned && go(screenHref(run, id))}
                     aria-pressed={selected === id}
                     title={`${s.id} · ${s.title}`}
                   >
@@ -670,6 +1127,13 @@ function SidePanel({
   byId,
   note,
   onClose,
+  tree,
+  visible,
+  original,
+  autoRename,
+  onEdit,
+  onAdded,
+  onRemoved,
 }: {
   run: string;
   map: AppMapData;
@@ -677,9 +1141,30 @@ function SidePanel({
   byId: Map<string, Screen>;
   note?: ScreenNote;
   onClose: () => void;
+  tree: DiscoveryTree;
+  visible: Screen[];
+  original: string; // crawled name
+  autoRename: boolean;
+  onEdit: (change: (e: TreeEdits) => TreeEdits) => void;
+  onAdded: (id: string) => void;
+  onRemoved: () => void;
 }) {
   const out = map.transitions.filter((t) => t.from === screen.id);
   const into = map.transitions.filter((t) => t.to === screen.id);
+  const [naming, setNaming] = useState(autoRename);
+  const [name, setName] = useState(screen.title);
+  const parent = tree.parent.get(screen.id);
+  const isRoot = screen.id === tree.root;
+  // Where it can go: anywhere but under itself or its own subtree.
+  const options = useMemo(() => {
+    const mine = new Set([screen.id]);
+    for (const id of tree.order) if (mine.has(tree.parent.get(id) ?? "")) mine.add(id);
+    return visible.filter((s) => !mine.has(s.id));
+  }, [screen.id, tree, visible]);
+  const saveName = () => {
+    onEdit((e) => renameIn(e, screen.id, name.trim(), original));
+    setNaming(false);
+  };
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="row side-head" style={{ alignItems: "flex-start", gap: 12 }}>
@@ -688,9 +1173,26 @@ function SidePanel({
         </button>
         <Thumb run={run} screen={screen} className="side-thumb" />
         <div className="col grow" style={{ gap: 4 }}>
-          <h2>{screen.title}</h2>
-          <span className="sid">{screen.id}</span>
-          <span className="small muted">{shortActivity(screen.activity)}</span>
+          {naming ? (
+            <input
+              className="cm-input"
+              aria-label="Screen name"
+              autoFocus
+              onFocus={(e) => e.currentTarget.select()}
+              value={name}
+              placeholder={original}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveName();
+                if (e.key === "Escape") (setName(screen.title), setNaming(false));
+              }}
+            />
+          ) : (
+            <h2>{screen.title}</h2>
+          )}
+          <span className="sid">{screen.planned ? "planned, not crawled" : screen.id}</span>
+          {!screen.planned && <span className="small muted">{shortActivity(screen.activity)}</span>}
           <div className="row wrap" style={{ gap: 4 }}>
             {screen.patterns.map((p) => (
               <span key={p} className="chip">
@@ -698,12 +1200,71 @@ function SidePanel({
               </span>
             ))}
           </div>
-          {screen.kind === "app" && (
+          {screen.kind === "app" && !screen.planned && (
             <a className="btn primary" href={screenHref(run, screen.id)} style={{ alignSelf: "flex-start", marginTop: 6 }}>
               Open screen →
             </a>
           )}
         </div>
+      </div>
+
+      <div className="tree-edit">
+        <h3 style={{ marginBottom: 6 }}>In the tree</h3>
+        <div className="row wrap" style={{ gap: 6 }}>
+          <button className="btn small" onClick={() => (setName(screen.title), setNaming(true))}>
+            <Icon name="pencil" size={13} /> Rename
+          </button>
+          <button
+            className="btn small"
+            onClick={() => {
+              const id = newScreenId();
+              onEdit((e) => addPlanned(e, id, screen.id));
+              onAdded(id);
+            }}
+          >
+            <Icon name="plus" size={13} /> Add screen under
+          </button>
+          {!isRoot && (
+            <button
+              className="btn small"
+              onClick={() => {
+                onEdit((e) => removeIn(e, screen.id));
+                onRemoved();
+              }}
+            >
+              <Icon name="trash" size={13} /> Remove
+            </button>
+          )}
+        </div>
+        {!isRoot && (
+          <label className="tree-edit-field small">
+            <span className="muted">Under</span>
+            <select
+              value={parent ?? ""}
+              onChange={(e) => onEdit((ed) => moveIn(ed, screen.id, e.target.value || null))}
+            >
+              <option value="">(a root of its own)</option>
+              {options.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.planned ? "new" : s.id} · {s.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {parent && (
+          <label className="tree-edit-field small">
+            <span className="muted">Reached by</span>
+            <input
+              className="cm-input"
+              key={tree.via.get(screen.id)?.label ?? ""}
+              defaultValue={tree.via.get(screen.id)?.label ?? ""}
+              placeholder="Link label, e.g. Sign in"
+              onBlur={(e) => onEdit((ed) => labelIn(ed, screen.id, e.target.value.trim()))}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+            />
+          </label>
+        )}
       </div>
 
       {note?.note && (
@@ -717,7 +1278,9 @@ function SidePanel({
         <h3 style={{ marginBottom: 6 }}>Path from launch</h3>
         {screen.reach_path.length === 0 ? (
           <div className="small muted">
-            {screen.kind !== "app"
+            {screen.planned
+              ? "Added on the map: the crawl has not found this screen. Crawl again once it exists in the app."
+              : screen.kind !== "app"
               ? "Opened from the app (see Reached from)."
               : screen.origin === "launch" || (!screen.origin && screen.id === map.screens.find((x) => x.kind === "app" && x.depth === 0)?.id)
                 ? "This is where the app opens."
@@ -742,9 +1305,11 @@ function SidePanel({
         <h3 style={{ marginBottom: 6 }}>Reached from ({into.length})</h3>
         <EdgeList run={run} items={into.map((t) => [t.label, byId.get(t.from), t.count] as const)} />
       </div>
-      <a className="small" href={href("r", run, "replay") + `?screen=${encodeURIComponent(screen.id)}`}>
-        See when the crawler found it →
-      </a>
+      {!screen.planned && (
+        <a className="small" href={href("r", run, "replay") + `?screen=${encodeURIComponent(screen.id)}`}>
+          See when the crawler found it →
+        </a>
+      )}
     </div>
   );
 }
