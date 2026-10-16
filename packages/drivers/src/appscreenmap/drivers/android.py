@@ -103,6 +103,21 @@ class AdbDriver:
     def set_font_scale(self, scale: float) -> None:
         self.shell(f"settings put system font_scale {scale:g}")
 
+    # ── language ─────────────────────────────────────────────────────────────
+    def get_app_locales(self, package: str) -> str:
+        """The app's own language list (Android 13+), "" when it follows the system language."""
+        m = re.search(r"\[(.*?)\]", self.shell(f"cmd locale get-app-locales {shlex.quote(package)} --user 0"))
+        return m.group(1).strip() if m else ""
+
+    def set_app_locales(self, package: str, tags: str) -> bool:
+        """Show the app in `tags` (e.g. "fr-FR", "ja", or the pseudo-locales "en-XA" and "ar-XB"); "" clears it.
+        Returns True when the device reports the language as set. Needs Android 13+."""
+        tags = tags.replace("_", "-").strip()
+        if not re.fullmatch(r"[A-Za-z0-9,\-]*", tags):
+            raise DriverError(f"not a language tag: {tags!r}")
+        self.shell(f'cmd locale set-app-locales {shlex.quote(package)} --user 0 --locales "{tags}"')
+        return self.get_app_locales(package).replace(" ", "") == tags.replace(" ", "")
+
     # ── app management ───────────────────────────────────────────────────────
     def install(self, apk: str | Path, grant: bool = True) -> None:
         args = ["install", "-r", "-t"] + (["-g"] if grant else []) + [str(apk)]

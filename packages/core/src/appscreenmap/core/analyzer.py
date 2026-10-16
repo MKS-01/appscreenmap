@@ -300,6 +300,7 @@ def analyze(
     long_click: bool = False,
     explore_toggles: bool = True,
     is_blocked=lambda label: False,
+    is_blocked_id=lambda rid: False,
 ) -> Observation:
     root = parse_hierarchy(xml)
     _mark_repeats(root)
@@ -328,7 +329,7 @@ def analyze(
     act = (activity or "").rsplit(".", 1)[-1]
     sig = hashlib.sha1((f"{package}|{act}\n" + "\n".join(sorted(tokens))).encode()).hexdigest()[:12]
 
-    elements = _elements(nodes, width, height, long_click, explore_toggles, is_blocked)
+    elements = _elements(nodes, width, height, long_click, explore_toggles, is_blocked, is_blocked_id)
     return Observation(
         xml=xml,
         root=root,
@@ -388,7 +389,13 @@ def _kind(n: Node, width: int, height: int) -> str:
 
 
 def _elements(
-    nodes: list[Node], width: int, height: int, long_click: bool, explore_toggles: bool, is_blocked
+    nodes: list[Node],
+    width: int,
+    height: int,
+    long_click: bool,
+    explore_toggles: bool,
+    is_blocked,
+    is_blocked_id=lambda rid: False,
 ) -> list[ElementInfo]:
     screen_area = width * height
     raw: list[tuple[Node, str, str]] = []  # (node, kind, action)
@@ -440,7 +447,7 @@ def _elements(
                 ordinal += 1
             key = f"{key}#{ordinal}"
         seen_keys.add(key)
-        blocked = action != "scroll" and kind != "input" and is_blocked(label)
+        blocked = action != "scroll" and kind != "input" and (is_blocked(label) or is_blocked_id(n.short_rid))
         el = ElementInfo(
             key=key,
             kind=kind,

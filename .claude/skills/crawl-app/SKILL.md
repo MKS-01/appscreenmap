@@ -5,6 +5,22 @@ description: Run an AppScreenMap crawl of an Android app on an emulator and revi
 
 # Crawl an app and review the map
 
+## 0. One canvas per app (the default)
+
+Every mapping of an app belongs in **one canvas** (a merged run, one scenario per flow). Before a crawl, find the
+app's canvas (`runs/<project>/`, the run whose `run.scenarios` lists the flows; with no canvas yet, the app's first run
+becomes it). After **every** crawl or re-run, add it to that canvas in place and drop its own folder, without asking:
+
+```bash
+uv run appscreenmap-engine merge --into runs/<project>/<canvas> runs/<project>/<new-run> --labels "Post-login" --move
+```
+
+The canvas keeps its id and folder, and its `notes.json` (stars, notes, a11y decisions, map comments, tree edits) and
+`titles.json` follow the screens to their new ids. Run `report` / `perf` on the new run *before* merging if you need
+its own numbers. Only when the developer asks: keep a run separate, or start a new canvas. Always ask before
+`--clear-data` (logs the emulator out) and before deleting a canvas. Don't re-run flows that are already on the
+canvas; script only the part that is missing.
+
 ## 1. Preflight
 
 ```bash

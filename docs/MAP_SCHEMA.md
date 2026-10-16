@@ -92,6 +92,7 @@ rather than building them. Paths are relative to the run directory.
     "visits": 7, "first_step": 1,
     "width": 1080, "height": 2400,
     "screenshot": "screens/s001.png", "thumb": "screens/s001.jpg", "hierarchy": "screens/s001.xml",
+    "captures": { "bottom": "screens/s001-bottom.png" },  // extra shots of the screen; {} when none
     "reach_path": [                     // replayable steps from launch; [] for the launch screen
       { "screen": "s001", "key": "…", "action": "click", "label": "Settings",
         "selector": { "id"?: "pkg:id/x", "text"?: "…", "desc"?: "…", "point": [x, y] },
@@ -230,7 +231,16 @@ of the same app. Not recorded on iOS yet: load times (`perf.json` has no screens
 **device caveats**: conditions that change what the numbers mean (emulator, power saver, low battery,
 TalkBack on, font scale, dark mode, airplane mode, preview build, low storage).
 
-## `notes.json` comments and edits
+## Canvases (merged runs) and `notes.json` comments and edits
+
+**Scenarios.** `appscreenmap merge <run>... [--into <canvas>]` puts several runs of one app on one canvas. The merged
+`map.json` keeps schema 1 and only adds fields: `run.scenarios[]` (`id`, `label`, `run_id`, `started_at`,
+`finished_at`, `steps`, `screens[]`, `entry[]` (the scenario's launch screens), `playbook`), `run.merged_from[]`, and a
+`scenario` id on every screen, transition and event. Screens are renumbered `s001…` (external `x:` screens are shared),
+steps keep the scenarios in order, each scenario keeps its own entry, so the viewer draws one tree per scenario.
+`--into` adds the runs to an existing canvas in place (same id and folder); its `notes.json` and `titles.json` (and
+the sources') follow the screens to their new ids. `--move` then deletes the merged runs' own folders, so an app keeps
+one canvas.
 
 **Comments and edits** live in `notes.json` next to `map.json` (`appscreenmap_notes: 1`, validated by `notes.py`), never in
 `map.json`, so the crawler's output stays the contract:

@@ -1,0 +1,1200 @@
+{
+ "schema": 1,
+ "note": "Words that make the crawler (a) refuse to tap destructive or costly buttons and (b) pick a sensible value for a form field, in the app's own language. English lives in config.py. Starter lists: native-speaker review is welcome. `boundary` true = match whole words (Latin, Cyrillic); false = plain substring (scripts without spaces or with attached prefixes).",
+ "languages": [
+  {
+   "code": "es",
+   "name": "Spanish",
+   "boundary": true,
+   "blocked": [
+    "cerrar sesión",
+    "cerrar sesion",
+    "desconectarse",
+    "eliminar",
+    "borrar",
+    "dar de baja",
+    "desinstalar",
+    "restablecer de fábrica",
+    "restablecer datos",
+    "restablecer todo",
+    "restaurar de fábrica",
+    "pagar",
+    "comprar",
+    "suscribirse",
+    "suscríbete",
+    "hacer pedido",
+    "realizar pedido",
+    "confirmar pedido",
+    "llamar",
+    "denunciar",
+    "reportar"
+   ],
+   "inputs": {
+    "email": [
+     "correo electrónico",
+     "correo electronico",
+     "correo"
+    ],
+    "phone": [
+     "teléfono",
+     "telefono",
+     "móvil",
+     "movil",
+     "celular"
+    ],
+    "password": [
+     "contraseña",
+     "contrasena",
+     "clave"
+    ],
+    "postal": [
+     "código postal",
+     "codigo postal"
+    ],
+    "otp": [
+     "código de verificación",
+     "codigo de verificacion",
+     "verificación"
+    ],
+    "first_name": [
+     "nombre"
+    ],
+    "last_name": [
+     "apellido"
+    ],
+    "search": [
+     "buscar",
+     "búsqueda"
+    ]
+   }
+  },
+  {
+   "code": "fr",
+   "name": "French",
+   "boundary": true,
+   "blocked": [
+    "se déconnecter",
+    "se deconnecter",
+    "déconnexion",
+    "deconnexion",
+    "supprimer",
+    "désactiver le compte",
+    "désinstaller",
+    "réinitialiser les données",
+    "réinitialiser l'appareil",
+    "réinitialiser tout",
+    "effacer",
+    "payer",
+    "acheter",
+    "s'abonner",
+    "abonnez-vous",
+    "passer la commande",
+    "valider la commande",
+    "appeler",
+    "signaler"
+   ],
+   "inputs": {
+    "email": [
+     "courriel",
+     "adresse mail"
+    ],
+    "phone": [
+     "téléphone",
+     "telephone",
+     "portable"
+    ],
+    "password": [
+     "mot de passe",
+     "mdp"
+    ],
+    "postal": [
+     "code postal"
+    ],
+    "otp": [
+     "code de vérification",
+     "code de verification"
+    ],
+    "first_name": [
+     "prénom",
+     "prenom"
+    ],
+    "last_name": [
+     "nom de famille"
+    ],
+    "search": [
+     "rechercher",
+     "recherche"
+    ]
+   }
+  },
+  {
+   "code": "de",
+   "name": "German",
+   "boundary": true,
+   "blocked": [
+    "abmelden",
+    "ausloggen",
+    "löschen",
+    "konto löschen",
+    "konto deaktivieren",
+    "deinstallieren",
+    "werkseinstellungen",
+    "alle daten zurücksetzen",
+    "daten zurücksetzen",
+    "bezahlen",
+    "jetzt bezahlen",
+    "kaufen",
+    "jetzt kaufen",
+    "abonnieren",
+    "zahlungspflichtig bestellen",
+    "jetzt bestellen",
+    "anrufen",
+    "melden"
+   ],
+   "inputs": {
+    "phone": [
+     "telefon",
+     "handy",
+     "mobilnummer"
+    ],
+    "password": [
+     "passwort",
+     "kennwort"
+    ],
+    "postal": [
+     "postleitzahl",
+     "plz"
+    ],
+    "otp": [
+     "bestätigungscode",
+     "verifizierungscode",
+     "sicherheitscode"
+    ],
+    "first_name": [
+     "vorname"
+    ],
+    "last_name": [
+     "nachname",
+     "familienname"
+    ],
+    "search": [
+     "suchen",
+     "suche"
+    ]
+   }
+  },
+  {
+   "code": "pt",
+   "name": "Portuguese",
+   "boundary": true,
+   "blocked": [
+    "sair da conta",
+    "terminar sessão",
+    "encerrar sessão",
+    "sair",
+    "excluir",
+    "apagar",
+    "eliminar",
+    "excluir conta",
+    "desinstalar",
+    "restaurar padrão",
+    "redefinir dados",
+    "repor dados",
+    "pagar",
+    "comprar",
+    "assinar",
+    "subscrever",
+    "finalizar pedido",
+    "finalizar compra",
+    "telefonar",
+    "chamar",
+    "denunciar",
+    "reportar"
+   ],
+   "inputs": {
+    "phone": [
+     "telefone",
+     "telemóvel",
+     "celular"
+    ],
+    "password": [
+     "senha",
+     "palavra-passe"
+    ],
+    "postal": [
+     "cep",
+     "código postal"
+    ],
+    "otp": [
+     "código de verificação",
+     "código de confirmação"
+    ],
+    "first_name": [
+     "primeiro nome"
+    ],
+    "last_name": [
+     "sobrenome",
+     "apelido"
+    ],
+    "search": [
+     "pesquisar",
+     "buscar",
+     "busca"
+    ]
+   }
+  },
+  {
+   "code": "it",
+   "name": "Italian",
+   "boundary": true,
+   "blocked": [
+    "esci",
+    "disconnetti",
+    "disconnettiti",
+    "elimina",
+    "cancella",
+    "elimina account",
+    "disinstalla",
+    "ripristina dati",
+    "impostazioni di fabbrica",
+    "paga",
+    "pagare",
+    "acquista",
+    "compra",
+    "abbonati",
+    "effettua l'ordine",
+    "conferma l'ordine",
+    "chiama",
+    "segnala"
+   ],
+   "inputs": {
+    "phone": [
+     "telefono",
+     "cellulare"
+    ],
+    "postal": [
+     "cap",
+     "codice postale"
+    ],
+    "otp": [
+     "codice di verifica"
+    ],
+    "first_name": [
+     "nome"
+    ],
+    "last_name": [
+     "cognome"
+    ],
+    "search": [
+     "cerca",
+     "ricerca"
+    ]
+   }
+  },
+  {
+   "code": "nl",
+   "name": "Dutch",
+   "boundary": true,
+   "blocked": [
+    "uitloggen",
+    "afmelden",
+    "verwijderen",
+    "verwijder",
+    "account verwijderen",
+    "de-installeren",
+    "fabrieksinstellingen",
+    "gegevens wissen",
+    "betalen",
+    "kopen",
+    "koop nu",
+    "abonneren",
+    "bestelling plaatsen",
+    "bellen",
+    "rapporteren"
+   ],
+   "inputs": {
+    "phone": [
+     "telefoon",
+     "mobiel"
+    ],
+    "password": [
+     "wachtwoord"
+    ],
+    "postal": [
+     "postcode"
+    ],
+    "otp": [
+     "verificatiecode"
+    ],
+    "first_name": [
+     "voornaam"
+    ],
+    "last_name": [
+     "achternaam"
+    ],
+    "search": [
+     "zoeken"
+    ]
+   }
+  },
+  {
+   "code": "sv",
+   "name": "Swedish",
+   "boundary": true,
+   "blocked": [
+    "logga ut",
+    "ta bort",
+    "radera",
+    "avinstallera",
+    "fabriksåterställ",
+    "betala",
+    "köp",
+    "köp nu",
+    "prenumerera",
+    "lägg beställning",
+    "ring upp",
+    "anmäl"
+   ],
+   "inputs": {
+    "email": [
+     "e-post",
+     "epost"
+    ],
+    "phone": [
+     "telefon",
+     "mobil"
+    ],
+    "password": [
+     "lösenord"
+    ],
+    "postal": [
+     "postnummer"
+    ],
+    "first_name": [
+     "förnamn"
+    ],
+    "last_name": [
+     "efternamn"
+    ],
+    "search": [
+     "sök"
+    ]
+   }
+  },
+  {
+   "code": "pl",
+   "name": "Polish",
+   "boundary": true,
+   "blocked": [
+    "wyloguj",
+    "wyloguj się",
+    "usuń",
+    "usuń konto",
+    "dezaktywuj konto",
+    "odinstaluj",
+    "przywróć ustawienia fabryczne",
+    "zresetuj dane",
+    "zapłać",
+    "kup",
+    "kup teraz",
+    "zasubskrybuj",
+    "subskrybuj",
+    "złóż zamówienie",
+    "zadzwoń",
+    "zgłoś"
+   ],
+   "inputs": {
+    "phone": [
+     "telefon",
+     "komórkowy"
+    ],
+    "password": [
+     "hasło"
+    ],
+    "postal": [
+     "kod pocztowy"
+    ],
+    "otp": [
+     "kod weryfikacyjny"
+    ],
+    "first_name": [
+     "imię"
+    ],
+    "last_name": [
+     "nazwisko"
+    ],
+    "search": [
+     "szukaj",
+     "wyszukaj"
+    ]
+   }
+  },
+  {
+   "code": "tr",
+   "name": "Turkish",
+   "boundary": true,
+   "blocked": [
+    "çıkış yap",
+    "oturumu kapat",
+    "hesaptan çık",
+    "sil",
+    "hesabı sil",
+    "fabrika ayarlarına sıfırla",
+    "verileri sil",
+    "verileri temizle",
+    "öde",
+    "ödeme yap",
+    "satın al",
+    "abone ol",
+    "sipariş ver",
+    "şikayet et",
+    "bildir"
+   ],
+   "inputs": {
+    "email": [
+     "e-posta",
+     "eposta"
+    ],
+    "phone": [
+     "telefon",
+     "cep"
+    ],
+    "password": [
+     "şifre",
+     "parola"
+    ],
+    "postal": [
+     "posta kodu"
+    ],
+    "otp": [
+     "doğrulama kodu"
+    ],
+    "last_name": [
+     "soyad"
+    ],
+    "search": [
+     "arama"
+    ]
+   }
+  },
+  {
+   "code": "ru",
+   "name": "Russian",
+   "boundary": true,
+   "blocked": [
+    "выйти",
+    "выйти из аккаунта",
+    "выход",
+    "удалить",
+    "удалить аккаунт",
+    "деактивировать",
+    "сбросить данные",
+    "сбросить все",
+    "сбросить настройки",
+    "очистить данные",
+    "оплатить",
+    "заплатить",
+    "купить",
+    "подписаться",
+    "оформить подписку",
+    "оформить заказ",
+    "позвонить",
+    "пожаловаться"
+   ],
+   "inputs": {
+    "email": [
+     "электронная почта",
+     "эл. почта",
+     "почта"
+    ],
+    "phone": [
+     "телефон",
+     "номер телефона"
+    ],
+    "password": [
+     "пароль"
+    ],
+    "postal": [
+     "индекс"
+    ],
+    "otp": [
+     "код подтверждения",
+     "смс"
+    ],
+    "first_name": [
+     "имя"
+    ],
+    "last_name": [
+     "фамилия"
+    ],
+    "search": [
+     "поиск",
+     "найти"
+    ]
+   }
+  },
+  {
+   "code": "uk",
+   "name": "Ukrainian",
+   "boundary": true,
+   "blocked": [
+    "вийти",
+    "вийти з акаунта",
+    "видалити",
+    "видалити акаунт",
+    "деактивувати акаунт",
+    "скинути дані",
+    "скинути все",
+    "очистити дані",
+    "оплатити",
+    "купити",
+    "підписатися",
+    "оформити замовлення",
+    "зателефонувати",
+    "поскаржитися"
+   ],
+   "inputs": {
+    "email": [
+     "електронна пошта",
+     "пошта"
+    ],
+    "phone": [
+     "телефон"
+    ],
+    "password": [
+     "пароль"
+    ],
+    "postal": [
+     "індекс"
+    ],
+    "otp": [
+     "код підтвердження"
+    ],
+    "first_name": [
+     "ім'я",
+     "імя"
+    ],
+    "last_name": [
+     "прізвище"
+    ],
+    "search": [
+     "пошук"
+    ]
+   }
+  },
+  {
+   "code": "ar",
+   "name": "Arabic",
+   "boundary": false,
+   "blocked": [
+    "تسجيل الخروج",
+    "تسجيل خروج",
+    "حذف",
+    "احذف",
+    "حذف الحساب",
+    "إلغاء تثبيت",
+    "إعادة ضبط المصنع",
+    "مسح البيانات",
+    "ادفع",
+    "دفع",
+    "شراء",
+    "اشتر",
+    "اشترك",
+    "اتصل",
+    "إبلاغ",
+    "ابلاغ"
+   ],
+   "inputs": {
+    "email": [
+     "البريد الإلكتروني",
+     "بريد"
+    ],
+    "phone": [
+     "رقم الهاتف",
+     "الهاتف",
+     "الجوال",
+     "هاتف"
+    ],
+    "password": [
+     "كلمة المرور",
+     "كلمة السر"
+    ],
+    "postal": [
+     "الرمز البريدي"
+    ],
+    "otp": [
+     "رمز التحقق"
+    ],
+    "first_name": [
+     "الاسم الأول"
+    ],
+    "last_name": [
+     "اسم العائلة",
+     "الاسم الأخير"
+    ],
+    "search": [
+     "بحث",
+     "ابحث"
+    ]
+   }
+  },
+  {
+   "code": "he",
+   "name": "Hebrew",
+   "boundary": false,
+   "blocked": [
+    "התנתק",
+    "התנתקות",
+    "יציאה",
+    "מחק",
+    "מחיקה",
+    "מחק חשבון",
+    "הסר התקנה",
+    "איפוס להגדרות יצרן",
+    "שלם",
+    "תשלום",
+    "קנה",
+    "רכישה",
+    "הזמן עכשיו",
+    "התקשר",
+    "דווח"
+   ],
+   "inputs": {
+    "email": [
+     "אימייל",
+     "דואר אלקטרוני"
+    ],
+    "phone": [
+     "טלפון",
+     "נייד"
+    ],
+    "password": [
+     "סיסמה",
+     "סיסמא"
+    ],
+    "postal": [
+     "מיקוד"
+    ],
+    "first_name": [
+     "שם פרטי"
+    ],
+    "last_name": [
+     "שם משפחה"
+    ],
+    "search": [
+     "חיפוש",
+     "חפש"
+    ]
+   }
+  },
+  {
+   "code": "hi",
+   "name": "Hindi",
+   "boundary": false,
+   "blocked": [
+    "लॉग आउट",
+    "लॉगआउट",
+    "साइन आउट",
+    "हटाएं",
+    "हटाएँ",
+    "मिटाएं",
+    "डिलीट",
+    "खाता हटाएं",
+    "निष्क्रिय करें",
+    "अनइंस्टॉल",
+    "फ़ैक्टरी रीसेट",
+    "डेटा साफ़",
+    "भुगतान",
+    "पे करें",
+    "खरीदें",
+    "सब्सक्राइब",
+    "सदस्यता लें",
+    "ऑर्डर करें",
+    "कॉल करें",
+    "रिपोर्ट करें"
+   ],
+   "inputs": {
+    "email": [
+     "ईमेल",
+     "ई-मेल"
+    ],
+    "phone": [
+     "फ़ोन",
+     "फोन",
+     "मोबाइल"
+    ],
+    "password": [
+     "पासवर्ड"
+    ],
+    "postal": [
+     "पिन कोड",
+     "पिनकोड"
+    ],
+    "otp": [
+     "ओटीपी",
+     "सत्यापन कोड"
+    ],
+    "first_name": [
+     "पहला नाम"
+    ],
+    "last_name": [
+     "अंतिम नाम",
+     "उपनाम"
+    ],
+    "search": [
+     "खोजें",
+     "खोज"
+    ]
+   }
+  },
+  {
+   "code": "bn",
+   "name": "Bengali",
+   "boundary": false,
+   "blocked": [
+    "লগ আউট",
+    "লগআউট",
+    "মুছুন",
+    "ডিলিট",
+    "অ্যাকাউন্ট মুছুন",
+    "পেমেন্ট",
+    "কিনুন",
+    "সাবস্ক্রাইব",
+    "অর্ডার করুন",
+    "কল করুন",
+    "রিপোর্ট করুন"
+   ],
+   "inputs": {
+    "email": [
+     "ইমেইল",
+     "ইমেল"
+    ],
+    "phone": [
+     "ফোন",
+     "মোবাইল"
+    ],
+    "password": [
+     "পাসওয়ার্ড"
+    ],
+    "postal": [
+     "পোস্টাল কোড",
+     "পিন কোড"
+    ],
+    "otp": [
+     "ওটিপি"
+    ],
+    "search": [
+     "অনুসন্ধান",
+     "খুঁজুন"
+    ]
+   }
+  },
+  {
+   "code": "id",
+   "name": "Indonesian",
+   "boundary": true,
+   "blocked": [
+    "keluar dari akun",
+    "hapus",
+    "hapus akun",
+    "nonaktifkan akun",
+    "copot pemasangan",
+    "hapus instalan",
+    "atur ulang pabrik",
+    "hapus data",
+    "bayar",
+    "beli",
+    "beli sekarang",
+    "berlangganan",
+    "buat pesanan",
+    "pesan sekarang",
+    "telepon",
+    "panggil",
+    "laporkan"
+   ],
+   "inputs": {
+    "email": [
+     "surel"
+    ],
+    "phone": [
+     "telepon",
+     "ponsel",
+     "nomor hp"
+    ],
+    "password": [
+     "kata sandi",
+     "sandi"
+    ],
+    "postal": [
+     "kode pos"
+    ],
+    "otp": [
+     "kode verifikasi"
+    ],
+    "first_name": [
+     "nama depan"
+    ],
+    "last_name": [
+     "nama belakang"
+    ],
+    "search": [
+     "cari",
+     "pencarian"
+    ]
+   }
+  },
+  {
+   "code": "ms",
+   "name": "Malay",
+   "boundary": true,
+   "blocked": [
+    "log keluar",
+    "keluar",
+    "padam",
+    "padam akaun",
+    "nyahaktifkan akaun",
+    "nyahpasang",
+    "tetapan semula kilang",
+    "padam data",
+    "bayar",
+    "beli",
+    "beli sekarang",
+    "langgan",
+    "buat pesanan",
+    "panggil",
+    "laporkan"
+   ],
+   "inputs": {
+    "email": [
+     "e-mel",
+     "emel"
+    ],
+    "phone": [
+     "nombor telefon",
+     "telefon"
+    ],
+    "password": [
+     "kata laluan"
+    ],
+    "postal": [
+     "poskod"
+    ],
+    "otp": [
+     "kod pengesahan"
+    ],
+    "first_name": [
+     "nama pertama"
+    ],
+    "last_name": [
+     "nama akhir",
+     "nama keluarga"
+    ],
+    "search": [
+     "cari"
+    ]
+   }
+  },
+  {
+   "code": "vi",
+   "name": "Vietnamese",
+   "boundary": true,
+   "blocked": [
+    "đăng xuất",
+    "xóa",
+    "xoá",
+    "xóa tài khoản",
+    "vô hiệu hóa tài khoản",
+    "gỡ cài đặt",
+    "đặt lại dữ liệu",
+    "khôi phục cài đặt gốc",
+    "thanh toán",
+    "mua",
+    "mua ngay",
+    "đăng ký gói",
+    "đặt hàng",
+    "gọi",
+    "báo cáo"
+   ],
+   "inputs": {
+    "email": [
+     "thư điện tử"
+    ],
+    "phone": [
+     "số điện thoại",
+     "điện thoại"
+    ],
+    "password": [
+     "mật khẩu"
+    ],
+    "postal": [
+     "mã bưu chính",
+     "mã bưu điện"
+    ],
+    "otp": [
+     "mã xác minh",
+     "mã otp"
+    ],
+    "search": [
+     "tìm kiếm",
+     "tìm"
+    ]
+   }
+  },
+  {
+   "code": "th",
+   "name": "Thai",
+   "boundary": false,
+   "blocked": [
+    "ออกจากระบบ",
+    "ลบ",
+    "ลบบัญชี",
+    "ปิดใช้งานบัญชี",
+    "ถอนการติดตั้ง",
+    "รีเซ็ตเป็นค่าโรงงาน",
+    "ล้างข้อมูล",
+    "ชำระเงิน",
+    "จ่ายเงิน",
+    "ซื้อ",
+    "สมัครสมาชิก",
+    "สั่งซื้อ",
+    "โทร",
+    "รายงาน"
+   ],
+   "inputs": {
+    "email": [
+     "อีเมล"
+    ],
+    "phone": [
+     "โทรศัพท์",
+     "เบอร์โทร",
+     "มือถือ"
+    ],
+    "password": [
+     "รหัสผ่าน"
+    ],
+    "postal": [
+     "รหัสไปรษณีย์"
+    ],
+    "otp": [
+     "รหัสยืนยัน"
+    ],
+    "first_name": [
+     "ชื่อจริง"
+    ],
+    "last_name": [
+     "นามสกุล"
+    ],
+    "search": [
+     "ค้นหา"
+    ]
+   }
+  },
+  {
+   "code": "zh-Hans",
+   "name": "Chinese (Simplified)",
+   "boundary": false,
+   "blocked": [
+    "退出登录",
+    "退出账号",
+    "退出账户",
+    "登出",
+    "注销",
+    "删除",
+    "删除账号",
+    "停用账号",
+    "卸载",
+    "恢复出厂",
+    "清除数据",
+    "清空数据",
+    "重置所有",
+    "重置数据",
+    "支付",
+    "付款",
+    "购买",
+    "立即购买",
+    "订阅",
+    "下单",
+    "提交订单",
+    "拨打",
+    "举报"
+   ],
+   "inputs": {
+    "email": [
+     "邮箱",
+     "电子邮件",
+     "电子邮箱"
+    ],
+    "phone": [
+     "手机号",
+     "手机",
+     "电话"
+    ],
+    "password": [
+     "密码"
+    ],
+    "postal": [
+     "邮编",
+     "邮政编码"
+    ],
+    "otp": [
+     "验证码"
+    ],
+    "search": [
+     "搜索",
+     "查找"
+    ]
+   }
+  },
+  {
+   "code": "zh-Hant",
+   "name": "Chinese (Traditional)",
+   "boundary": false,
+   "blocked": [
+    "登出",
+    "退出登入",
+    "刪除",
+    "刪除帳號",
+    "停用帳號",
+    "解除安裝",
+    "恢復原廠",
+    "清除資料",
+    "重設所有",
+    "支付",
+    "付款",
+    "購買",
+    "立即購買",
+    "訂閱",
+    "下單",
+    "提交訂單",
+    "撥打",
+    "檢舉"
+   ],
+   "inputs": {
+    "email": [
+     "電子郵件",
+     "電郵",
+     "信箱"
+    ],
+    "phone": [
+     "手機",
+     "電話"
+    ],
+    "password": [
+     "密碼"
+    ],
+    "postal": [
+     "郵遞區號"
+    ],
+    "otp": [
+     "驗證碼"
+    ],
+    "search": [
+     "搜尋",
+     "搜索"
+    ]
+   }
+  },
+  {
+   "code": "ja",
+   "name": "Japanese",
+   "boundary": false,
+   "blocked": [
+    "ログアウト",
+    "サインアウト",
+    "削除",
+    "アカウント削除",
+    "退会",
+    "アンインストール",
+    "初期化",
+    "データを消去",
+    "データを削除",
+    "支払",
+    "購入",
+    "今すぐ購入",
+    "定期購入",
+    "購読",
+    "注文",
+    "電話をかける",
+    "発信",
+    "通報",
+    "報告"
+   ],
+   "inputs": {
+    "email": [
+     "メールアドレス",
+     "メール"
+    ],
+    "phone": [
+     "電話番号",
+     "電話",
+     "携帯"
+    ],
+    "password": [
+     "パスワード",
+     "暗証番号"
+    ],
+    "postal": [
+     "郵便番号"
+    ],
+    "otp": [
+     "認証コード",
+     "確認コード",
+     "ワンタイム"
+    ],
+    "search": [
+     "検索"
+    ]
+   }
+  },
+  {
+   "code": "ko",
+   "name": "Korean",
+   "boundary": false,
+   "blocked": [
+    "로그아웃",
+    "삭제",
+    "계정 삭제",
+    "회원 탈퇴",
+    "계정 비활성화",
+    "초기화",
+    "데이터 삭제",
+    "결제",
+    "지불",
+    "구매",
+    "구독",
+    "주문",
+    "전화하기",
+    "전화 걸기",
+    "신고"
+   ],
+   "inputs": {
+    "email": [
+     "이메일",
+     "메일"
+    ],
+    "phone": [
+     "전화번호",
+     "휴대폰",
+     "전화"
+    ],
+    "password": [
+     "비밀번호",
+     "암호"
+    ],
+    "postal": [
+     "우편번호"
+    ],
+    "otp": [
+     "인증번호",
+     "인증 코드"
+    ],
+    "first_name": [
+     "이름"
+    ],
+    "search": [
+     "검색"
+    ]
+   }
+  }
+ ]
+}

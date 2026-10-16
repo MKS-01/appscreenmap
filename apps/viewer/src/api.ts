@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppMapData, RunIndexRow, TraceRow } from "./types";
 
 /**
@@ -74,7 +74,29 @@ export const useIndex = () =>
     d.runs.some((r) => r.status === "running"),
   );
 
-export const useMap = (run: string) => usePolled<AppMapData>(runFile(run, "map.json"), parseJson, 2000, isRunning);
+/** runs/<run>/titles.json: display titles that replace the screens' own (e.g. English for a run crawled in another
+ *  language). The original stays on the screen as `title_local`. */
+interface TitlesFile {
+  language?: string;
+  titles?: Record<string, string>;
+}
+const parseTitles = (text: string): TitlesFile => JSON.parse(text) as TitlesFile;
+
+export const withTitles = (map: AppMapData | null, file: TitlesFile | null): AppMapData | null => {
+  const titles = file?.titles;
+  if (!map || !titles) return map;
+  return {
+    ...map,
+    screens: map.screens.map((s) => (titles[s.id] ? { ...s, title_local: s.title, title: titles[s.id] } : s)),
+  };
+};
+
+export const useMap = (run: string): Loaded<AppMapData> => {
+  const map = usePolled<AppMapData>(runFile(run, "map.json"), parseJson, 2000, isRunning);
+  const titles = usePolled<TitlesFile>(runFile(run, "titles.json"), parseTitles);
+  const data = useMemo(() => withTitles(map.data, titles.data), [map.data, titles.data]);
+  return { data, error: map.error };
+};
 
 export const parseTrace = (text: string): TraceRow[] =>
   text

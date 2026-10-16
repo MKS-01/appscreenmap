@@ -248,6 +248,8 @@ class Replayer:
                 self.meter.begin()
             self.d.back()
             return "back", self._wait()
+        if step["action"] == "wait":  # the app moved on by itself: give it the time it took
+            return "wait", self._wait()
         el, via = find_element(obs, step["key"], step["selector"], step.get("label", ""))
         if el is None:
             el, via, obs = self._scroll_find(obs, step)

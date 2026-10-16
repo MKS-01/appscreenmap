@@ -106,6 +106,9 @@ class Screen:
     screenshot: str | None = None
     thumb: str | None = None
     hierarchy: str | None = None
+    captures: dict[str, str] = field(
+        default_factory=dict
+    )  # extra shots, e.g. {"bottom": "screens/s012-bottom.png"}
     # How the screen is reached: "launch" (app start lands here; reach_path is []), "action" (reach_path
     # replays from launch), or "unknown" (first seen outside a recorded action, e.g. after returning from
     # another app or when typing changed screens; healed as soon as a known screen leads here).
@@ -137,6 +140,7 @@ class Screen:
             "screenshot": self.screenshot,
             "thumb": self.thumb,
             "hierarchy": self.hierarchy,
+            "captures": self.captures,
             "variant_of": self.variant_of,
             "origin": self.origin,
             "reach_path": [s.to_dict() for s in self.reach_path],
