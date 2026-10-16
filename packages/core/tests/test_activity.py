@@ -104,7 +104,13 @@ def test_read_events_follows_appends_and_rotation(tmp_path):
 
 
 def _ev(pid, t, msg, kind=None, **kw):
-    e = {"t": f"2026-10-16T12:00:{t:02d}.000+00:00", "cmd": "crawl", "run": None, "source": "agent", "level": "info"}
+    e = {
+        "t": f"2026-10-16T12:00:{t:02d}.000+00:00",
+        "cmd": "crawl",
+        "run": None,
+        "source": "agent",
+        "level": "info",
+    }
     e.update(msg=msg, pid=pid, **kw)
     if kind:
         e["kind"] = kind
@@ -127,7 +133,10 @@ def test_sessions_group_a_command_run_and_say_how_it_ended():
     assert sec["status"] == "failed" and sec["exit"] == 1 and sec["warnings"] == 1 and sec["recent"]
     assert orphan["status"] == "interrupted" and orphan["command"] == ""
     assert activity.sessions(events, alive=lambda p: False)[0]["status"] == "interrupted"  # killed, no end
-    old = [_ev(4, 0, "appscreenmap perf", "start"), _ev(4, 1, "exit 0 after 0.0s", "end")]  # no "exit" field yet
+    old = [
+        _ev(4, 0, "appscreenmap perf", "start"),
+        _ev(4, 1, "exit 0 after 0.0s", "end"),
+    ]  # no "exit" field yet
     assert activity.sessions(old)[0]["status"] == "done"
 
 

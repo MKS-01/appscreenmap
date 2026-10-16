@@ -363,7 +363,9 @@ def sessions(events: list[dict], alive=_alive, now: float | None = None) -> list
         s["run"] = e.get("run") or s["run"]
         if e.get("kind") == "end":
             code = e.get("exit")
-            if code is None and (m := _EXIT_RE.match(e.get("msg") or "")):  # written before "exit" was a field
+            if code is None and (
+                m := _EXIT_RE.match(e.get("msg") or "")
+            ):  # written before "exit" was a field
                 code = int(m.group(1))
             s["end"], s["exit"] = e.get("t"), code
             open_.pop(pid, None)
