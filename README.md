@@ -4,14 +4,14 @@
 
 <h1 align="center">AppScreenMap</h1>
 
-<h3 align="center">Map and audit any mobile app by crawling it, from your AI agent over MCP.</h3>
+<h3 align="center">Map and audit any mobile app by crawling it, from your AI agent.</h3>
 
 <p align="center">Android emulator and iOS Simulator · No SDK, no test IDs, no source</p>
 
 <p align="center">
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/Android_·_iOS-0a0a0a?style=flat-square" alt="Android and iOS">
-  <a href="#mcp-server"><img src="https://img.shields.io/badge/MCP-server-0a0a0a?style=flat-square&logo=modelcontextprotocol&logoColor=white" alt="MCP server"></a>
+  <a href="#ai-agent-and-mcp"><img src="https://img.shields.io/badge/MCP-server-0a0a0a?style=flat-square&logo=modelcontextprotocol&logoColor=white" alt="MCP server"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0a0a0a?style=flat-square" alt="MIT License"></a>
 </p>
 
@@ -19,8 +19,7 @@
   <a href="#why">Why</a> ·
   <a href="#get-started">Get started</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#use-it-with-an-agent">Agent</a> ·
-  <a href="#mcp-server">MCP</a> ·
+  <a href="#ai-agent-and-mcp">Agent and MCP</a> ·
   <a href="#dashboard">Dashboard</a> ·
   <a href="docs/SETUP.md">Docs</a>
 </p>
@@ -59,7 +58,7 @@ And it asks nothing of your app:
   Compose, React Native, SwiftUI), even with almost no resource ids.
 - **Deterministic.** No model calls in the crawl: same build and config, same map, so a regression is a diff.
 - **Local and safe.** Nothing leaves your machine. It stays in the app and never taps log out, delete or pay.
-- **Agent-native.** A local [MCP server](#mcp-server) and [skills](.claude/skills/) for Claude Code or any MCP client.
+- **Agent-native.** A local [MCP server](#ai-agent-and-mcp) and [skills](.claude/skills/) for Claude Code or any MCP client.
 
 ## Get started
 
@@ -78,50 +77,29 @@ No app handy? Press `x` in the terminal home to map the [Playground](samples/REA
 Output is a run folder of plain files (`map.json`, `screens/`, `flows/`, `a11y.json`, `perf.json`, reports);
 `map.json` is a versioned contract, see [docs/MAP_SCHEMA.md](docs/MAP_SCHEMA.md).
 
-## How it works
+## AI agent and MCP
 
-1. **Drive.** The engine talks to the device over `adb` (Android) or `simctl` + `idb` (iOS Simulator), pinned to
-   your app so a crawl cannot wander into other apps.
-2. **Observe.** Each step captures a screenshot and the UI hierarchy (`uiautomator` on Android).
-3. **Identify.** The analyzer fingerprints the layout and ignores list contents and digits (clocks, counters), so a
-   list with new rows is the same screen and a different layout is a new one. That keeps the map stable across runs.
-4. **Act.** The explorer picks the next tap, scroll or text entry. It recognises tabs, lists, forms, dialogs and
-   login screens, and skips destructive actions (log out, delete, pay).
-5. **Record.** Screens and transitions go to `map.json`; the audits read the same files.
+Everything runs through your AI agent. Press `t` in the terminal home for a new terminal in the same folder, run
+`claude`, and ask in plain language:
 
-Your agent sits above this loop: it starts runs, reads the health report, fixes config and re-crawls.
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the details.
-
-## Use it with an agent
-
-Press `t` in the terminal home for a new terminal in the same folder, run `claude`, and ask in plain language:
-
-> *Map my app on the emulator and review the map.*
-> *Audit accessibility on the latest run at WCAG 2.2 AA.*
-> *Crawl the new build and compare it with the last run.*
+> *Map my app on the emulator and review the map.*<br>
+> *Audit accessibility on the latest run at WCAG 2.2 AA.*<br>
+> *Crawl the new build and compare it with the last run.*<br>
 > *The last crawl merged two screens. Fix it and crawl again.*
 
-Its work shows up live in the dashboard.
-
-| Job | Skill |
-|---|---|
-| Map and review a crawl | [`crawl-app`](.claude/skills/crawl-app/SKILL.md), [`tune-crawler`](.claude/skills/tune-crawler/SKILL.md) |
-| Accessibility (WCAG 2.2) | [`a11y-audit`](.claude/skills/a11y-audit/SKILL.md) |
-| iOS Simulator setup | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
-| Store deadlines (Play target API, App Store SDK) | [`store-requirements`](.claude/skills/store-requirements/SKILL.md) |
-| Test export | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
-
-## MCP server
+The agent works through the MCP server, so it answers from the map instead of exploring the app again, and its
+work shows up live in the dashboard:
 
 > *You:* How do I reach Settings?<br>
 > *Agent → `route("Settings")`:* From launch: tap **Profile**, then tap **Settings**. Here is the test flow.<br>
 > *You:* Take the emulator there.<br>
 > *Agent → `go_to_screen("Settings")` → `where_am_i()`:* Done, the device is on Settings.
 
-`appscreenmap mcp` serves your mapped runs to any MCP client (Claude Code, Claude Desktop, Cursor, VS Code, …). The
-map becomes the agent's memory of the app, so it answers from the map instead of exploring the app again. It is a
-local stdio server: it reads `runs/` on your machine and talks to your emulator or Simulator, with no account, no
-API key and no network calls.
+### Connect
+
+`appscreenmap mcp` serves your mapped runs to any MCP client (Claude Code, Claude Desktop, Cursor, VS Code, …). It
+is a local stdio server: it reads `runs/` on your machine and talks to your emulator or Simulator, with no account,
+no API key and no network calls.
 
 ```bash
 claude mcp add appscreenmap -- appscreenmap mcp
@@ -135,6 +113,8 @@ Other clients take the same command in their MCP config:
 
 Options: `--runs <dir>` (default `./runs`), `--run <run-id>` (default: the latest finished run), `--serial <device>`.
 
+### Tools
+
 | Tool | Answers | Kind |
 |---|---|---|
 | `list_runs`, `list_screens`, `find_screens` | What has been mapped; which screen is "Settings" or has a "Save" button | read-only |
@@ -147,6 +127,32 @@ Options: `--runs <dir>` (default `./runs`), `--run <run-id>` (default: the lates
 
 Tools carry MCP annotations (`readOnlyHint`, `destructiveHint`), so clients can ask before the two that drive the
 device. More in [docs/SETUP.md](docs/SETUP.md#agents-mcp).
+
+### Skills
+
+[Skills](.claude/skills/) teach the agent the jobs around a crawl:
+
+| Job | Skill |
+|---|---|
+| Map and review a crawl | [`crawl-app`](.claude/skills/crawl-app/SKILL.md), [`tune-crawler`](.claude/skills/tune-crawler/SKILL.md) |
+| Accessibility (WCAG 2.2) | [`a11y-audit`](.claude/skills/a11y-audit/SKILL.md) |
+| iOS Simulator setup | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
+| Store deadlines (Play target API, App Store SDK) | [`store-requirements`](.claude/skills/store-requirements/SKILL.md) |
+| Test export | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
+
+## How it works
+
+1. **Drive.** The engine talks to the device over `adb` (Android) or `simctl` + `idb` (iOS Simulator), pinned to
+   your app so a crawl cannot wander into other apps.
+2. **Observe.** Each step captures a screenshot and the UI hierarchy (`uiautomator` on Android).
+3. **Identify.** The analyzer fingerprints the layout and ignores list contents and digits (clocks, counters), so a
+   list with new rows is the same screen and a different layout is a new one. That keeps the map stable across runs.
+4. **Act.** The explorer picks the next tap, scroll or text entry. It recognises tabs, lists, forms, dialogs and
+   login screens, and skips destructive actions (log out, delete, pay).
+5. **Record.** Screens and transitions go to `map.json`; the audits read the same files.
+
+Your agent sits above this loop: it starts runs, reads the health report, fixes config and re-crawls.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the details.
 
 ## Dashboard
 
