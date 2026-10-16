@@ -202,6 +202,7 @@ Apple's Xcode 27 skills with `make skills-xcode`.
 | Store readiness | ✅ Ready | Play and App Store SDK deadlines for the next 365 days |
 | iOS Simulator crawl | 🧪 Beta | Same map on iOS; see the [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) skill |
 | Security audit | 🧪 Beta | 18 of 19 rules on Android and iOS builds; see the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
+| Adaptive UI review | 🚧 Coming soon | Check every screen at phone, tablet and foldable sizes |
 
 Audit rules (WCAG, security, Play and App Store) are updated as the official guidance changes.
 
