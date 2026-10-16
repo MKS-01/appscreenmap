@@ -5,9 +5,9 @@
 <h1 align="center">AppScreenMap</h1>
 
 <p align="center">
-  <strong>Your app's screens and routes, mapped by crawling it. No SDK, no test IDs, no source.</strong><br>
-  Point it at a build. It crawls on an Android emulator or iOS Simulator and maps every screen and route,<br>
-  as plain files, exports for your tests and CI, and an MCP server your AI agent can query.
+  <strong>Every screen in your app, mapped. No SDK, no test IDs, no source.</strong><br>
+  Point it at a build on an Android emulator or iOS Simulator. You get plain files, ready-to-run test flows,<br>
+  WCAG and performance audits, a CI gate, and an MCP server your AI agent can query.
 </p>
 
 <p align="center">
