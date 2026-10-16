@@ -53,7 +53,7 @@ build you already ship and writes it down, so the answer is a file you can query
 | **Routes to every screen** | "How do I reach Settings?" is a lookup, for you and for your agent |
 | **A diff between builds** | Added, removed and changed screens before release, not after |
 | **Crawl on Android and iOS** | One command explores the build on an emulator or Simulator, no scripting |
-| **Exports you can use** | Test flows, one per screen (Maestro for now; other tools such as Appium or Espresso can plug in), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
+| **Exports you can use** | Test flows, one per screen (Maestro format), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
 | **WCAG 2.2 and performance audits** | Every screen checked, with the fix and an official source |
 | **A CI gate** | `verify` replays every path on a new build and fails the job if one breaks |
 | **An MCP server for your agent** | Your agent knows the app without re-exploring it: find a screen, get the route, go there |
@@ -197,7 +197,7 @@ Apple's Xcode 27 skills with `make skills-xcode`.
 | Accessibility audit | ✅ Ready | WCAG 2.2 findings with screenshots, fixes and a shareable report |
 | Performance | ✅ Ready | Load time per screen, jank and cold start |
 | `verify` CI gate | ✅ Ready | Replays every path on a new build and fails the job if one breaks |
-| Exports | ✅ Ready | Test flows (Maestro for now), Mermaid graph and a one-file SVG of the map |
+| Exports | ✅ Ready | Test flows (Maestro format), Mermaid graph and a one-file SVG of the map |
 | MCP server and agent skills | ✅ Ready | Ask your AI agent to map, audit and compare |
 | Store readiness | ✅ Ready | Play and App Store SDK deadlines for the next 365 days |
 | iOS Simulator crawl | 🧪 Beta | Same map on iOS; see the [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) skill |
