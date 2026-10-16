@@ -36,7 +36,7 @@ appscreenmap crawl --apk app.apk   # explore the app, then run `appscreenmap` to
 ```
 
 > [!NOTE]
-> **Early alpha.** Commands and flags may change. iOS is beta. Adaptive UI review is planned, and the security audit covers 18 of its 19 rules (see [Feature status](#feature-status)).
+> **Early alpha.** Commands and flags may change. iOS and the security audit (18 of 19 rules) are beta (see [Feature status](#feature-status)).
 
 ## Why
 
@@ -202,9 +202,6 @@ Apple's Xcode 27 skills with `make skills-xcode`.
 | Store readiness | ✅ Ready | Play and App Store SDK deadlines for the next 365 days |
 | iOS Simulator crawl | 🧪 Beta | Same map on iOS; see the [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) skill |
 | Security audit | 🧪 Beta | 18 of 19 rules on Android and iOS builds; see the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
-| Sensitive data in logs | 🚧 Coming soon | The last security rule, plus confirmed code findings instead of string matches |
-| Adaptive UI review | 🚧 Coming soon | Check every screen at phone, tablet and foldable sizes |
-| Release change checks | 🚧 Coming soon | Flag what each new Android and iOS release means for your app |
 
 Audit rules (WCAG, security, Play and App Store) are updated as the official guidance changes.
 
