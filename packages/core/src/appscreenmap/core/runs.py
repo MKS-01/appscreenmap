@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -64,6 +65,33 @@ def resolve_run(runs_root: Path, run_id: str) -> Path | None:
         if (d / "map.json").is_file():
             return d
     return None
+
+
+class RunDeleteError(ValueError):
+    pass
+
+
+def delete_run(runs_root: Path, key: str) -> Path:
+    """Delete one run folder: `key` is `<project>/<run-id>` (the index `path`) or a bare run id. Refuses anything that is
+    not a run inside `runs_root`, and a crawl that is still running. Rebuilds index.json; returns the deleted folder."""
+    root = runs_root.resolve()
+    parts = key.strip("/").split("/")
+    if not 1 <= len(parts) <= 2 or not all(RUN_ID_RE.fullmatch(p) and ".." not in p for p in parts):
+        raise RunDeleteError(f"not a run: {key!r}")
+    run_dir = (root / parts[0] / parts[1]).resolve() if len(parts) == 2 else resolve_run(root, parts[0])
+    if run_dir is not None:
+        run_dir = run_dir.resolve()
+    if run_dir is None or root not in run_dir.parents or not (run_dir / "map.json").is_file():
+        raise RunDeleteError(f"no run {key!r}")
+    try:
+        status = json.loads((run_dir / "map.json").read_text()).get("run", {}).get("status")
+    except (OSError, ValueError):
+        status = None
+    if status == "running":
+        raise RunDeleteError("the crawl is still running; stop it first")
+    shutil.rmtree(run_dir)
+    update_index(runs_root)
+    return run_dir
 
 
 def update_index(runs_root: Path) -> list[dict]:

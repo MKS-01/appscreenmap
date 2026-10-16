@@ -74,6 +74,12 @@ export const useIndex = () =>
     d.runs.some((r) => r.status === "running"),
   );
 
+/** Delete a run folder through the dashboard server (`appscreenmap serve`). Throws with the server's reason. */
+export async function deleteRun(run: string): Promise<void> {
+  const r = await fetch(`/runs/${run}`, { method: "DELETE" });
+  if (!r.ok) throw new Error(r.status === 409 ? "The crawl is still running; stop it first." : `${r.status} ${(await r.text()).trim() || r.statusText}`);
+}
+
 /** runs/<run>/titles.json: display titles that replace the screens' own (e.g. English for a run crawled in another
  *  language). The original stays on the screen as `title_local`. */
 interface TitlesFile {

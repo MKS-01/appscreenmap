@@ -1765,6 +1765,83 @@ pre.code {
   color: var(--muted);
   font-size: var(--text-base);
 }
+/* Earlier runs: the folder and the diff command are truncated (full text on hover), with copy and delete beside. */
+.history-tbl {
+  width: 100%;
+  table-layout: fixed;
+  min-width: 720px;
+}
+.history-tbl td {
+  vertical-align: middle;
+}
+.history-when {
+  width: 24%;
+}
+.history-when > * {
+  display: block;
+}
+.history-cmd {
+  width: 38%;
+}
+.history-cmd code {
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+/* Phones: each run stacks (when + status, then what it found, then the command), so copy and delete stay in reach. */
+@media (max-width: 640px) {
+  .history-tbl {
+    min-width: 0;
+  }
+  .history-tbl tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "when status" "stats stats" "cmd cmd";
+    gap: 6px 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .history-tbl tr:last-child {
+    border-bottom: 0;
+  }
+  .history-tbl td {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+  }
+  .history-when {
+    grid-area: when;
+  }
+  .history-status {
+    grid-area: status;
+  }
+  .history-ver {
+    display: none !important; /* shown in the app card's header */
+  }
+  .history-stats {
+    grid-area: stats;
+  }
+  .history-cmd {
+    grid-area: cmd;
+  }
+  .history-cmd .btn {
+    min-width: var(--hit-min);
+    min-height: var(--hit-min);
+    justify-content: center;
+  }
+}
+.btn-delete {
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-delete:hover:not(:disabled) {
+    color: var(--bad);
+    border-color: var(--bad);
+  }
+}
+.btn-delete:focus-visible {
+  color: var(--bad);
+}
 .start-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

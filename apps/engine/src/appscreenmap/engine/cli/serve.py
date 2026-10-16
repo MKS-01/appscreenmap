@@ -1,4 +1,5 @@
-"""Serve the maps: `serve` (the web viewer, the notes endpoint and SVG export) and `mcp` (agents, over stdio)."""
+"""Serve the maps: `serve` (the web viewer, the notes and run-delete endpoints, SVG export) and `mcp` (agents, over
+stdio)."""
 
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ from urllib.parse import parse_qs, unquote
 
 from appscreenmap.core import notes
 from appscreenmap.core.model import load_map
-from appscreenmap.core.runs import resolve_run, update_index
+from appscreenmap.core.runs import RunDeleteError, delete_run, resolve_run, update_index
 from appscreenmap.exporters.svg import LAYOUTS, THEMES, map_svg
 
 
@@ -93,8 +94,27 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             update_index(self.runs_root)
         super().do_GET()
 
+    def _local_page(self) -> bool:
+        """Only same-machine pages may write (guards against DNS rebinding); cross-site writes already fail CORS preflight."""
+        host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]")
+        return host in ("localhost", "127.0.0.1", "::1", self.server.server_address[0])
+
+    def do_DELETE(self):
+        """Delete a run from the dashboard: DELETE /runs/[<project>/]<run-id>. Refuses a crawl that is still running."""
+        path = unquote(self.path.split("?", 1)[0])
+        if not path.startswith("/runs/"):
+            return self.send_error(404)
+        if not self._local_page():
+            return self.send_error(403)
+        try:
+            delete_run(self.runs_root, path[len("/runs/") :])
+        except RunDeleteError as e:
+            return self.send_error(409 if "running" in str(e) else 404, str(e))
+        self.send_response(204)
+        self.end_headers()
+
     def do_PUT(self):
-        """Save viewer notes: PUT /runs/[<project>/]<run-id>/notes.json. The only write the server accepts."""
+        """Save viewer notes: PUT /runs/[<project>/]<run-id>/notes.json."""
         parts = self.path.split("?", 1)[0].split("/")
         run_dir = None
         if parts[:2] == ["", "runs"] and parts[-1] == notes.NOTES_FILE and len(parts) in (4, 5):
@@ -107,9 +127,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
                 run_dir = None  # the project folder in the URL must be the run's real one
         if run_dir is None:
             return self.send_error(404)
-        # Only same-machine pages may write (guards against DNS rebinding); cross-site PUTs already fail CORS preflight.
-        host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]")
-        if host not in ("localhost", "127.0.0.1", "::1", self.server.server_address[0]):
+        if not self._local_page():
             return self.send_error(403)
         if not (self.headers.get("Content-Type") or "").startswith("application/json"):
             return self.send_error(415)
