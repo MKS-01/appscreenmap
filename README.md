@@ -4,11 +4,14 @@
 
 <h1 align="center">AppScreenMap</h1>
 
+<h3 align="center">Map and audit any mobile app by crawling it, from your AI agent over MCP.</h3>
+
 <p align="center">
-  <strong>Map and audit any mobile app by crawling it, from your AI agent over MCP. No SDK, no test IDs, no source.</strong><br>
-  Point it at a build on an Android emulator or iOS Simulator. You get plain files, ready-to-run test flows,<br>
+  Point it at a build on an Android emulator or iOS Simulator. You get plain files, ready-to-run test flows,
   WCAG and performance audits, a CI gate, and a live dashboard to browse it all.
 </p>
+
+<p align="center"><strong>No SDK · no test IDs · no source</strong></p>
 
 <p align="center">
   <a href="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml"><img src="https://github.com/MKS-01/appscreenmap/actions/workflows/crawler.yml/badge.svg" alt="CI"></a>
