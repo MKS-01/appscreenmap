@@ -53,7 +53,7 @@ build you already ship and writes it down, so the answer is a file you can query
 | **Routes to every screen** | "How do I reach Settings?" is a lookup, for you and for your agent |
 | **A diff between builds** | Added, removed and changed screens before release, not after |
 | **Crawl on Android and iOS** | One command explores the build on an emulator or Simulator, no scripting |
-| **Exports you can use** | Maestro flows (one per screen), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
+| **Exports you can use** | Test flows, one per screen (Maestro for now; other tools such as Appium or Espresso can plug in), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
 | **WCAG 2.2 and performance audits** | Every screen checked, with the fix and an official source |
 | **A CI gate** | `verify` replays every path on a new build and fails the job if one breaks |
 | **An MCP server for your agent** | Your agent knows the app without re-exploring it: find a screen, get the route, go there |
@@ -119,7 +119,7 @@ Its work shows up live in the dashboard.
 ## MCP server
 
 > *You:* How do I reach Settings?<br>
-> *Agent → `route("Settings")`:* From launch: tap **Profile**, then tap **Settings**. Here is the Maestro flow.<br>
+> *Agent → `route("Settings")`:* From launch: tap **Profile**, then tap **Settings**. Here is the test flow.<br>
 > *You:* Take the emulator there.<br>
 > *Agent → `go_to_screen("Settings")` → `where_am_i()`:* Done, the device is on Settings.
 
@@ -144,7 +144,7 @@ Options: `--runs <dir>` (default `./runs`), `--run <run-id>` (default: the lates
 |---|---|---|
 | `list_runs`, `list_screens`, `find_screens` | What has been mapped; which screen is "Settings" or has a "Save" button | read-only |
 | `get_screen`, `screenshot` | One screen: elements and where each leads, how to reach it, findings, load time, image | read-only |
-| `route` | Steps to a screen, from launch or another screen (with the Maestro flow) | read-only |
+| `route` | Steps to a screen, from launch or another screen (with its test flow) | read-only |
 | `a11y_findings`, `perf_summary` | Which screens fail which WCAG 2.2 criteria; which are slow | read-only |
 | `where_am_i` | Which mapped screen the device shows now | read-only |
 | `go_to_screen` | Drive the device to a screen along its route | drives the device |
@@ -159,12 +159,12 @@ device. More in [docs/SETUP.md](docs/SETUP.md#agents-mcp).
 
 - **Insights**: scored audits with findings, fixes and official sources
 - **Map**: every screen as a tree, graph or storyboard
-- **Screens**: search, tappable overlays, transitions, the Maestro flow
+- **Screens**: search, tappable overlays, transitions, the test flow
 - **Accessibility**: findings per rule with screenshots; triage them, export a WCAG 2.2 report
 - **Compare**: what changed between two builds
 - **Crawl replay**: step through what was tapped and why
 
-Export Markdown or CSV from the dashboard, or take the files straight from the run: Maestro flows (`flows/`), a
+Export Markdown or CSV from the dashboard, or take the files straight from the run: test flows (`flows/`, Maestro format), a
 Mermaid graph (`map.mmd`), a one-file WCAG report (`a11y-report.html`, evidence not a conformance claim), and
 `map.json` / `a11y.json` / `perf.json` for your own tooling.
 
@@ -197,7 +197,7 @@ Apple's Xcode 27 skills with `make skills-xcode`.
 | Accessibility audit | ✅ Ready | WCAG 2.2 findings with screenshots, fixes and a shareable report |
 | Performance | ✅ Ready | Load time per screen, jank and cold start |
 | `verify` CI gate | ✅ Ready | Replays every path on a new build and fails the job if one breaks |
-| Exports | ✅ Ready | Maestro flows, Mermaid graph and a one-file SVG of the map |
+| Exports | ✅ Ready | Test flows (Maestro for now), Mermaid graph and a one-file SVG of the map |
 | MCP server and agent skills | ✅ Ready | Ask your AI agent to map, audit and compare |
 | Store readiness | ✅ Ready | Play and App Store SDK deadlines for the next 365 days |
 | iOS Simulator crawl | 🧪 Beta | Same map on iOS; see the [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) skill |
