@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { runFile, runKey, useIndex, useMap } from "../api";
+import { deleteRun, runFile, runKey, useIndex, useMap } from "../api";
 import { CopyButton, ErrorBox, Loading, StatusBadge } from "../components/common";
 import { Icon } from "../components/Icon";
 import { href, screenHref } from "../router";
@@ -21,11 +21,13 @@ const osLabel = (d: RunIndexRow["device"]) => (d.platform === "ios" ? `iOS ${d.o
 
 export default function Runs() {
   const { data, error } = useIndex();
+  const [gone, setGone] = useState<Set<string>>(new Set()); // deleted here; index.json catches up on its next read
 
   // One card per app (project folder, else package), newest run first.
   const apps = useMemo<AppGroup[]>(() => {
     const by = new Map<string, RunIndexRow[]>();
     for (const r of data?.runs ?? []) {
+      if (gone.has(runKey(r))) continue;
       const k = r.project ?? r.app.package;
       by.set(k, [...(by.get(k) ?? []), r]);
     }
@@ -35,12 +37,12 @@ export default function Runs() {
         return { key, latest: sorted[0], runs: sorted };
       })
       .sort((a, b) => (b.latest.started_at ?? "").localeCompare(a.latest.started_at ?? ""));
-  }, [data]);
+  }, [data, gone]);
 
   if (error) return <div className="page"><ErrorBox error={error} /></div>;
   if (!data) return <Loading />;
 
-  const runs = data.runs;
+  const runs = data.runs.filter((r) => !gone.has(runKey(r)));
   const total = (f: (r: RunIndexRow) => number) => runs.reduce((n, r) => n + (f(r) || 0), 0);
   const live = runs.filter((r) => r.status === "running").length;
 
@@ -97,7 +99,7 @@ export default function Runs() {
             </div>
             <div className="col" style={{ gap: 18 }}>
               {apps.map((a) => (
-                <AppCard key={a.key} group={a} />
+                <AppCard key={a.key} group={a} onDeleted={(k) => setGone((g) => new Set([...g, k]))} />
               ))}
             </div>
             <GettingStarted />
@@ -127,7 +129,7 @@ const LINKS: [string, string][] = [
   ["compare", "Compare"],
 ];
 
-function AppCard({ group }: { group: AppGroup }) {
+function AppCard({ group, onDeleted }: { group: AppGroup; onDeleted: (key: string) => void }) {
   const r = group.latest;
   const key = runKey(r);
   const { data: map } = useMap(key);
@@ -204,31 +206,72 @@ function AppCard({ group }: { group: AppGroup }) {
           <summary>
             {plural(group.runs.length - 1, "earlier run")}
           </summary>
-          <table className="tbl">
-            <tbody>
-              {group.runs.slice(1).map((o) => (
-                <tr key={runKey(o)} className="hover">
-                  <td>
-                    <a href={href("r", runKey(o), "map")}>{fmtDate(o.started_at)}</a>
-                  </td>
-                  <td className="muted">v{o.app.version ?? "?"}</td>
-                  <td className="muted">
-                    {o.screens} screens · {o.transitions} transitions
-                    {o.crashes > 0 && <span style={{ color: "var(--st-blocked)" }}> · {plural(o.crashes, "crash")}</span>}
-                  </td>
-                  <td>
-                    <StatusBadge status={o.status} />
-                  </td>
-                  <td className="small" style={{ textAlign: "right" }}>
-                    <span className="mono faint">appscreenmap diff runs/{runKey(o)} runs/{key}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="tbl-scroll">
+            <table className="tbl history-tbl">
+              <tbody>
+                {group.runs.slice(1).map((o) => (
+                  <EarlierRun key={runKey(o)} run={o} latest={key} onDeleted={onDeleted} />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </details>
       )}
     </article>
+  );
+}
+
+/** One earlier run: when, what it found, the diff command against the latest (truncated, copyable) and delete. */
+function EarlierRun({ run: o, latest, onDeleted }: { run: RunIndexRow; latest: string; onDeleted: (key: string) => void }) {
+  const k = runKey(o);
+  const cmd = `appscreenmap diff runs/${k} runs/${latest}`;
+  const [busy, setBusy] = useState(false);
+  const remove = async () => {
+    const when = o.started_at ? fmtDate(o.started_at) : o.id;
+    if (!confirm(`Delete the run from ${when}?\n\nruns/${k} is removed from disk: map, screenshots, notes and comments. This can't be undone.`)) return;
+    setBusy(true);
+    try {
+      await deleteRun(k);
+      onDeleted(k);
+    } catch (e) {
+      alert(`Couldn't delete runs/${k}: ${e instanceof Error ? e.message : e}`);
+      setBusy(false);
+    }
+  };
+  return (
+    <tr className="hover">
+      <td className="history-when">
+        <a href={href("r", k, "map")}>{o.started_at ? fmtDate(o.started_at) : "Undated run"}</a>
+        <span className="mono faint ellipsis" title={`runs/${k}`}>
+          {o.id}
+        </span>
+      </td>
+      <td className="muted history-ver">v{o.app.version ?? "?"}</td>
+      <td className="muted history-stats">
+        {o.screens} screens · {o.transitions} transitions
+        {o.crashes > 0 && <span style={{ color: "var(--st-blocked)" }}> · {plural(o.crashes, "crash")}</span>}
+      </td>
+      <td className="history-status">
+        <StatusBadge status={o.status || "unknown"} />
+      </td>
+      <td className="history-cmd">
+        <div className="row" style={{ gap: 6 }}>
+          <code className="mono faint ellipsis grow" title={cmd}>
+            {cmd}
+          </code>
+          <CopyButton text={cmd} label="Copy the diff command" iconOnly />
+          <button
+            className="btn icon-only btn-delete"
+            onClick={remove}
+            disabled={busy || o.status === "running"}
+            aria-label={`Delete run ${o.id}`}
+            title={o.status === "running" ? "Still running" : "Delete this run"}
+          >
+            <Icon name="trash" size={14} />
+          </button>
+        </div>
+      </td>
+    </tr>
   );
 }
 

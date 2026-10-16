@@ -57,12 +57,37 @@ function saveNotes(req: IncomingMessage, res: ServerResponse) {
   });
 }
 
+// Mirrors `DELETE /runs/[<project>/]<run-id>` in `appscreenmap serve` (packages/core/src/appscreenmap/core/runs.py).
+// index.json is rebuilt by the engine; in dev it is left as is, so the deleted run's row stays until the next crawl.
+const RUN_RE = /^\/([A-Za-z0-9][A-Za-z0-9_.-]*)\/([A-Za-z0-9][A-Za-z0-9_.-]*)\/?$/;
+function deleteRun(req: IncomingMessage, res: ServerResponse) {
+  const m = RUN_RE.exec(decodeURIComponent((req.url ?? "").split("?")[0]));
+  const runDir = m && !m[1].includes("..") && !m[2].includes("..") ? path.join(runsRoot, m[1], m[2]) : null;
+  res.statusCode = 404;
+  if (!runDir || !fs.existsSync(path.join(runDir, "map.json"))) return res.end("not found");
+  const status = (() => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(runDir, "map.json"), "utf8"))?.run?.status;
+    } catch {
+      return undefined;
+    }
+  })();
+  if (status === "running") {
+    res.statusCode = 409;
+    return res.end("the crawl is still running; stop it first");
+  }
+  fs.rmSync(runDir, { recursive: true, force: true });
+  res.statusCode = 204;
+  res.end();
+}
+
 function serveRuns(): Plugin {
   return {
     name: "appscreenmap-runs",
     configureServer(server) {
       server.middlewares.use("/runs", (req, res, next) => {
         if (req.method === "PUT") return saveNotes(req, res);
+        if (req.method === "DELETE") return deleteRun(req, res);
         const rel = decodeURIComponent((req.url ?? "/").split("?")[0]);
         const file = path.resolve(runsRoot, "." + rel);
         if (!file.startsWith(runsRoot + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {

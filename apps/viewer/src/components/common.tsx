@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { runFile } from "../api";
+import { Icon } from "./Icon";
 import { screenHref } from "../router";
 import type { RunMeta, Screen } from "../types";
 
@@ -30,17 +31,21 @@ export function ScreenLink({ run, screen, children }: { run: string; screen: Scr
   );
 }
 
-export function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
+export function CopyButton({ text, label = "Copy", iconOnly }: { text: string; label?: string; iconOnly?: boolean }) {
   const [done, setDone] = useState(false);
+  const copy = async () => {
+    await navigator.clipboard.writeText(text);
+    setDone(true);
+    setTimeout(() => setDone(false), 1400);
+  };
+  if (iconOnly)
+    return (
+      <button className="btn icon-only" onClick={copy} aria-label={done ? "Copied" : label} title={done ? "Copied" : label}>
+        <Icon name={done ? "check" : "copy"} size={14} />
+      </button>
+    );
   return (
-    <button
-      className="btn"
-      onClick={async () => {
-        await navigator.clipboard.writeText(text);
-        setDone(true);
-        setTimeout(() => setDone(false), 1400);
-      }}
-    >
+    <button className="btn" onClick={copy}>
       {done ? "Copied ✓" : label}
     </button>
   );

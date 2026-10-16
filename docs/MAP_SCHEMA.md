@@ -34,7 +34,8 @@ Older runs may sit directly in `runs/<run-id>/`. Use the index's `path` to locat
 
 **URLs:** `appscreenmap serve` accepts both `/runs/<path>/…` and `/runs/<run-id>/…`. It resolves a
 bare run id to its project folder, so `/runs/<run-id>/map.json` and `PUT /runs/<run-id>/notes.json`
-keep working. A dev server that maps `/runs` straight onto the folder must do the same
+keep working. `DELETE /runs/[<project>/]<run-id>` deletes one run folder (the Runs page's delete button; same-machine
+pages only, refused with 409 while the crawl is running) and rebuilds `index.json`. A dev server that maps `/runs` straight onto the folder must do the same
 (look the id up in `index.json` → `path`, or glob `runs/*/<run-id>`).
 
 External screens use `x:<package>` as the id. Their files use `_` in place of `:`

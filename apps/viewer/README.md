@@ -34,7 +34,8 @@ id-only links redirect.
 | Data | Where | Why |
 |---|---|---|
 | Crawl output | `runs/<project>/<run-id>/` | Source of truth, written by the crawler |
-| Stars, screen notes, a11y triage | `runs/…/notes.json` via `PUT` to `appscreenmap serve` or the dev server | Travels with the run, survives browser resets, can be committed |
+| Stars, screen notes, a11y triage, map comments and tree edits | `runs/…/notes.json` via `PUT` to `appscreenmap serve` or the dev server | Travels with the run, survives browser resets, can be committed |
+| Deleting an earlier run | `DELETE /runs/<project>/<run-id>` to `appscreenmap serve` (or the dev server) | Removes the folder from disk; refused while the crawl runs |
 | View prefs, dragged map layouts | `localStorage` (`appscreenmap:v1:*`) | Personal to one browser, fine to lose |
 
 On a read-only host the `PUT` fails, so notes stay in localStorage and sync to `notes.json` the next time a save succeeds.

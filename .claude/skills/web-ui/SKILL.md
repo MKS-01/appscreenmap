@@ -6,7 +6,7 @@ description: Design and build UI in the AppScreenMap web viewer (apps/viewer/) â
 # Viewer UI work
 
 The viewer is React + TypeScript + Vite in `apps/viewer/`, run with **Bun** (never npm). It has no backend: it reads
-`runs/` as static files, plus a single `PUT` for `notes.json`. The crawler (`src/`) belongs to another workstream.
+`runs/` as static files, plus a `PUT` for `notes.json` and a `DELETE` for a run folder (Runs page). The crawler (`src/`) belongs to another workstream.
 Don't edit it for UI work. If the UI needs new data, ask for a `map.json` field (see `docs/MAP_SCHEMA.md`).
 
 ## 1. Load the design context first
