@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Android_·_iOS-0a0a0a?style=flat-square" alt="Android and iOS">
   <a href="#ai-agent-and-mcp"><img src="https://img.shields.io/badge/MCP-server-0a0a0a?style=flat-square&logo=modelcontextprotocol&logoColor=white" alt="MCP server"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0a0a0a?style=flat-square" alt="MIT License"></a>
+  <a href="https://m8ven.ai/mcp/mks-01-appscreenmap-5cftte?s=readme"><img src="https://m8ven.ai/badge/mcp/mks-01-appscreenmap-5cftte?v=5da838a903ecc0b48a695af01acacf32" alt="M8ven Score"></a>
 </p>
 
 <p align="center">
