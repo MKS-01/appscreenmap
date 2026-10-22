@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- SECURITY BUG (cleartext-traffic): plain http:// allowed for the banner host, used by v1's Network check. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">cdn.playground.test</domain>
+    </domain-config>
+</network-security-config>

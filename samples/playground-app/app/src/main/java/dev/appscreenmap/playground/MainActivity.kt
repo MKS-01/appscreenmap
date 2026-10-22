@@ -72,6 +72,7 @@ sealed interface Route {
     data object Feedback : Route
     data object Terms : Route
     data object Developer : Route
+    data object Network : Route
     data object WhatsNew : Route
 }
 
@@ -128,6 +129,7 @@ fun PlaygroundApp(prefs: SharedPreferences) {
                 Route.Feedback -> FeedbackScreen(nav)
                 Route.Terms -> TermsScreen(nav)
                 Route.Developer -> DeveloperScreen(nav)
+                Route.Network -> NetworkScreen(nav)
                 Route.WhatsNew -> WhatsNewScreen(nav)
             }
         }

@@ -35,7 +35,8 @@ resource ids (`testTagsAsResourceId`), so selectors and Maestro flows use stable
 | Text size | Profile | A slider: **2.5.7 Dragging Movements** review flag |
 | Help → Feedback | Profile → Help → Contact support | Unlabeled message field (viewer: **3.3.2**), same id with a different label (**3.2.4**) |
 | Terms of use | Profile | **WebView** pattern (local HTML) |
-| Developer options | Profile | Depth 2: **crash button** (crash + logcat captured, app relaunched), **Open scanner** |
+| Developer options | Profile | Depth 2: **crash button** (crash + logcat captured, app relaunched), **Open scanner**, **Network check** |
+| Network check | Developer → Network check | `crawl --network`: calls `api.playground.test` (HTTPS), `cdn.playground.test` over plain `http://` (**SECURITY BUG** `cleartext-observed`, allowed by `res/xml/network_security_config.xml`) and the third-party `events.tracker.test`. `.test` hosts never resolve, so nothing leaves the device; the screen's text never changes with or without a proxy |
 | Scanner | Developer → Open scanner | A **second activity** (activity coverage), locked to portrait (**1.3.4**, from the manifest) |
 
 ## v1 → v2 changes (for `appscreenmap diff`, `perf`, `a11y`)
@@ -52,6 +53,7 @@ resource ids (`testTagsAsResourceId`), so selectors and Maestro flows use stable
 | Gallery has no UI-thread work | `perf`: jank on Gallery drops |
 | "Rate us" dialog removed, "What's new" screen added | Visual diff: *missing* and *new* screens |
 | Feedback message field gets a label; Text size gets +/− buttons | 3.3.2 fixed; 2.5.7 alternative provided |
+| Network check: banner over https, plus a `/v1/whats-new` call | `cleartext-observed` gone; one endpoint added (network diff, planned) |
 
 ## Rebuild
 

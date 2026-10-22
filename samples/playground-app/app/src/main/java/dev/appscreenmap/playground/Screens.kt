@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import android.webkit.WebView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -80,7 +81,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 private val V2 = BuildConfig.V2
 
@@ -551,12 +554,60 @@ fun DeveloperScreen(nav: Nav) {
                 onClick = { context.startActivity(Intent(context, ScannerActivity::class.java)) },
                 modifier = Modifier.testTag("open_scanner"),
             ) { Text("Open scanner") }
+            OutlinedButton(onClick = { nav.go(Route.Network) }, modifier = Modifier.testTag("open_network")) { Text("Network check") }
             // Crash detection demo: the crawler records the crash with its logcat and relaunches.
             Button(
                 onClick = { throw IllegalStateException("Playground: intentional crash for the AppScreenMap demo") },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.testTag("crash"),
             ) { Text("Crash the app") }
+        }
+    }
+}
+
+// ── network ─────────────────────────────────────────────────────────────────
+
+private data class SampleCall(val method: String, val url: String)
+
+// `.test` hosts never resolve, so nothing leaves the emulator; `crawl --network` still records every host.
+private val NETWORK_CALLS =
+    buildList {
+        add(SampleCall("GET", "https://api.playground.test/v1/status?client=playground"))
+        // SECURITY BUG (cleartext-observed): v1 loads the banner over plain http://. v2 uses https.
+        add(SampleCall("GET", if (V2) "https://cdn.playground.test/banner.png?size=2" else "http://cdn.playground.test/banner.png?size=2"))
+        add(SampleCall("POST", "https://events.tracker.test/collect"))  // a third-party host
+        if (V2) add(SampleCall("GET", "https://api.playground.test/v1/whats-new"))
+    }
+
+@Composable
+fun NetworkScreen(nav: Nav) {
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            for (call in NETWORK_CALLS) {
+                val result =
+                    try {
+                        val conn = java.net.URL(call.url).openConnection() as java.net.HttpURLConnection
+                        conn.requestMethod = call.method
+                        conn.connectTimeout = 5000
+                        conn.readTimeout = 5000
+                        if (call.method == "POST") {
+                            conn.doOutput = true
+                            conn.outputStream.use { it.write("event=screen_view".toByteArray()) }
+                        }
+                        "HTTP ${conn.responseCode}".also { conn.disconnect() }
+                    } catch (e: Exception) {
+                        "failed: ${e.javaClass.simpleName}"
+                    }
+                Log.i("PlaygroundNet", "${call.method} ${call.url.substringBefore('?')} -> $result")
+            }
+        }
+    }
+    Column {
+        Bar("Network check", nav)
+        Page {
+            // Static text: the screen looks the same with or without a proxy, so screen identity never depends on it.
+            Text("Opening this screen calls ${NETWORK_CALLS.size} sample hosts. They never resolve, so nothing leaves the device.")
+            NETWORK_CALLS.forEach { Text("${it.method} ${it.url.substringBefore('?')}", style = MaterialTheme.typography.bodySmall) }
         }
     }
 }

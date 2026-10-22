@@ -46,6 +46,8 @@ leaves the device's animation, font and pinning settings as it found them.
 | 18 | Agents use the map (MCP) | `appscreenmap mcp` | `where_am_i`, `route`, `go_to_screen` against the sample runs |
 | 19 | First-run screens after sign-in | (part of 1, `--clear-data`) | `data_reset` event; *Reset password* mapped although sign-in persists |
 | 20 | Same app on iOS: map, flows and a11y from the accessibility tree | planned: `crawl --platform ios --app …/Playground.app --clear-data` | waits for Playground iOS |
+| 21 | Hosts the app talks to (network capture) | `crawl … --network` (needs `uv tool install mitmproxy`) | `network.jsonl`: the Network check screen's three hosts; `cdn.playground.test` over plain http:// |
+| 22 | Logs and traffic while you use the app by hand | `watch <canvas> --network`, then Profile → Developer options → Network check | `sessions/<id>/`: the three hosts and the `PlaygroundNet` log lines on the Network check screen |
 
 Planned (roadmap §8.2): network profiles, Perfetto traces for slow screens, condition matrix.
 
