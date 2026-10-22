@@ -88,6 +88,27 @@ dashboard shows real findings. The [`security-audit` skill](../.claude/skills/se
 to run and judge it. Rules the scanner doesn't cover yet stay `planned`, and the audit never reads as a pass while any
 remain. For builds you own or are authorised to test.
 
+**Network** (Android emulator). `crawl --network` starts `mitmdump` (mitmproxy, an optional external tool) with the
+[observation addon](../packages/security/src/appscreenmap/security/hooks/mitm_observe.py), listening on 127.0.0.1 only,
+and points the emulator at it (`settings put global http_proxy 10.0.2.2:<port>`). In `observe` mode TLS passes through
+untouched, so the app behaves as users see it: HTTPS shows as host and port, plain `http://` in full. The addon writes
+metadata-only lines to `network.jsonl` (`packages/security/.../network.py` runs and reads it). The device's proxy setting
+is always put back: at the end of the crawl, on an error or Ctrl-C, and at once by a watchdog if mitmdump dies.
+`--logs` (on with `--network`) follows the app's own log (`drivers/logcat.py`, `adb logcat --pid`, reattached when the
+app restarts) into `logs.jsonl`, masked by `security/applogs.py` before each line is written. Every crawl also writes
+`timeline.jsonl`: which screen showed from when, timed at the input that opened it (the explorer wraps the driver to
+note each tap, back and launch). At the end, `core/timeline.attribute` gives each row its `screen` and `step`, and
+`perf.json` → `network` sums them per screen.
+
+**Manual sessions.** `appscreenmap watch` records the same while a person uses the app by hand. It taps nothing: about
+once a second it reads the screen and matches it to the canvas (`crawler/replay.identify`, as MCP `where_am_i` does),
+building a timeline; at the end `core/timeline.attribute` ties every log line and request to the screen that was showing.
+The session lives in the canvas, under `sessions/<session-id>/`. The dashboard finds all of it through
+`GET /api/captures?run=<id>` (`serve`): the run's hosts, log line count and sessions; the rows are the plain files.
+The dashboard can also start and stop a session: `POST /api/sessions` runs `watch` as a child process of `serve`
+(one at a time, since a device has one proxy setting), and `POST /api/sessions/<id>/stop` sends it SIGTERM, which
+`watch` handles like Ctrl-C. Leaving `serve` stops it the same way.
+
 **Your own audits.** Any audit written to `runs/<project>/<run-id>/audits/<id>.json` shows up in Insights, scored
 and exportable like the built-in ones (format in [MAP_SCHEMA.md](MAP_SCHEMA.md)).
 
@@ -106,6 +127,10 @@ runs/
     perf.json                 load times, jank, cold start
     audits/<id>.json          extra audits (security is written by `appscreenmap security`)
     audits/security-evidence.json   the evidence the security audit was built from (apk, device, frida)
+    network.jsonl             hosts and requests seen through mitmproxy (`crawl --network`)
+    logs.jsonl                the app's own log lines, masked (`crawl --logs`)
+    timeline.jsonl            which screen showed from when, timed at each tap: ties network and log rows to screens
+    sessions/<id>/            manual sessions (`watch`): timeline, logs, network, each row tied to a screen
     notes.json                your stars, notes and triage decisions
     crashes/                  logcat for each crash
     diff/<base-run>/          diff against another run (written by `diff`)
@@ -127,7 +152,7 @@ packages/
   drivers/          appscreenmap.drivers: Android (adb, dumpsys, device facts, apkinfo), iOS Simulator
   crawler/          appscreenmap.crawler: explorer, replay, load timing
   a11y/             appscreenmap.a11y: WCAG 2.2 checks, criteria catalogue, HTML/MD report
-  security/         appscreenmap.security: scanner, rules.json (@appscreenmap/security-rules), Frida hook
+  security/         appscreenmap.security: scanner, rules.json (@appscreenmap/security-rules), Frida hook, mitmproxy addon
   reports/          appscreenmap.reports: health report, perf summary
   regression/       appscreenmap.regression: verify against baselines, visual diff
   exporters/        appscreenmap.exporters: Maestro flows, Mermaid

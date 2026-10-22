@@ -19,6 +19,7 @@ export const PLAYGROUND_CRAWL: Suggestion = {
 const GENERIC_CRAWL: Suggestion[] = [
   { cmd: "appscreenmap crawl --apk path/to/app.apk --clear-data", what: "install an Android build and map it from first launch" },
   { cmd: "appscreenmap crawl --package com.example.app", what: "map an app that's already installed" },
+  { cmd: "appscreenmap crawl --package com.example.app --network --logs", what: "map it and record its logs and the hosts it calls" },
   { cmd: "appscreenmap crawl --platform ios --app path/to/App.app", what: "map an iOS Simulator build (beta)" },
 ];
 
@@ -48,6 +49,11 @@ export function runCommands(runDir: string): Suggestion[] {
     { cmd: `appscreenmap report ${runDir}`, what: "crawl health: wasted steps, identity issues", engine: ["report", runDir] },
     { cmd: `appscreenmap a11y ${runDir} --report`, what: "WCAG 2.2 checks and the report", engine: ["a11y", runDir, "--report"] },
     { cmd: `appscreenmap perf ${runDir}`, what: "load time per screen, jank", engine: ["perf", runDir] },
+    {
+      cmd: `appscreenmap watch ${runDir} --network`,
+      what: "use the app by hand: its logs and hosts, tied to this map's screens",
+      engine: ["watch", runDir, "--network"],
+    },
   ];
 }
 

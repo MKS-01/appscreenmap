@@ -172,7 +172,8 @@ dev tools (Vite, TypeScript, pytest, ruff, hatchling) are not redistributed.
 
 AppScreenMap runs these if you have installed them; it does not include or redistribute them: `adb` and `aapt2`
 (Android SDK, Apache-2.0), `xcrun simctl` (Xcode), [idb](https://fbidb.io) and `idb_companion` (MIT), and, for the
-security-audit skill only, `frida` (wxWindows Library Licence) and, for the by-hand code checks, `jadx` (Apache-2.0).
+security-audit skill only, `frida` (wxWindows Library Licence) and, for the by-hand code checks, `jadx` (Apache-2.0),
+and, for `crawl --network`, [mitmproxy](https://github.com/mitmproxy/mitmproxy) (MIT), which loads our own addon.
 The security scanner (`packages/security/`) was written from scratch for this project. It borrows ideas, not code,
 from [mobile-recon](https://github.com/MKS-01/mobile-recon), an earlier MIT-licensed tool by the same author.
 

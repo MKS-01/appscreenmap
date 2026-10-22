@@ -132,9 +132,13 @@ def test_scan_secrets_reads_dex_assets_and_resources_once(tmp_path):
 
 
 @pytest.mark.skipif(not find_aapt2(), reason="aapt2 not installed")
-def test_a_clean_release_apk_has_no_findings():
+def test_the_playground_release_apk_has_only_its_deliberate_finding():
     ev = scan_apk(REPO / "samples/playground-app/apk/playground-v1.apk")
-    assert ev["ran"] == ["manifest", "static"] and ev["findings"] == []
+    assert ev["ran"] == ["manifest", "static"]
+    # SECURITY BUG on the Network check screen: plain http:// allowed for one sample host
+    assert [(f["rule"], f["detail"]) for f in ev["findings"]] == [
+        ("cleartext-traffic", "The network security config permits cleartext HTTP for: cdn.playground.test.")
+    ]
 
 
 # ── data at rest ─────────────────────────────────────────────────────────────

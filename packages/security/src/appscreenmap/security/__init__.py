@@ -4,8 +4,9 @@ Stdlib only and fast, so an agent can run it after every crawl: the manifest com
 call, hard-coded secrets and risky API references (WebView bridge, weak crypto, sticky broadcasts, …) from byte
 matches over the APK's dex files and resources (no decompiling), iOS builds from Info.plist and the bundle's files,
 data left on the device from the app's data folder over adb, and dynamic findings from the observation-only Frida
-hook in `hooks/`. Rules, severities, fixes and official sources come from `rules.json`. A finding never contains a
-secret's value, only where it is and a fingerprint. For apps you own or are authorised to test.
+hook and mitmproxy addon in `hooks/` (`network.py` runs the proxy during a crawl). Rules, severities, fixes and
+official sources come from `rules.json`. A finding never contains a secret's value, only where it is and a
+fingerprint. For apps you own or are authorised to test.
 """
 
 from .apk import scan_apk

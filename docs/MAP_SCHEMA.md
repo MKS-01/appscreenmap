@@ -28,6 +28,11 @@ runs/                              # crawl output, git-ignored (generated locall
     audits/index.json              # optional: audits this run has beyond the built-in ones (see "audits" below)
     audits/<audit-id>.json         # optional: one audit report (security, store, adaptive, …)
     audits/security-evidence.json  # written by `appscreenmap security`: the evidence behind audits/security.json
+    network.jsonl                  # `crawl --network`: one line per connection or request the app made (see "network" below)
+    network-proxy.log              # `crawl --network`: mitmdump's own output, for when capture fails
+    logs.jsonl                     # `crawl --logs` (on with --network): the app's own log lines, masked (see "logs" below)
+    timeline.jsonl                 # every crawl: which screen was showing from when (see "timeline" below)
+    sessions/<session-id>/         # `watch`: a person used the app by hand while AppScreenMap recorded (see "sessions")
 ```
 
 Older runs may sit directly in `runs/<run-id>/`. Use the index's `path` to locate a run's files.
@@ -74,7 +79,13 @@ rather than building them. Paths are relative to the run directory.
     "stop_reason": "saturated: no new screen in the last 30 steps … | step budget reached (200) | complete: nothing left to explore | stopped by user | null",
     "error": "only when status = failed",
     "tool": "appscreenmap 0.1.0", "steps": 120, "elapsed_s": 410.5,
-    "app": { … as in index … }, "device": { … see below … }, "config": { /* CrawlConfig */ }
+    "app": { … as in index … }, "device": { … see below … }, "config": { /* CrawlConfig */ },
+    "network": {                        // only with `crawl --network`; absent otherwise
+      "mode": "observe", "tool": "mitmproxy", "log": "network.jsonl",
+      "status": "recording | done | lost",  // lost: the proxy stopped mid-crawl (the device's setting was put back)
+      "events": 3, "hosts": 3, "cleartext_hosts": ["cdn.playground.test"]
+    },
+    "logs": { "log": "logs.jsonl", "source": "logcat", "lines": 42 }  // only with --logs / --network
   },
 
   "screens": [ {
@@ -241,7 +252,10 @@ TalkBack on, font scale, dark mode, airplane mode, preview build, low storage).
 steps keep the scenarios in order, each scenario keeps its own entry, so the viewer draws one tree per scenario.
 `--into` adds the runs to an existing canvas in place (same id and folder); its `notes.json` and `titles.json` (and
 the sources') follow the screens to their new ids. `--move` then deletes the merged runs' own folders, so an app keeps
-one canvas.
+one canvas. Captures follow too: each source's `network.jsonl`, `logs.jsonl`, `timeline.jsonl` and `trace.jsonl` (so Crawl
+replay works on a canvas) rows are concatenated with a `scenario` id (any `screen` renumbered, any `step` shifted like the transitions'), manual `sessions/<id>/` are copied with their screen ids renumbered, and a run's
+`run.network` / `run.logs` summary moves to its scenario entry (`run.scenarios[].network`, `.logs`); a canvas has no
+run-level `network` or `logs`.
 
 **Comments and edits** live in `notes.json` next to `map.json` (`appscreenmap_notes: 1`, validated by `notes.py`), never in
 `map.json`, so the crawler's output stays the contract:
@@ -252,6 +266,10 @@ one canvas.
   "screen": "s005",                        // optional: the pin follows this screen
   "tag": "bug | flow | copy | question", "status": "open | resolved", "text": "…",
   "replies": [{ "text": "…", "created": "…" }], "created": "…", "updated": "…" } },
+"stickies": { "<id>": {
+  "id": "<id>", "x": 12, "y": 40,          // same coordinates as comments: flow space, or an offset from "screen"
+  "screen": "s005",                        // optional: the note follows this screen
+  "text": "…", "created": "…", "updated": "…" } },   // sticky notes: optional, drawn flat in the viewer and in the SVG export
 "edits": {
   "titles":  { "s003": "Sign-up chooser" },   // renamed screens
   "deleted": ["s009"],                         // taken out of the tree; their children move up
@@ -261,9 +279,91 @@ one canvas.
 }
 ```
 
-The viewer applies `edits` on top of the map (toolbar: select, comment, add, move under, rename, remove, undo; dropping
+The viewer applies `edits` on top of the map (toolbar: select, comment, sticky note, add, move under, rename, remove, undo; dropping
 a card on another in the Tree also moves it under). Planned screens are drawn dashed, without a screenshot, and have
 no screen page. Open comments and edits are the to-do list for fixing the flow.
+
+## `network.jsonl`
+
+Written live during `crawl --network` by the mitmproxy addon (`packages/security/.../hooks/mitm_observe.py`), one JSON
+object per line. **Metadata only**: never a body, a header value, a cookie or a query value, and any value the crawler
+typed from `${ENV}` inputs is masked (`••••`) before the line is written. Lines without `"asm": 1` are not ours; skip them.
+
+```jsonc
+{ "asm": 1, "event": "connect", "source": "proxy", "mode": "observe",
+  "t": 1792608295.581,                  // Unix seconds, measured at the proxy (not on the device)
+  "host": "api.playground.test", "port": 443 }           // an HTTPS tunnel; observe mode never sees inside it
+
+{ "asm": 1, "event": "connect_failed", …, "host": "api.playground.test", "port": 443,
+  "error": "[Errno 8] nodename nor servname provided, or not known" }
+
+{ "asm": 1, "event": "request", "source": "proxy", "mode": "observe", "t": 1792608295.6, "t_end": 1792608295.85,
+  "method": "GET", "scheme": "http", "host": "cdn.playground.test", "port": 80,
+  "path": "/banner.png",                // without the query string
+  "query_keys": ["size"],               // names only, never values
+  "status": 200, "content_type": "image/png", "bytes_out": 0, "bytes_in": 38211, "http_version": "HTTP/1.1",
+  "error": "…" }                        // status, content_type, t_end absent when the request failed
+```
+
+After the crawl, each row also gets the screen showing when it started, from `timeline.jsonl`: `"screen": "s004"`,
+`"screen_title"` (the screen's final title; absent when it has none), `"step"` (all absent before the first screen;
+rows written while the crawl runs don't have them yet). The proxy is device-wide, so hosts include the device's own
+background traffic (Google Play services, other apps) on whatever screen was showing.
+A `request` row also has `"timing": {"connect", "tls", "send", "wait", "receive"}` in ms when mitmproxy recorded them:
+the time between the proxy and the server, so proxy-measured too. `connect` and `tls` appear only on the request that
+opened the connection, and there is no DNS phase (mitmproxy resolves inside `connect`).
+
+`event`: `connect` (an HTTPS tunnel opened), `connect_failed` (the proxy could not reach that host), `request` (a request
+read in full: plain `http://` in observe mode). The proxy sees only apps that use the system proxy; an app that bypasses
+it leaves no lines, which means "not seen", never "no requests".
+
+## `logs.jsonl`
+
+The app's own log lines (`adb logcat --pid`, followed across app restarts), one JSON object per line. Masked before the
+line is written: values the crawler typed from `${ENV}` inputs become `••••`, and token-shaped values (JWTs, bearer
+tokens, the key formats of `secrets.py`) become `[<kind> · sha <8 hex>]`, so `sensitive-logging` can report them
+without the value.
+
+Log lines are tied to screens by the device clock against the host's: on an emulator the two agree to well under
+0.1 s (the emulator takes the host's time). A real device with a drifting clock would need an offset.
+
+```jsonc
+{ "asm": 1, "event": "log", "source": "logcat", "t": 1792608295.581,   // Unix seconds, device clock
+  "pid": 4321, "level": "verbose | debug | info | warn | error | fatal", "tag": "PlaygroundNet",
+  "message": "GET https://api.playground.test/v1/status -> failed: UnknownHostException" }
+```
+
+## `timeline.jsonl`
+
+Written by every crawl as it goes (and by `watch`, per session), one line per screen per step:
+
+```jsonc
+{ "t": 1792610929.09, "step": 4, "screen": "s004", "title": "Network check" }   // Unix seconds, host clock
+```
+
+`t` is when the input that led there landed (the tap, back or launch), not when the screen finished loading, so
+requests a screen makes while it loads are its own. A screen that changes by itself is timed when the crawler saw it.
+The crawl uses it to fill `screen`, `screen_title` and `step` in `network.jsonl` and `logs.jsonl`.
+
+## `sessions/<session-id>/` (manual sessions)
+
+Written by `appscreenmap watch`, or by the dashboard's Start debugging (`serve` runs `watch`): a person uses the app by
+hand (AppScreenMap taps nothing) and the session is saved in the app's canvas. Same row formats as above, plus the screen each row belongs to.
+
+```
+sessions/session-20261022-101500/
+  session.json      { "id", "kind": "manual", "started_at", "finished_at", "status": "recording | done | failed",
+                      "run": "<canvas run id the screens were matched against>", "app": {package, version, label},
+                      "device": { … }, "logs": {"log", "lines"} | null,
+                      "network": {"mode", "tool", "log", "status", "events", "hosts", "cleartext_hosts"} | null,
+                      "screens": ["s004", "s012"],       // mapped screens visited
+                      "screenshots"?: ["screenshots/b2b-01-choose.png"] }   // extra shots filed with the session by hand
+  timeline.jsonl    { "t", "screen": "s004" | null, "title", "similarity",
+                      "package"?: "<other app in front>", "activity"?: "<in the app, a screen the map doesn't have>" }
+  logs.jsonl        log rows + "screen", "screen_title" (the screen showing when the line was written)
+  network.jsonl     network rows + "screen", "screen_title" (with --network)
+  watch.log         only when started from the dashboard: watch's own output, for when it fails
+```
 
 ## `perf.json`
 
@@ -279,11 +379,18 @@ navigation (back/up and scrolls excluded; inferred edges have no timings).
                  "waited_for_loading": true, "rating": "ok | needs work | slow" } ],   // slowest first
   "transitions": [ { "from", "to", "label", "action", "kind", "samples", "median_ms", "max_ms",
                      "unsettled", "janky_frames", "frozen_frames", "waited_for_loading" } ],
-  "findings": [ "s002 'Feed' loads in 3000 ms (median, budget 1000 ms)", … ]
+  "network": {                                         // null without network.jsonl
+    "measured": "proxy", "events": 8, "unattributed": 0,   // rows on no screen (before the first, or older runs)
+    "screens": [ { "screen": "s004", "title": "Network check", "requests": 1, "tunnels": 4, "failed": 4,
+                   "cleartext": 0, "hosts": ["api.playground.test", …],
+                   "slowest": { "method", "host", "path", "ms", "phase": "wait | … | null" } | null } ]  // slowest first
+  },
+  "findings": [ "s002 'Feed' loads in 3000 ms (median, budget 1000 ms)",
+                "s004 'Network check' waits 1400 ms on GET cdn.playground.test/banner.png (proxy-measured, mostly wait)", … ]
 }
 ```
 
-Ratings: median ≤ budget → ok, ≤ 2.5 × budget → needs work, above → slow.
+A screen's `slowest` request over the budget is a finding. Ratings: median ≤ budget → ok, ≤ 2.5 × budget → needs work, above → slow.
 
 ## `a11y.json`
 

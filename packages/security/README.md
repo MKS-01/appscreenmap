@@ -11,10 +11,12 @@ catalogue, and the Frida hook for the dynamic check. Standard library only; depe
 | `appscreenmap.security.apk` | `scan_apk`: manifest checks + secret scan for one APK |
 | `appscreenmap.security.device_data` | plain-text secrets left in the app's data folder (adb `run-as`) |
 | `appscreenmap.security.frida` | parses what the hook prints; `HOOK` is the hook's path |
+| `appscreenmap.security.network` | `crawl --network`: runs `mitmdump` with the addon, points the device at it and always puts its proxy back (`proxied`), reads and summarises `network.jsonl` |
 | `appscreenmap.security.audit` | combines every source's evidence into `audits/security.json` (score, findings, rule text) |
 | `appscreenmap.security.rules` | loads and validates `rules.json` |
 | `rules.json` | the rule catalogue: id, severity, why, fix, official sources, `planned`/`ready`. Read by the viewer too |
 | `hooks/frida-observe.js` | observation-only Frida hooks (cleartext requests, certificate pinning); `appscreenmap security --frida-script` prints its path |
+| `hooks/mitm_observe.py` | mitmproxy addon: one metadata-only JSON line per connection or request; runs in mitmproxy's Python (stdlib only, no appscreenmap imports) |
 
 `from appscreenmap.security import scan_apk, write_audit, …` re-exports the public functions. Rules are
 documented in the `security-rules` skill; running an audit is the `security-audit` skill.

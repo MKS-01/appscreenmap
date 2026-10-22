@@ -61,3 +61,16 @@ def test_parse_gfx_summary_framestats_and_am_start():
         {"start": 0, "end": 40_000_000, "deadline": 33_000_000, "interval": 16_666_666},
     ]
     assert frame_metrics(late)["janky_frames"] == 1
+
+
+def test_frame_polling_reads_the_whole_dump(monkeypatch):
+    """`grep -m1` closed the pipe early: the app logged a 28-line EPIPE trace into its own log on every poll."""
+    from appscreenmap.drivers.android import AdbDriver
+
+    d = AdbDriver.__new__(AdbDriver)  # no adb needed: only the command is checked
+    seen = []
+    monkeypatch.setattr(
+        d, "shell", lambda cmd, *a, **k: seen.append(cmd) or "Total frames rendered: 42\n", raising=False
+    )
+    assert d.frames_rendered("dev.example") == 42
+    assert "grep" in seen[0] and "-m" not in seen[0].split("grep", 1)[1]

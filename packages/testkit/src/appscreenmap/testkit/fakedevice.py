@@ -154,6 +154,17 @@ class FakeDriver:
     def set_font_scale(self, scale):
         pass
 
+    http_proxy = ""
+
+    def get_http_proxy(self):
+        return self.http_proxy
+
+    def set_http_proxy(self, host_port):
+        self.http_proxy = host_port
+
+    def pidof(self, pkg):
+        return None  # no log capture on the fake device
+
     def crash_log(self):
         return ""
 

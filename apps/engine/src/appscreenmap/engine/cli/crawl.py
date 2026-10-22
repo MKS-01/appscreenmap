@@ -7,6 +7,7 @@ import shutil
 import signal
 import sys
 import tempfile
+from contextlib import ExitStack
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -16,13 +17,18 @@ from appscreenmap.core import __version__, accounts, activity, locales
 from appscreenmap.core.config import CrawlConfig
 from appscreenmap.core.model import AppMap
 from appscreenmap.core.runs import new_run_dir, update_index
+from appscreenmap.core.timeline import finish as finish_timeline
 from appscreenmap.crawler.explorer import CrawlAborted, Explorer
 from appscreenmap.drivers.android import AdbDriver
 from appscreenmap.drivers.apkinfo import apk_info, find_aapt2
 from appscreenmap.drivers.base import DriverError
 from appscreenmap.drivers.device import describe
+from appscreenmap.drivers.logcat import LOG as LOGS_LOG
+from appscreenmap.drivers.logcat import LogcatCapture
 from appscreenmap.exporters.export import export_run
 from appscreenmap.reports.perf import summarize as summarize_perf
+from appscreenmap.security import network
+from appscreenmap.security.applogs import masker
 from appscreenmap.store import android_facts, build_audit, ios_facts
 from appscreenmap.store import write_audit as write_store_audit
 
@@ -78,7 +84,18 @@ def cmd_doctor(args) -> int:
         d = AdbDriver(serial)
         info = d.info()
         row(True, f"{serial}", f"{describe(info)}, {info['width']}x{info['height']}")
+        proxy = d.get_http_proxy()
+        if proxy.startswith(network.EMULATOR_HOST + ":"):  # a killed `crawl --network` left it: no internet
+            row(
+                False,
+                f"{serial} proxy left on",
+                f"{proxy}: adb -s {serial} shell settings put global http_proxy :0",
+            )
+        elif proxy:
+            row(True, f"{serial} http proxy", proxy)
     _doctor_ios(row)
+    mitm = network.find_mitmdump()
+    row(True, "mitmproxy (optional: crawl --network)", mitm or network.INSTALL)
     aapt2 = find_aapt2()
     row(bool(aapt2), "aapt2 (optional: activity coverage)", aapt2 or "not found in Android SDK build-tools")
     dist = _web_dist()
@@ -245,6 +262,12 @@ def cmd_crawl(args) -> int:
         return 2
     activity.add_secrets(os.environ.get(n) for n in cfg.secret_names())
     ios = bool(args.app) or args.platform == "ios"
+    if (args.network or args.logs) and ios:
+        print("--network and --logs work on Android for now (iOS simulators are planned).", file=sys.stderr)
+        return 2
+    if args.network and not network.find_mitmdump():
+        print(f"--network needs mitmproxy: {network.INSTALL}", file=sys.stderr)
+        return 2
     if ios:
         cfg.measure_load = (
             False  # load timing reads Android's frame counters; iOS has no equivalent wired yet
@@ -312,6 +335,40 @@ def cmd_crawl(args) -> int:
 
     explorer = Explorer(d, package, launch, cfg, run_dir, amap)
     code = 0
+    net_stack = ExitStack()
+    if args.network:
+
+        def _proxy_lost() -> None:
+            print(
+                "\n  ! the network proxy stopped: the device's proxy setting is back, and the crawl goes on "
+                f"without network capture (see {run_dir / 'network-proxy.log'})",
+                file=sys.stderr,
+            )
+
+        capture = network.MitmCapture(run_dir / network.LOG, args.network, cfg.secret_names())
+        try:
+            net = net_stack.enter_context(network.proxied(d, capture, on_lost=_proxy_lost))
+        except (network.CaptureError, DriverError) as e:
+            print(f"network capture could not start: {e}", file=sys.stderr)
+            run.update(status="failed", error=f"network capture: {e}", finished_at=_now())
+            amap.save(run_dir / "map.json")
+            update_index(runs_root)
+            return 1
+        run["network"] = {
+            "mode": args.network,
+            "tool": "mitmproxy",
+            "log": network.LOG,
+            "status": "recording",
+        }
+        print(f"   network: {args.network} through mitmproxy on port {net.port} ({network.LOG})")
+    app_logs = None
+    if args.logs or args.network:
+        app_logs = LogcatCapture(
+            d, package, run_dir / LOGS_LOG, mask=masker(os.environ.get(n) for n in cfg.secret_names())
+        )
+        app_logs.start()
+        net_stack.callback(app_logs.stop)
+        run["logs"] = {"log": LOGS_LOG, "source": "logcat", "lines": 0}
 
     def _terminate(signum, frame):
         raise KeyboardInterrupt
@@ -336,6 +393,29 @@ def cmd_crawl(args) -> int:
         print(f"device error: {e}", file=sys.stderr)
         code = 1
     finally:
+        try:
+            net_stack.close()  # first: the device gets its own proxy setting back before anything else
+        except DriverError as e:
+            print(
+                f"  ! could not put the device's proxy back ({e}): adb -s {d.serial} shell settings put global "
+                "http_proxy :0",
+                file=sys.stderr,
+            )
+        counts = finish_timeline(
+            run_dir,
+            {sid: s.title for sid, s in amap.screens.items()},
+            [LOGS_LOG] * bool(app_logs) + [network.LOG] * bool(args.network and "network" in run),
+        )
+        if app_logs:
+            run["logs"]["lines"] = counts[LOGS_LOG]
+        if args.network and "network" in run:
+            net_summary = network.summarize(network.read_log(run_dir / network.LOG))
+            run["network"].update(
+                status="lost" if net.lost else "done",
+                events=net_summary["events"],
+                hosts=len(net_summary["hosts"]),
+                cleartext_hosts=net_summary["cleartext_hosts"],
+            )
         if cfg.stay_in_app:
             try:
                 d.unpin()
@@ -377,6 +457,13 @@ def cmd_crawl(args) -> int:
         print(
             f"  slowest screen: {slowest['screen']} '{slowest['title']}' {slowest['median_ms']} ms "
             f"(median); {len(perf['findings'])} perf finding(s): appscreenmap perf {run_dir}"
+        )
+    if run.get("network"):
+        n = run["network"]
+        clear = f", plain http:// to {', '.join(n['cleartext_hosts'])}" if n.get("cleartext_hosts") else ""
+        lost = " (the proxy stopped mid-crawl)" if n["status"] == "lost" else ""
+        print(
+            f"  network: {n.get('events', 0)} events, {n.get('hosts', 0)} hosts{clear}{lost}: {run_dir / network.LOG}"
         )
     print(f"  {audit['summary']['issues']} WCAG 2.2 findings: {run_dir / 'a11y-report.html'}")
     if store and store["status"] != "not_run":
@@ -420,6 +507,19 @@ def register(sub) -> None:
         "--locale",
         help="crawl the app in this language, e.g. fr-FR, ja, ar (Android 13+; iOS relaunches the app). "
         "Pseudo-locales en-XA and ar-XB test long text and right-to-left layouts",
+    )
+    s.add_argument(
+        "--network",
+        nargs="?",
+        const="observe",
+        choices=["observe"],
+        help="record the hosts the app talks to with mitmproxy (observe: TLS passes through untouched, plain http:// "
+        "is read in full); writes network.jsonl. Android emulator; needs `uv tool install mitmproxy`",
+    )
+    s.add_argument(
+        "--logs",
+        action="store_true",
+        help="record the app's own log lines (logcat, masked) into logs.jsonl; on with --network. Android",
     )
     s.add_argument("--font-scale", type=float, help="crawl at this system font scale, e.g. 2.0 (WCAG 1.4.4)")
     s.add_argument("--project", help="project folder under runs/ (default: last part of the package)")

@@ -419,16 +419,213 @@ a static scan can't, while recording everything it passes through.
 2. `secrets-at-rest` from the data container the drivers already resolve; logs-during-crawl scan.
 3. Signing, SBOM and dependency advisories (OSV) from the build.
 4. jadx static rules with fixture tests (`hardcoded-secret`, TLS, WebView, crypto, logging).
-5. Proxy-observed network and `no-secure-flag` during a crawl; reachable-surface checks (exported components, deep links).
+5. Proxy-observed network (mitmproxy, §8.5) and `no-secure-flag` during a crawl; reachable-surface checks (exported
+   components, deep links).
 6. frida for what the proxy can't see (certificate pinning, in-process hooks): last, because it needs a prepared target.
 
 **Tools to evaluate before building our own:** MobSF (static + dynamic mobile scanner, could be driven for a second
-opinion), semgrep rules for Android and Swift, OSV-Scanner for dependencies, mitmproxy for the proxy step, `apkanalyzer` and
+opinion), semgrep rules for Android and Swift, OSV-Scanner for dependencies, mitmproxy for the proxy step (chosen: §8.5), `apkanalyzer` and
 `apksigner` from the Android SDK. Prefer small direct checks we can test with fixtures over wrapping a large tool.
 
 **Rules:** only official sources back a rule (`security_rules.py` rejects any other host); a scan that skipped a category must
 say so in `summary` and `metrics`, never read as a pass; findings never include a secret's value or exploit steps. Only run
 against builds you own or are authorised to test (`security-audit` skill).
+
+### 8.5 2026-10-21: Network and logs with mitmproxy (in progress)
+
+**Status:** in progress (2026-10-22: stages 1–4 built, 3 verified on the Playground; the start/stop sessions endpoint for stage 5 is done; stage 5's viewer UI built 2026-10-22 in the crawler session at the user's request, from the handoff in `docs/handoffs/`). Branch `mitmproxy-network`. Viewer: **variant A** chosen. UI variants and this plan are also on the canvas "AppScreenMap redesign"
+(https://claude.ai/artifact/4SFYfivAGfxggUnZyrvKKq), row *Network & logs*.
+
+**Why.** The crawl reaches every screen, so it is also the best way to answer "what does this app talk to, and from
+where?" Today only the Frida hook sees traffic, and it needs a frida-server and a prepared target. A proxy needs no change
+to the app. It gives us the §8.4 "network seen" signal (cleartext, hosts, TLS failures) and a first-party vs third-party host
+list, which is a privacy signal for Play's Data safety form. Tied to screens, it gives perf the "why" behind a slow load
+(§8.2, network logs). With the app's logs beside it, the dashboard becomes the place a developer debugs a screen, for Android
+and iOS alike.
+
+**Decision:** [mitmproxy](https://github.com/mitmproxy/mitmproxy) (MIT) is the one capture engine, and **the UI is ours**.
+mitmproxy runs as an **external tool** (`uv tool install mitmproxy`, like Frida), driven as `mitmdump` with our own addon. The
+addon prints one JSON line per connection or request. A stdlib parser in `appscreenmap.security` reads those lines, the same
+way `frida.py` reads the Frida hook's output. Requests and app logs then show in the viewer's own Network & Logs section,
+joined to screens. That join is something mitmproxy's own UI (mitmweb) and the commercial proxies can't do. A developer who wants
+hands-on debugging can still run `mitmweb` with the same addon. Two capture modes:
+
+| Mode | What the device needs | What we see | Default |
+|---|---|---|---|
+| `observe` | only the proxy setting; TLS passes through untouched | every host and port (CONNECT/SNI), plain `http://` requests in full, timings, bytes | yes |
+| `decrypt` | our CA trusted: a debug build with `<debug-overrides>` trusting user CAs, or the CA in the system store of a rooted Google APIs image | method, path, status, content type and sizes for HTTPS too; **pinning** (a client that trusts our CA and still refuses the handshake) | opt-in |
+
+`observe` is the default because a crawl must map the app as users see it. If interception fails on an untrusted CA, every
+request errors, and the crawl maps error screens instead of the app.
+
+**Two ways to record (2026-10-22):** during a crawl (`crawl --network --logs`), and while a person uses the app by hand
+(`appscreenmap watch`). In a manual session AppScreenMap taps nothing. It reads the screen about once a second to know
+which mapped screen is showing (the same matching as MCP `where_am_i`), follows the app's log and, with `--network`, its
+traffic. The session is saved inside the app's canvas (`sessions/<session-id>/`), so the one-canvas rule holds and the
+viewer's per-screen tabs can show crawl and manual rows together, labelled by source.
+
+**Devices, in order:** Android emulator first, then the iOS simulator, then real devices.
+
+| Tier | Network | Logs | Notes |
+|---|---|---|---|
+| Android emulator | proxy at `10.0.2.2:<port>`, `network setup` / `reset` | `logcat --pid <app>` | first; the Playground gives known answers |
+| iOS simulator | mitmproxy local capture (`--mode local:<executable>`) if the spike works; CA via `simctl keychain` | `simctl spawn booted log stream`, filtered to the app's process | after §8.3's iOS Playground |
+| Real devices | Android: proxy on the host's LAN address, user CA on debug builds. iOS: Wi-Fi proxy and a CA profile, set up by hand | adb; `devicectl` / `log collect` | last; device testing is manual, so the crawl stops and says what to set |
+
+**Rejected alternatives:**
+- *mitmproxy as a Python dependency (in-process `DumpMaster`)*: it pins a large tree of dependencies, and
+  `packages/security` is stdlib only.
+- *mitmweb as our UI*: it shows one device's raw flows with no screens, steps or audits. We keep our own viewer and data
+  contract.
+- *Emulator `-tcpdump` / pcap*: shows hosts but never paths or pinning, and needs an emulator restart.
+- *macOS system-wide proxy for iOS simulators*: it reroutes the whole Mac's traffic.
+- *Driving MobSF's dynamic analyser or HTTP Toolkit*: large to wrap. §8.4 already prefers small direct checks we can test
+  with fixtures.
+- *Proxyman or Charles as the engine*: commercial GUI apps that can't run headless inside a crawl or in CI. We borrow
+  Proxyman's ideas (table below) and work with both through HAR files.
+- *An in-app recorder (Pulse, Chucker) as a capture path*: it needs a library inside the app, and AppScreenMap works on
+  unmodified builds. Pulse is a design reference only (table below).
+- *Frida only*: stays, for what a proxy can't see (in-process pinning on non-OkHttp stacks). The two confirm each other.
+
+**Cost we accept:** one more optional tool for users to install. The crawl changes a device setting and must always put it
+back. Apps that bypass the system proxy (Flutter, `Proxy.NO_PROXY`) show no traffic, so the audit must say "the proxy saw
+nothing" and never read that as "no requests". Timings are measured at the proxy, not on the device, and are labelled so.
+`decrypt` needs a prepared device.
+
+**Data rules.** `network.jsonl` holds metadata only: method, scheme, host, port, the path with query **keys** but no values,
+status, content type, sizes, timing phases, TLS version and errors. It never holds bodies, header values, cookies or tokens.
+`logs.jsonl` holds the app's own log lines (level, tag, message), with token-shaped values replaced by a fingerprint, as
+`secrets.py` already does. The crawler types real `[inputs]` values, so a self-check asserts none of them appear in either
+file (as for §8.4's stored credentials). Redaction happens in the addon and the log reader, before anything reaches disk.
+`[network] redact_headers`, `redact_query` and `redact_fields` extend the defaults for the few fields decrypt mode keeps
+(GraphQL operation names, imported HAR rows). Every row carries `source: proxy | har | logcat | oslog`.
+
+**Ideas from [Proxyman](https://proxyman.com/).** Proxyman is a polished interactive debugging proxy for macOS. A
+person inspects one app at a time. AppScreenMap runs on its own across the whole app, so we take what helps an unattended
+crawl and leave the hands-on debugging tools to Proxyman.
+
+| Proxyman does | What it teaches us | Plan |
+|---|---|---|
+| One-click emulator script: set the proxy, install and trust the CA, "Revert all changes" (it warns that an emulator left proxied has no internet) | Device prep is the hardest part of decrypting traffic, and undoing it matters as much as doing it | `appscreenmap network setup [--serial] [--ios]` / `network reset`: proxy, CA (user store on debug builds, system store on rooted Google APIs images, `simctl keychain` on iOS), and a full revert. `doctor` shows what is set. Stage 6 |
+| SSL Proxying on chosen domains only, everything else passed through | Decrypting everything breaks pinned third-party SDKs and captures data we don't need | `[network] decrypt = ["*.example.com"]` in `appscreenmap.toml`: decrypt the app's own hosts and pass the rest through. Stage 6 |
+| Traffic grouped by app and domain | Grouping is how people read a capture | We group by **screen**, which Proxyman can't do, then by host (first- vs third-party). Stages 3 and 5 |
+| Map Local / Map Remote: serve a local response, or redirect a request | Many screens appear only when an API fails or returns nothing | Network-shaped states: rules that return a 500, an empty list or a delay for one endpoint, so the crawl maps error, empty and loading screens. Each rule set is merged into the canvas as its own labelled scenario. Stage 8 |
+| Network Condition (throttling) | Slow networks reveal missing loading states | Per-host delay rules, beside §8.2's emulator network profiles. Stage 8 |
+| Diff of requests and responses | Builds differ in what they call, not only in how they look | Network diff between runs: hosts and endpoints added or removed (a new third-party SDK is a privacy change). Stage 7 |
+| Export sessions, import Charles files; HAR | Captures should move between tools | Export `network.har` (metadata only) to open in Proxyman, Charles or browser devtools. Import a HAR as evidence (`security --har FILE`). Stage 7 |
+| GraphQL by operation name | One URL can hide many calls | Record the GraphQL `operationName` (never the query or variables), so per-screen calls read as `GetProfile`, `UpdateCart`. Stage 6 |
+| MCP server: agents fetch flows, explain requests | Agents ask "what does this screen call?" | MCP `screen_requests(screen)` and `network_summary`. Stage 11 |
+
+Not adopting: Breakpoints, Compose, JS scripting and Repeat (interactive debugging is a different product; open the HAR in
+Proxyman for those).
+
+**Reference: [Pulse](https://github.com/kean/Pulse)** (MIT, by kean). Pulse is a logger inside an iOS app, with a console
+UI for logs and `URLSession` traffic. We don't use its approach (it needs a library in the app). We take ideas about what a
+network and log console should show:
+
+| Pulse shows | What we take for our UI and data |
+|---|---|
+| Logs and requests in one console, filtered together | One shared console component for network rows and log lines on one timeline (stage 5) |
+| Per-transaction timing phases (`TransactionTimingInfo`: DNS, connect, TLS, request, response), redirects, transfer sizes, connection reuse | The same phase model in `network.jsonl`, filled from mitmproxy's timestamps and labelled proxy-measured. `perf.json` names the phase that dominates a slow screen ("TTFB 1.8 s on `/feed`"). Stage 3 |
+| Capture filters (`includedHosts`, `excludedHosts`, `includedURLs`, `excludedURLs`) | `[network] exclude_hosts`: excluded hosts (analytics, crash SDKs) are still **counted** in the third-party list, because they matter for privacy, but they get no per-request rows. Stage 6 |
+| Redaction before storage (`sensitiveHeaders`, `sensitiveQueryItems`, `sensitiveDataFields`) | The data rules above: privacy is a write-time rule, not an export option |
+| Remote logger streaming to Pulse for Mac live | `network.jsonl` and `logs.jsonl` are appended row by row like `map.json`, so the viewer follows a crawl live |
+
+**Stages** (each builds and verifies on its own; commit at the end of each):
+1. **Playground Network screen + observe slice.** Add a Network screen to the Playground with known answers: one HTTPS
+   call, one deliberate `http://` call marked `SECURITY BUG`, and one third-party host. It must work offline, with no real
+   servers. Rebuild v1/v2. Then `crawl --network` starts `mitmdump` with the addon, points the emulator at it
+   (`settings put global http_proxy 10.0.2.2:<port>`), writes `network.jsonl`, and **always** clears the setting: on a
+   normal end, a crash, Ctrl-C, or `mitmdump` dying mid-crawl. A dead proxy would leave the device offline.
+   *(verify: Playground crawl lists exactly the Network screen's hosts; the proxy setting is null afterwards in every exit
+   case, each case covered by a fake-device test.)*
+2. **Security evidence.** `appscreenmap security <run>` reads `network.jsonl` when present as a new `network` source:
+   `cleartext-observed` from proxy evidence, merged with Frida's, plus `audits/network.json` (hosts, first- vs third-party,
+   TLS versions, failures). It uses the existing audit shape, so Insights shows it with no viewer change.
+   *(verify: `security` on the stage-1 run reports the Playground http host; the summary names the mode, and an empty
+   capture says so.)*
+3. **Per-screen network.** Attribute each request to the screen whose step was active. Add per-screen request counts,
+   the slowest request and its dominant timing phase to `perf.json` (additive, documented in `docs/MAP_SCHEMA.md`).
+   *(verify: the Network screen owns its requests; other Playground screens own none.)*
+   **Done 2026-10-22.** Two changes from the plan above. (a) The crawl writes its own wall-clock `timeline.jsonl`,
+   timed at each input, instead of reusing `trace.jsonl`: the trace counts seconds since the explorer started and is
+   written after a screen settles, so a screen's on-open calls would land on the screen before it. (b) Per-screen
+   numbers live in `perf.json` only, not also in `map.json` or `report`: it is derived from `network.jsonl` and rebuilt
+   on merge, so it needs no second home. Verified on Playground v2 (Profile → Developer options → Network check): all 8
+   rows and the 4 `PlaygroundNet` log lines on the Network check screen, none elsewhere, and they kept that after
+   `merge --into` (scenario sc3, steps shifted).
+4. **Logs channel + manual sessions.** `crawl --logs` (on with `--network`) records the app's own log lines
+   (`logcat --pid`, reattached when the app restarts) to `logs.jsonl`, masked at write time (typed secrets, JWTs, bearer
+   tokens, known key formats → kind + fingerprint). `appscreenmap watch [canvas] [--network]` records the same while a
+   person uses the app, with a screen timeline, and ties every log line and request to the screen showing when it started.
+   Feeds §8.4's `sensitive-logging` as dynamic evidence. *(verify: the Playground's Network check logs its known lines in
+   both; a manual session through Profile → Developer options → Network check puts those lines and hosts on that screen;
+   no `[inputs]` value appears.)*
+5. **Viewer: Network & Logs** (built by the viewer session in `apps/viewer/`, `web-ui` skill, mockups first). Two variants
+   are on the canvas. **A is chosen (2026-10-22)**: a Network / Logs tab in each screen's detail plus a hosts strip.
+   B (a run console synced to Crawl replay) stays on the canvas for later. This plan delivers the data contract, the
+   `GET /api/captures?run=<id>` endpoint (hosts, log line count, manual sessions; done 2026-10-22), `POST /api/sessions`
+   and `…/<id>/stop` to start and stop a manual session from the dashboard (done 2026-10-22), and sample runs.
+   Entry points the viewer needs, since today nothing in the UI leads to app logs (the top bar's Logs page is the
+   engine's own command log): a **Network · Logs** link on the run page when `/api/captures` reports any, the
+   per-screen tabs, and a **Sessions** list for `watch` recordings. Handoff with the exact contract and acceptance list:
+   `docs/handoffs/viewer-network-logs.md` (2026-10-22). *(verify: the chosen variant shows the stage-1 Playground run
+   and a manual session.)*
+6. **Device setup + decrypt mode.** `network setup` / `network reset`, modelled on Proxyman's emulator script. `doctor`
+   checks that the CA is trusted and reports a proxy setting left on the device. `--network decrypt` applies the
+   `[network] decrypt` host list: paths, statuses and GraphQL operation names for those hosts. `no-cert-pinning` and pinned
+   hosts come from handshake results, on a Playground debug build with `<debug-overrides>`. *(verify: a Playground pinned
+   call shows as pinned, the unpinned one as not; the third-party host stays passed through.)*
+7. **HAR interop + network diff.** Export `network.har`; `security --har FILE` imports a capture from Proxyman, Charles or
+   mitmproxy; `verify` and the run compare list hosts and endpoints added or removed between builds. *(verify: round-trip
+   the Playground HAR; v1 vs v2 shows the endpoint v2 adds.)*
+8. **Network-shaped states.** `[[network.rules]]` (status, empty body or delay per endpoint) to reach error, empty and
+   loading screens. Opt-in, and each rule set becomes a labelled canvas scenario through `merge --into … --labels`. Needs
+   decrypt mode. *(verify: a 500 rule on the Playground's API reaches its error screen, merged as its own scenario.)*
+9. **iOS simulator.** Spike first: can mitmproxy's macOS local capture mode (`--mode local:<executable>`, a Network
+   Extension) target one simulator app? CA via `xcrun simctl keychain booted add-root-cert`; logs via `simctl spawn booted
+   log stream`. If capture can't target the app, iOS network stays Frida-only and this section says why. *(verify: the
+   iOS Playground's Network screen gives the same hosts as Android, or the spike result is recorded here.)*
+10. **Real devices.** Android over the LAN (host address, user CA on debug builds); iOS by hand (Wi-Fi proxy, CA profile).
+    `network setup` prints the exact steps, and the crawl refuses to start until `doctor` sees the proxy working.
+    *(verify: by hand on one Android phone, per the device testing rule.)*
+11. **Agents and docs.** MCP `network_summary`, `screen_requests` and `screen_logs`; `security-audit` skill, `docs/SETUP.md`
+    (optional tool), `docs/ARCHITECTURE.md`, and `THIRD_PARTY_NOTICES.md` (mitmproxy, MIT, run as an external tool, not
+    bundled).
+
+**Acceptance criteria** (graded by `change-evaluator`):
+1. `crawl --network` on Playground v1 writes `network.jsonl` with exactly the Network screen's hosts, each row tied to a
+   screen id.
+2. After any crawl end (normal, crash, Ctrl-C, `mitmdump` killed), the device's `http_proxy` setting is cleared. A test
+   per case.
+3. With `--network observe`, the Playground maps the same screens and transitions as without it.
+4. No `network.jsonl` or `logs.jsonl` row holds a body, header value, cookie, query value or any `[inputs]` value
+   (asserted in a test).
+5. `security <run>` reports `cleartext-observed` for the Playground's http host from proxy evidence alone. The summary says
+   which mode ran, and "not run" or "saw nothing" when it didn't.
+6. `audits/network.json` appears in Insights with no change under `apps/viewer/`.
+7. Without mitmproxy installed, a plain `crawl` is unaffected, and `crawl --network` fails fast with the install command.
+   `doctor` reports both.
+8. `uv run pytest -q` and `uv run ruff check` pass, including the layer test, with the addon (which imports `mitmproxy`,
+   absent from our venv) in place.
+9. Every new field and file is additive within schema 1 and documented in `docs/MAP_SCHEMA.md` in the same change.
+10. Every timing in `network.jsonl` and `perf.json` is labelled proxy-measured.
+11. `network setup` then `network reset` leaves the emulator with no proxy and with its internet working.
+12. In decrypt mode, hosts outside the `[network] decrypt` list are never decrypted.
+13. The exported `network.har` is valid HAR 1.2 with no bodies. Importing it with `security --har` gives the same
+    `cleartext-observed` finding as the native capture.
+14. A network rule run is merged into the app's canvas as a labelled scenario, never left as a separate run.
+15. `watch` taps nothing, saves into the app's canvas under `sessions/<id>/`, ties every log line and request to the
+    screen showing when it started (or none, outside the app), and puts the proxy back on Ctrl-C as `crawl` does.
+
+Criteria 1–10 and 15 gate stages 1–4. The viewer session grades stage 5 against variant A. Criteria 11–14 are
+graded when stages 6–8 ship.
+
+**Open questions:**
+- Rule ids and official sources for "third-party host" and "outdated TLS" findings (through the `security-rules` skill; a
+  rule needs an official source or it isn't added).
+- Whether decrypt mode should also prepare a rooted Android 14+ image, where the system CA store moved into an APEX module
+  and needs a different install than older images.
 
 ## 9. Todo
 

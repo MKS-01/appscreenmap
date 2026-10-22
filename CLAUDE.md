@@ -12,11 +12,12 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   package: never add `src/appscreenmap/__init__.py`). A package imports only what its `pyproject.toml` depends on
   (`packages/testkit/tests/test_layers.py` checks).
   - `packages/core/`: `appscreenmap.core`: map.json model, analyzer, config, runs, notes, media; imports nothing else
-  - `packages/drivers/`: Android (adb, dumpsys, device facts, apkinfo) and iOS Simulator; stdlib only
+  - `packages/drivers/`: Android (adb, dumpsys, device facts, apkinfo, logcat) and iOS Simulator; stdlib only
   - `packages/crawler/`: explorer, replay, load timing
   - `packages/a11y/`: WCAG checks (`checks.py`), criteria (`wcag.py`), HTML/MD report
   - `packages/security/`: all security tooling (scanner modules, `rules.json` catalogue also read by the viewer,
-    `hooks/frida-observe.js`); stdlib only
+    `hooks/frida-observe.js`, `hooks/mitm_observe.py` + `network.py` for `crawl --network`); stdlib only. The mitmproxy
+    addon runs in mitmproxy's own Python: never import appscreenmap or mitmproxy at its top level
   - `packages/store/`: store readiness (target / compile / min SDK vs Play and App Store rules, 365 days ahead; `requirements.json`)
   - `packages/reports/`: health report, perf summary · `packages/regression/`: verify, visual diff ·
     `packages/exporters/`: Maestro, Mermaid

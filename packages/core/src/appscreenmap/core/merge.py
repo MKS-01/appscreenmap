@@ -3,8 +3,9 @@
 Screens are renumbered so ids stay unique; every screen and transition carries the `scenario` it came from, and each
 scenario keeps its own entry screen(s) (origin "launch"), so the viewer draws one tree per scenario side by side.
 External screens (`x:<package>`) are shared. What people added in the viewer (notes.json: stars, notes, a11y decisions,
-map comments, tree edits) and titles.json follow their screens under the new ids. Derived files (a11y, perf, flows)
-are rebuilt from the merged map by the caller.
+map comments, tree edits) and titles.json follow their screens under the new ids, and so do captured rows
+(network.jsonl, logs.jsonl, manual sessions/). Derived files (a11y, perf, flows) are rebuilt from the merged map by
+the caller.
 """
 
 from __future__ import annotations
@@ -67,6 +68,8 @@ def merge_runs(run_dirs: list[Path], out_dir: Path, name: str, labels: list[str]
     scenarios: list[dict] = []
     externals: dict[str, dict] = {}
     idmaps: list[dict[str, str]] = []
+    sc_maps: list[dict] = []
+    offsets: list[int] = []
     offset = 0
     for i, (d, m, label) in enumerate(zip(run_dirs, maps, labels, strict=True)):
         # A source that is already a canvas keeps its scenarios; a plain run is one scenario named by `label`.
@@ -79,9 +82,13 @@ def merge_runs(run_dirs: list[Path], out_dir: Path, name: str, labels: list[str]
                 "finished_at": m["run"].get("finished_at"),
                 "steps": m["run"].get("steps"),
                 "playbook": m["run"].get("playbook"),
+                "network": m["run"].get("network"),
+                "logs": m["run"].get("logs"),
             }
         ]
         sc_map = {p["id"]: f"sc{len(scenarios) + k + 1}" for k, p in enumerate(parts)}
+        sc_maps.append(sc_map)
+        offsets.append(offset)
 
         idmap: dict[str, str] = {}
         idmaps.append(idmap)
@@ -135,16 +142,18 @@ def merge_runs(run_dirs: list[Path], out_dir: Path, name: str, labels: list[str]
                     "screens": [r["id"] for r in mine],
                     "entry": [r["id"] for r in mine if r.get("origin") == "launch"],
                     "playbook": part.get("playbook"),
+                    **{k: part[k] for k in ("network", "logs") if part.get(k)},
                 }
             )
-        offset += _max_step(m)
+        # run.steps too: a run that ends on same-screen steps has capture rows past its last transition.
+        offset += max(_max_step(m), m["run"].get("steps") or 0)
 
     screens += list(externals.values())
     for n, t in enumerate(transitions, 1):
         t["id"] = f"t{n}"
 
     base = maps[-1]["run"]
-    run = {k: v for k, v in base.items() if k not in ("playbook",)}
+    run = {k: v for k, v in base.items() if k not in ("playbook", "network", "logs")}  # per scenario instead
     run.update(
         id=name,
         status="done",
@@ -184,10 +193,55 @@ def merge_runs(run_dirs: list[Path], out_dir: Path, name: str, labels: list[str]
         },
     }
     write_json_atomic(out_dir / "map.json", data)
-    (out_dir / "trace.jsonl").write_text("")
     _carry_notes(run_dirs, idmaps, out_dir)
     _carry_titles(run_dirs, idmaps, out_dir)
+    _carry_captures(run_dirs, idmaps, sc_maps, offsets, out_dir)
     return data
+
+
+# The timeline ties network and log rows to screens; the trace is Crawl replay's steps.
+CAPTURES = ("network.jsonl", "logs.jsonl", "timeline.jsonl", "trace.jsonl")
+
+
+def _remap_rows(text: str, idmap: dict[str, str], sc_map: dict | None, offset: int = 0) -> str:
+    out = []
+    for line in text.splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        for key in ("screen", "to"):  # `to`: where a trace step led
+            if row.get(key):
+                row[key] = idmap.get(row[key], row[key])
+        if offset and isinstance(row.get("step"), int):  # a playbook trace row's `step` is its description
+            row["step"] += offset
+        if sc_map is not None:
+            row["scenario"] = _scenario(row, sc_map)
+        out.append(json.dumps(row, ensure_ascii=False) + "\n")
+    return "".join(out)
+
+
+def _carry_captures(
+    run_dirs: list[Path], idmaps: list[dict[str, str]], sc_maps: list[dict], offsets: list[int], out_dir: Path
+) -> None:
+    """Each run's network and log rows (tagged with their scenario) and its manual sessions, under the new screen ids."""
+    for name in CAPTURES:
+        parts = [
+            _remap_rows((d / name).read_text(encoding="utf-8", errors="replace"), idmap, sc_map, offset)
+            for d, idmap, sc_map, offset in zip(run_dirs, idmaps, sc_maps, offsets, strict=True)
+            if (d / name).is_file()
+        ]
+        if parts or name == "trace.jsonl":  # Crawl replay reads the trace, so the canvas always has one
+            (out_dir / name).write_text("".join(parts), encoding="utf-8")
+    for d, idmap in zip(run_dirs, idmaps, strict=True):
+        for sess in sorted((d / "sessions").glob("*/")) if (d / "sessions").is_dir() else []:
+            dest = out_dir / "sessions" / sess.name
+            shutil.copytree(sess, dest, dirs_exist_ok=True)
+            for f in dest.glob("*.jsonl"):
+                f.write_text(_remap_rows(f.read_text(encoding="utf-8", errors="replace"), idmap, None))
+            if doc := _read(dest / "session.json"):
+                doc["screens"] = sorted({idmap.get(s, s) for s in doc.get("screens") or []})
+                (dest / "session.json").write_text(json.dumps(doc, indent=1) + "\n")
 
 
 def _read(path: Path) -> dict | None:
@@ -220,6 +274,8 @@ def _carry_notes(run_dirs: list[Path], idmaps: list[dict[str, str]], out_dir: Pa
             out["a11y"][sid(head) + sep + rest] = t
         for cid, c in doc["comments"].items():
             out["comments"][cid] = {**c, "screen": sid(c["screen"])} if "screen" in c else c
+        for nid, n in doc["stickies"].items():
+            out["stickies"][nid] = {**n, "screen": sid(n["screen"])} if "screen" in n else n
         e, o = doc["edits"], out["edits"]
         o["titles"].update({sid(k): v for k, v in e["titles"].items()})
         o["deleted"] = sorted({*o["deleted"], *map(sid, e["deleted"])})

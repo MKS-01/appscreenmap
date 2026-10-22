@@ -19,6 +19,7 @@ TRIAGE_STATUSES = ("confirmed", "wontfix", "false_positive")
 COMMENT_TAGS = ("bug", "flow", "copy", "question")
 COMMENT_STATUSES = ("open", "resolved")
 MAX_REPLIES = 100
+MAX_STICKY_TEXT = 4000
 _RUN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
 
 
@@ -69,6 +70,7 @@ def validate(data: object) -> dict:
         "notes": clean,
         "a11y": triage,
         "comments": _comments(data.get("comments", {})),
+        "stickies": _stickies(data.get("stickies", {})),
         "edits": _edits(data.get("edits", {})),
     }
 
@@ -109,6 +111,31 @@ def _comments(raw: object) -> dict[str, dict]:
             if isinstance(r, dict) and isinstance(r.get("text"), str) and r["text"].strip():
                 entry["replies"].append({"text": r["text"], "created": str(r.get("created") or "")})
         out[cid] = entry
+    return out
+
+
+def _stickies(raw: object) -> dict[str, dict]:
+    """Sticky notes on the canvas: free text placed around a feature, on a point or (with "screen") on a screen."""
+    if not isinstance(raw, dict):
+        raise NotesError("stickies must be an object")
+    out: dict[str, dict] = {}
+    for sid, n in raw.items():
+        if not isinstance(sid, str) or not isinstance(n, dict):
+            raise NotesError(f"bad sticky {sid!r}")
+        text = n.get("text")
+        if not isinstance(text, str):
+            raise NotesError(f"sticky {sid!r} has no text")
+        entry: dict = {
+            "id": sid,
+            "x": _num(n.get("x", 0), "x"),
+            "y": _num(n.get("y", 0), "y"),
+            "text": text[:MAX_STICKY_TEXT],
+            "created": str(n.get("created") or ""),
+            "updated": str(n.get("updated") or ""),
+        }
+        if isinstance(n.get("screen"), str) and n["screen"]:
+            entry["screen"] = n["screen"]  # x, y are then an offset from the screen card's top-left
+        out[sid] = entry
     return out
 
 
@@ -173,6 +200,7 @@ def load(run_dir: Path) -> dict:
             "notes": {},
             "a11y": {},
             "comments": {},
+            "stickies": {},
             "edits": {"titles": {}, "deleted": [], "parents": {}, "added": {}, "labels": {}},
         }
     return validate(json.loads(p.read_text()))

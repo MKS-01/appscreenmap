@@ -13,7 +13,7 @@ command, configuration, end-to-end tests, CI and MCP. For how the crawler works 
 | **iOS** | macOS with Xcode, a booted simulator, and [idb](https://fbidb.io): `brew install facebook/fb/idb-companion` and `uv tool install fb-idb` |
 | **From a checkout** | [Bun](https://bun.sh) as well: `make install` builds the dashboard and the `appscreenmap` command with it |
 | **Recommended** | `aapt2` (Android build-tools): app details, activity coverage and the security manifest checks |
-| **Optional** | An AI agent (Claude Code or any MCP client) for the hands-off flow; [Maestro](https://maestro.mobile.dev) to run the generated flows; [Frida](https://frida.re) (`uv tool install frida-tools`) for the dynamic security check |
+| **Optional** | An AI agent (Claude Code or any MCP client) for the hands-off flow; [Maestro](https://maestro.mobile.dev) to run the generated flows; [Frida](https://frida.re) (`uv tool install frida-tools`) for the dynamic security check; [mitmproxy](https://mitmproxy.org) (`uv tool install mitmproxy`) for `crawl --network` |
 
 ```bash
 git clone https://github.com/MKS-01/appscreenmap && cd appscreenmap
@@ -68,8 +68,10 @@ All run as `appscreenmap <command>`; `<run>` is a run folder such as `runs/playg
 
 | Command | What it does |
 |---|---|
-| `doctor` | Check adb, devices, booted simulators, idb, aapt2 and the viewer build |
-| `crawl --apk app.apk` / `--platform ios --app X.app` / `--package id` | Explore the app and write `runs/<project>/<run-id>/` |
+| `doctor` | Check adb, devices, booted simulators, idb, aapt2, mitmproxy and the viewer build; flags a device proxy a killed `crawl --network` left on |
+| `crawl --apk app.apk` / `--platform ios --app X.app` / `--package id` | Explore the app and write `runs/<project>/<run-id>/`. `--network` (Android emulator) also records the hosts the app talks to into `network.jsonl`, with TLS left untouched; `--logs` (on with `--network`) the app's own log lines into `logs.jsonl` |
+| `record --package <pkg> [--clear-data]` | Tap through the app by hand and get a Maestro flow (`runs/<project>/maestro/recorded.yaml`): each tap resolved to an id or label, typing to `inputText`, a password to `${ACCOUNT_PASSWORD}`, an edge swipe to `back`. Taps nothing; Ctrl-C to save. Not while `watch` runs. Android |
+| `watch [canvas] [--network]` | Use the app by hand while AppScreenMap records its log (and traffic), tied to the mapped screen you're on; saved in the canvas under `sessions/`. Taps nothing; Ctrl-C to stop. Android |
 | `serve` | Open the dashboard on `runs/` |
 | `report <run>` | Health check: wasted taps, near-duplicate screens, navigation failures, and device conditions that skew results |
 | `a11y <run> [--report]` | WCAG 2.2 checks; `--report` rebuilds `a11y-report.html` and `.md` |

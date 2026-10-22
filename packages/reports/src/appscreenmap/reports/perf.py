@@ -1,6 +1,7 @@
 """Navigation performance report: per-screen load times, slow transitions, jank and cold start.
 
-Reads the timings the crawl recorded in map.json (measured by `appscreenmap.crawler.timing`).
+Reads the timings the crawl recorded in map.json (measured by `appscreenmap.crawler.timing`) and, after
+`crawl --network`, what each screen called (network.jsonl, timed at the proxy).
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from appscreenmap.core.model import load_map, write_json_atomic
+from appscreenmap.core.timeline import read_rows
 from appscreenmap.drivers.dumpsys import FROZEN_FRAME_MS
 
 MIN_JANK_FRAMES = 30  # fewer frames than this are too few to call a screen janky
@@ -26,6 +28,52 @@ def _jank(sample: dict) -> tuple[int, int]:
 def _pct(values: list[int], q: float) -> int:
     s = sorted(values)
     return s[min(len(s) - 1, round(q * (len(s) - 1)))]
+
+
+def _network(run_dir: Path, titles: dict[str, str]) -> dict | None:
+    """Per screen: requests, tunnels, failures, plain http:// and the slowest request with the phase that dominated it."""
+    rows = [r for r in read_rows(run_dir / "network.jsonl") if r.get("asm") == 1]
+    if not rows:
+        return None
+    per: dict[str, dict] = {}
+    for r in rows:
+        sid = r.get("screen")
+        if not sid:
+            continue
+        s = per.setdefault(
+            sid,
+            {"screen": sid, "title": titles.get(sid, sid), "requests": 0, "tunnels": 0, "failed": 0,
+             "cleartext": 0, "hosts": set(), "slowest": None},
+        )  # fmt: skip
+        if r.get("host"):
+            s["hosts"].add(r["host"])
+        if r["event"] == "connect":
+            s["tunnels"] += 1
+        elif r["event"] == "connect_failed":
+            s["failed"] += 1
+        elif r["event"] == "request":
+            s["requests"] += 1
+            s["cleartext"] += r.get("scheme") == "http"
+            s["failed"] += bool(r.get("error"))
+            if r.get("t_end") is not None and r.get("t") is not None:
+                ms = round((r["t_end"] - r["t"]) * 1000)
+                if s["slowest"] is None or ms > s["slowest"]["ms"]:
+                    timing = r.get("timing") or {}
+                    s["slowest"] = {
+                        "method": r.get("method"), "host": r.get("host"), "path": r.get("path"), "ms": ms,
+                        "phase": max(timing, key=timing.get) if timing else None,
+                    }  # fmt: skip
+    screens = sorted(
+        per.values(), key=lambda s: (-(s["slowest"] or {}).get("ms", -1), -s["requests"], s["screen"])
+    )
+    for s in screens:
+        s["hosts"] = sorted(s["hosts"])
+    return {
+        "measured": "proxy",  # between the proxy and the server, not on the device
+        "events": len(rows),
+        "unattributed": sum(1 for r in rows if not r.get("screen")),
+        "screens": screens,
+    }
 
 
 def summarize(run_dir: str | Path, budget_ms: int = 1000, write: bool = True) -> dict:
@@ -108,6 +156,15 @@ def summarize(run_dir: str | Path, budget_ms: int = 1000, write: bool = True) ->
                 f"{r['screen']} '{r['title']}' never stopped drawing within the timeout "
                 "(continuous animation or polling UI)"
             )
+    net = _network(run_dir, {sid: s.get("title", sid) for sid, s in screens.items()})
+    for s in (net or {}).get("screens", []):
+        slow = s["slowest"]
+        if slow and slow["ms"] > budget_ms:
+            phase = f", mostly {slow['phase']}" if slow["phase"] else ""
+            findings.append(
+                f"{s['screen']} '{s['title']}' waits {slow['ms']} ms on {slow['method']} {slow['host']}{slow['path']} "
+                f"(proxy-measured{phase})"
+            )
     if cold and statistics.median(cold) > 5000:
         findings.append(
             f"cold start {statistics.median(cold):.0f} ms (median) exceeds Android vitals' 5 s threshold"
@@ -124,6 +181,7 @@ def summarize(run_dir: str | Path, budget_ms: int = 1000, write: bool = True) ->
         },
         "screens": screen_rows,
         "transitions": transitions,
+        "network": net,
         "findings": findings,
     }
     if write:
@@ -143,7 +201,7 @@ def format_perf(rep: dict, top: int = 12) -> str:
         lines.append(
             "  no load timings in this run (crawled before metrics existed, or measure_load = false)"
         )
-        return "\n".join(lines)
+        return "\n".join(lines + _format_network(rep.get("network"), top))
     lines.append("  screens, slowest first (median / p90 / max ms, samples):")
     for r in rep["screens"][:top]:
         flag = {"slow": "SLOW", "needs work": "NEEDS WORK", "ok": "ok"}[r["rating"]]
@@ -163,6 +221,31 @@ def format_perf(rep: dict, top: int = 12) -> str:
     lines.append("  slowest transitions:")
     for t in rep["transitions"][:5]:
         lines.append(f"     {t['from']} to {t['to']}  {t['label'][:30]!r:32} {t['max_ms']} ms max")
+    lines += _format_network(rep.get("network"), top)
     lines.append("  findings:" if rep["findings"] else "  findings: none")
     lines += [f"    - {f}" for f in rep["findings"]]
     return "\n".join(lines)
+
+
+def _format_network(net: dict | None, top: int) -> list[str]:
+    if not net:
+        return []
+    lines = [
+        f"  network per screen (measured at the proxy; {net['unattributed']} of {net['events']} rows on no screen):"
+    ]
+    for s in net["screens"][:top]:
+        slow = s["slowest"]
+        slowest = (
+            f"  slowest {slow['ms']} ms {slow['method']} {slow['host']}{slow['path']}"
+            + (f" ({slow['phase']})" if slow["phase"] else "")
+            if slow
+            else ""
+        )
+        flags = (f", {s['failed']} failed" if s["failed"] else "") + (
+            f", {s['cleartext']} http://" if s["cleartext"] else ""
+        )
+        lines.append(
+            f"     {s['screen']:>5} {s['title'][:28]!r:30} {s['requests']} req, {s['tunnels']} tunnels, "
+            f"{len(s['hosts'])} hosts{flags}{slowest}"
+        )
+    return lines

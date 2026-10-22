@@ -129,3 +129,35 @@ def test_a_comment_needs_text_and_numbers():
         notes.validate({**base, "comments": {"c": {"x": 1, "y": 1, "text": " "}}})
     with pytest.raises(notes.NotesError, match="number"):
         notes.validate({**base, "comments": {"c": {"x": "1", "y": 1, "text": "hi"}}})
+
+
+def test_stickies_roundtrip_and_clean(run_dir):
+    doc = {
+        "appscreenmap_notes": 1,
+        "notes": {},
+        "stickies": {
+            "k1": {"x": 10, "y": 20, "screen": "s002", "text": "Check the empty state"},
+            "k2": {
+                "x": 1,
+                "y": 2,
+                "color": "neon",
+                "text": "",
+            },  # unknown colour → yellow; empty text kept (a fresh note)
+        },
+    }
+    notes.save(run_dir, json.dumps(doc).encode())
+    s = notes.load(run_dir)["stickies"]
+    assert s["k1"]["screen"] == "s002"
+    assert "screen" not in s["k2"] and "color" not in s["k2"]
+
+
+def test_old_notes_file_has_no_stickies(run_dir):
+    notes.save(run_dir, b'{"appscreenmap_notes": 1, "notes": {}}')
+    assert notes.load(run_dir)["stickies"] == {}
+
+
+def test_save_rejects_bad_sticky(run_dir):
+    with pytest.raises(notes.NotesError):
+        notes.save(
+            run_dir, b'{"appscreenmap_notes": 1, "notes": {}, "stickies": {"k": {"x": "a", "text": "t"}}}'
+        )

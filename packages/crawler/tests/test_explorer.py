@@ -280,3 +280,58 @@ def test_paths_include_same_screen_steps_that_reveal_elements(tmp_path):
     ex.restart("test")
     assert ex.cur is home_screen and app.screen == "home"
     assert ex.navigate(timer_screen, None)
+
+
+def test_requests_made_while_a_screen_loads_belong_to_that_screen(tmp_path):
+    """The timeline switches at the tap, not when the screen has settled: Settings owns the call it makes on open."""
+    import time
+
+    from appscreenmap.core.timeline import TIMELINE, attribute, read_rows
+
+    ex, amap = _explorer(tmp_path)
+    rows: list[dict] = []
+    tap = ex.d.tap
+
+    def tap_then_call(x, y):
+        tap(x, y)
+        if ex.d.app.screen == "settings":  # the app calls its API as the screen opens, before it settles
+            rows.append({"t": time.time(), "host": "api.settings.test", "fired_at_step": ex.step + 1})
+        else:
+            rows.append({"t": time.time(), "host": f"other-{len(rows)}.test"})
+
+    ex.d.tap = tap_then_call
+    ex.run()
+    timeline = read_rows(ex.dir / TIMELINE)
+    assert timeline[0]["step"] == 1 and timeline[0]["title"] == "Home"
+    assert [e["t"] for e in timeline] == sorted(e["t"] for e in timeline)
+
+    settings = next(s.id for s in amap.screens.values() if s.title == "Settings")
+    got = attribute(rows, timeline)
+    calls = [r for r in got if r["host"] == "api.settings.test"]
+    assert calls and all(r["screen"] == settings and r["step"] == r["fired_at_step"] for r in calls)
+    assert not [r for r in got if r["host"] != "api.settings.test" and r.get("screen") == settings]
+
+
+def test_rows_take_the_screens_final_title(tmp_path):
+    """An untitled screen is named after what opened it once it's recorded; its rows get that name, not the activity."""
+    from appscreenmap.core.timeline import TIMELINE, finish, read_rows
+    from appscreenmap.testkit import fakedevice as fd
+    from appscreenmap.testkit.helpers import hierarchy, node
+
+    screens = {**fd.SCREENS, "about": hierarchy(node("android.widget.ImageView", (40, 300, 1000, 360)))}
+    run_dir, ex = fd.crawl(tmp_path, fd.FakeDriver(fd.FakeApp(screens=screens)))
+    about = next(s for s in ex.map.screens.values() if s.title == "About")
+    at = next(e for e in read_rows(run_dir / TIMELINE) if e["screen"] == about.id)
+    (run_dir / "network.jsonl").write_text(
+        json.dumps({"asm": 1, "event": "connect", "host": "x.test", "t": at["t"] + 0.01}) + "\n"
+    )
+    assert finish(
+        run_dir, {sid: s.title for sid, s in ex.map.screens.items()}, ["network.jsonl", "logs.jsonl"]
+    ) == {
+        "network.jsonl": 1,
+        "logs.jsonl": 0,  # no file: nothing written
+    }
+    (row,) = read_rows(run_dir / "network.jsonl")
+    assert (row["screen"], row["screen_title"], row["step"]) == (about.id, "About", at["step"])
+    assert next(e for e in read_rows(run_dir / TIMELINE) if e["screen"] == about.id)["title"] == "About"
+    assert not (run_dir / "logs.jsonl").exists()

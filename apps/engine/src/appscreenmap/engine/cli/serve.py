@@ -1,5 +1,5 @@
-"""Serve the maps: `serve` (the web viewer, the notes and run-delete endpoints, SVG export, the activity log) and
-`mcp` (agents, over stdio)."""
+"""Serve the maps: `serve` (the web viewer, the notes and run-delete endpoints, SVG export, the activity log, manual
+sessions started from the dashboard) and `mcp` (agents, over stdio)."""
 
 from __future__ import annotations
 
@@ -7,15 +7,22 @@ import functools
 import http.server
 import json
 import os
+import re
+import subprocess
 import sys
+import threading
+import time
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
 from appscreenmap.core import activity, notes
 from appscreenmap.core.model import load_map
 from appscreenmap.core.runs import RunDeleteError, delete_run, resolve_run, update_index
+from appscreenmap.drivers.logcat import LOG as LOGS_LOG
 from appscreenmap.exporters.svg import LAYOUTS, THEMES, map_svg
+from appscreenmap.security import network
 
 
 def _web_dist() -> Path | None:
@@ -32,10 +39,61 @@ def _web_dist() -> Path | None:
     return None
 
 
+SESSION_START_WAIT_S = 8  # for `watch` to write session.json, or to fail
+SESSION_STOP_WAIT_S = 20  # for `watch` to put the proxy back and tie its rows to screens
+
+
+class _Recorder:
+    """`watch` processes started from the dashboard, one at a time: a device has one proxy setting to put back."""
+
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.procs: dict[str, tuple[subprocess.Popen, Path]] = {}
+
+    def running(self) -> dict[str, tuple[subprocess.Popen, Path]]:
+        with self.lock:
+            self.procs = {k: v for k, v in self.procs.items() if v[0].poll() is None}
+            return dict(self.procs)
+
+    def stop(self, sid: str) -> bool:
+        with self.lock:
+            proc, _ = self.procs.pop(sid, (None, None))
+        if proc is None:
+            return False
+        proc.terminate()  # SIGTERM: `watch` handles it like Ctrl-C
+        try:
+            proc.wait(SESSION_STOP_WAIT_S)
+        except subprocess.TimeoutExpired:
+            proc.kill()  # `doctor` reports a proxy left on the device
+            proc.wait()
+        return True
+
+    def stop_all(self) -> None:
+        for sid in list(self.running()):
+            self.stop(sid)
+
+
+def _watch_cmd(run_dir: Path, runs_root: Path, sid: str, net: bool, serial: str | None) -> list[str]:
+    cmd = [
+        sys.executable,
+        "-m",
+        "appscreenmap.engine",
+        "watch",
+        str(run_dir),
+        "--id",
+        sid,
+        "--out",
+        str(runs_root),
+    ]
+    return cmd + (["--network"] if net else []) + (["--serial", serial] if serial else [])
+
+
 class _Handler(http.server.SimpleHTTPRequestHandler):
     runs_root: Path
     web_root: Path
     activity: activity.ActivityReader
+    recorder: _Recorder
+    watch_cmd = staticmethod(_watch_cmd)  # tests swap in a stand-in process
 
     def translate_path(self, path: str) -> str:
         clean = path.split("?", 1)[0].split("#", 1)[0]
@@ -149,9 +207,43 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             )
         return self.send_error(404)
 
+    def _captures_api(self) -> None:
+        """GET /api/captures?run=<id>: what a run recorded beyond the map: its network hosts, app log lines and manual
+        `watch` sessions. The rows themselves are plain files under /runs/<id>/ (`network.jsonl`, `logs.jsonl`,
+        `sessions/<id>/…`), each tagged with its `screen`.
+        """
+        opts = {k: v[0] for k, v in parse_qs(self.path.partition("?")[2]).items()}
+        run_dir = self._run_dir(opts.get("run", "")) if opts.get("run") else None
+        if run_dir is None:
+            return self.send_error(404, "no such run")
+
+        def captures(d: Path) -> dict:
+            rows = network.read_log(d / network.LOG)
+            logs = d / LOGS_LOG
+            return {
+                "network": {"log": network.LOG, **network.summarize(rows)} if rows else None,
+                "logs": {"log": LOGS_LOG, "lines": sum(1 for _ in logs.open(encoding="utf-8"))}
+                if logs.is_file()
+                else None,
+            }
+
+        sessions = []
+        for sj in sorted((run_dir / "sessions").glob("*/session.json"), reverse=True):  # ids sort by time
+            try:
+                s = json.loads(sj.read_text())
+            except (OSError, ValueError):
+                continue
+            stoppable = sj.parent.name in self.recorder.running()
+            sessions.append(
+                {**s, **captures(sj.parent), "path": f"sessions/{sj.parent.name}", "stoppable": stoppable}
+            )
+        self._json({"run": run_dir.name, **captures(run_dir), "sessions": sessions})
+
     def do_GET(self):
         if self.path.startswith("/export/"):
             return self._export_svg()
+        if self.path.split("?", 1)[0] == "/api/captures":
+            return self._captures_api()
         if self.path.startswith(("/api/activity/", "/api/logs/")):
             return self._activity_api()
         if self.path.split("?", 1)[0] == "/runs/index.json":
@@ -162,6 +254,80 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         """Only same-machine pages may write (guards against DNS rebinding); cross-site writes already fail CORS preflight."""
         host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]")
         return host in ("localhost", "127.0.0.1", "::1", self.server.server_address[0])
+
+    def _read_json(self, limit: int = 4096) -> dict | None:
+        if not (self.headers.get("Content-Type") or "").startswith("application/json"):
+            self.send_error(415)
+            return None
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            body = json.loads(self.rfile.read(length)) if 0 < length <= limit else None
+        except ValueError:
+            body = None
+        if not isinstance(body, dict):
+            self.send_error(400, "a JSON object")
+        return body if isinstance(body, dict) else None
+
+    def do_POST(self):
+        """Manual sessions from the dashboard (see `watch`):
+        POST /api/sessions  {"run": "<canvas id>", "network": true, "serial"?: "…"}   start one; 201 + its session.json
+        POST /api/sessions/<id>/stop                                                stop it; 200 + its final session.json
+        """
+        path = self.path.split("?", 1)[0]
+        if not path.startswith("/api/sessions"):
+            return self.send_error(404)
+        if not self._local_page():
+            return self.send_error(403)
+        if path == "/api/sessions":
+            return self._start_session()
+        m = re.fullmatch(r"/api/sessions/([A-Za-z0-9_-]{1,64})/stop", path)
+        if not m:
+            return self.send_error(404)
+        sid = m.group(1)
+        dirs = self.recorder.running()
+        sdir = dirs[sid][1] if sid in dirs else None
+        if sdir is None or not self.recorder.stop(sid):
+            return self.send_error(404, "no session recording with that id from this dashboard")
+        return self._json(json.loads((sdir / "session.json").read_text()))
+
+    def _start_session(self) -> None:
+        body = self._read_json()
+        if body is None:
+            return
+        run_dir = self._run_dir(str(body.get("run") or ""))
+        if run_dir is None:
+            return self.send_error(404, "no such run")
+        if busy := self.recorder.running():
+            return self._json({"error": f"a session is already recording: {next(iter(busy))}"}, 409)
+        net = body.get("network", True) is not False
+        if net and not network.find_mitmdump():
+            return self._json({"error": f"network capture needs mitmproxy: {network.INSTALL}"}, 422)
+        serial = body.get("serial")
+        if serial is not None and not (isinstance(serial, str) and re.fullmatch(r"[\w.:-]{1,64}", serial)):
+            return self.send_error(400, "serial")
+        sid = f"session-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        sdir = run_dir / "sessions" / sid
+        sdir.mkdir(parents=True, exist_ok=True)
+        with (sdir / "watch.log").open("w") as log:
+            proc = subprocess.Popen(
+                self.watch_cmd(run_dir, self.runs_root, sid, net, serial),
+                stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+            )  # fmt: skip
+        with self.recorder.lock:
+            self.recorder.procs[sid] = (proc, sdir)
+        deadline = time.monotonic() + SESSION_START_WAIT_S
+        while time.monotonic() < deadline and proc.poll() is None and not (sdir / "session.json").is_file():
+            time.sleep(0.1)
+        if proc.poll() is not None and proc.returncode != 0:
+            tail = (sdir / "watch.log").read_text(errors="replace").strip().splitlines()[-3:]
+            return self._json(
+                {"error": " ".join(tail) or f"watch exited with {proc.returncode}", "id": sid}, 422
+            )
+        try:
+            session = json.loads((sdir / "session.json").read_text())
+        except (OSError, ValueError):
+            session = {"id": sid, "status": "starting"}
+        self._json({**session, "path": f"sessions/{sid}", "stoppable": proc.poll() is None}, 201)
 
     def do_DELETE(self):
         """Delete a run from the dashboard: DELETE /runs/[<project>/]<run-id>. Refuses a crawl that is still running."""
@@ -228,7 +394,12 @@ def cmd_serve(args) -> int:
     handler = type(
         "Handler",
         (_Handler,),
-        {"runs_root": runs_root, "web_root": dist, "activity": activity.ActivityReader(runs_root)},
+        {
+            "runs_root": runs_root,
+            "web_root": dist,
+            "activity": activity.ActivityReader(runs_root),
+            "recorder": _Recorder(),
+        },
     )
     server = http.server.ThreadingHTTPServer(
         (args.host, args.port), functools.partial(handler, directory=str(dist))
@@ -241,6 +412,8 @@ def cmd_serve(args) -> int:
         server.serve_forever()
     except KeyboardInterrupt:
         pass
+    finally:
+        handler.recorder.stop_all()  # each `watch` puts the device's proxy back before serve exits
     return 0
 
 

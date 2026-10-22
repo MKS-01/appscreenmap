@@ -120,6 +120,7 @@ def test_notes_and_titles_follow_their_screens_into_the_canvas(tmp_path):
                 "notes": {"s002": {"star": True, "updated": "t"}},
                 "a11y": {"s001::touch-target::btn::Go::0,0": {"status": "wontfix", "updated": "t"}},
                 "comments": {"c1": {"x": 1, "y": 2, "screen": "s002", "tag": "bug", "text": "Wrong title"}},
+                "stickies": {"k1": {"x": 3, "y": 4, "screen": "s002", "text": "Key flow"}},
                 "edits": {
                     "titles": {"s001": "Feed"},
                     "deleted": ["s002"],
@@ -139,6 +140,7 @@ def test_notes_and_titles_follow_their_screens_into_the_canvas(tmp_path):
     assert doc["run"] == "merged" and doc["notes"] == {"s004": {"star": True, "updated": "t"}}
     assert list(doc["a11y"]) == ["s003::touch-target::btn::Go::0,0"]
     assert doc["comments"]["c1"]["screen"] == "s004"
+    assert doc["stickies"]["k1"]["screen"] == "s004"
     assert doc["edits"] == {
         "titles": {"s003": "Feed"},
         "deleted": ["s004"],
@@ -158,3 +160,63 @@ def test_no_notes_file_when_no_source_has_one(tmp_path):
     out.mkdir()
     merge_runs([a], out, "merged")
     assert not (out / "notes.json").exists() and not (out / "titles.json").exists()
+
+
+def test_network_logs_and_sessions_follow_their_screens_into_the_canvas(tmp_path):
+    a = make_run(tmp_path, "p-a", ["Home", "Settings"], "2026-10-01T00:00:00+00:00")
+    b = make_run(tmp_path, "p-b", ["Home", "Network"], "2026-10-02T00:00:00+00:00")
+    mb = json.loads((b / "map.json").read_text())
+    mb["run"]["network"] = {"mode": "observe", "events": 1}
+    (b / "map.json").write_text(json.dumps(mb))
+    (b / "network.jsonl").write_text('{"asm": 1, "event": "connect", "host": "api.test", "t": 1}\n')
+    (b / "logs.jsonl").write_text('{"asm": 1, "event": "log", "t": 1, "message": "hi"}\n')
+    sess = a / "sessions" / "session-1"
+    sess.mkdir(parents=True)
+    (sess / "session.json").write_text(json.dumps({"id": "session-1", "screens": ["s002"]}))
+    (sess / "logs.jsonl").write_text('{"asm": 1, "event": "log", "t": 1, "screen": "s002"}\n')
+    (sess / "timeline.jsonl").write_text('{"t": 1, "screen": "s002"}\n')
+
+    out = tmp_path / "canvas"
+    out.mkdir()
+    m = merge_runs([a, b], out, "canvas")
+    net = [json.loads(x) for x in (out / "network.jsonl").read_text().splitlines()]
+    assert net == [{"asm": 1, "event": "connect", "host": "api.test", "t": 1, "scenario": "sc2"}]
+    assert json.loads((out / "logs.jsonl").read_text())["scenario"] == "sc2"
+    assert m["run"]["scenarios"][1]["network"] == {"mode": "observe", "events": 1}
+    assert "network" not in m["run"] and "network" not in m["run"]["scenarios"][0]
+    # the session was recorded against the first run: its screens keep their (unchanged) ids
+    assert json.loads((out / "sessions/session-1/session.json").read_text())["screens"] == ["s002"]
+
+    # merge the canvas again behind a new run: the session's screen ids follow the renumbering
+    c = make_run(tmp_path, "p-c", ["Home", "Search", "About"], "2026-09-30T00:00:00+00:00")
+    out2 = tmp_path / "canvas2"
+    out2.mkdir()
+    merge_runs([c, out], out2, "canvas2")
+    assert json.loads((out2 / "sessions/session-1/session.json").read_text())["screens"] == ["s005"]
+    assert json.loads((out2 / "sessions/session-1/logs.jsonl").read_text())["screen"] == "s005"
+    assert json.loads((out2 / "sessions/session-1/timeline.jsonl").read_text())["screen"] == "s005"
+    assert [json.loads(x)["scenario"] for x in (out2 / "network.jsonl").read_text().splitlines()] == ["sc3"]
+
+
+def test_crawl_rows_keep_their_step_and_screen_in_the_canvas(tmp_path):
+    a = make_run(tmp_path, "p-a", ["Home", "Settings"], "2026-10-01T00:00:00+00:00")
+    b = make_run(tmp_path, "p-b", ["Home", "Network"], "2026-10-02T00:00:00+00:00")
+    (b / "network.jsonl").write_text('{"asm": 1, "event": "connect", "t": 5, "screen": "s002", "step": 2}\n')
+    (b / "timeline.jsonl").write_text('{"t": 4, "step": 2, "screen": "s002", "title": "Network"}\n')
+    (b / "trace.jsonl").write_text(
+        '{"step": 2, "t": 3.1, "screen": "s001", "to": "s002", "effect": "new_screen"}\n'
+        '{"step": "tap ^Profile$", "t": 3.0, "playbook": "before", "n": 1, "ok": true}\n'
+    )
+    out = tmp_path / "canvas"
+    out.mkdir()
+    m = merge_runs([a, b], out, "canvas")
+    net = json.loads((out / "network.jsonl").read_text())
+    tl = json.loads((out / "timeline.jsonl").read_text())
+    network = next(s["id"] for s in m["screens"] if s["title"] == "Network")
+    offset = max(t["step"] for t in m["transitions"] if t["scenario"] == "sc1")
+    assert net["screen"] == tl["screen"] == network != "s002"
+    assert net["step"] == tl["step"] == 2 + offset and net["scenario"] == tl["scenario"] == "sc2"
+    # Crawl replay works on the canvas: the step keeps where it led, under the new ids
+    tr, play = (json.loads(x) for x in (out / "trace.jsonl").read_text().splitlines())
+    assert play["step"] == "tap ^Profile$"  # a playbook row's `step` is its description: kept, not shifted
+    assert (tr["to"], tr["step"], tr["scenario"]) == (network, 2 + offset, "sc2") and tr["screen"] != "s001"

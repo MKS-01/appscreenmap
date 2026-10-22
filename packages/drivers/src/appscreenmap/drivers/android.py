@@ -175,8 +175,9 @@ class AdbDriver:
         self.shell(f"dumpsys gfxinfo {package} reset >/dev/null")
 
     def frames_rendered(self, package: str) -> int | None:
+        # grep reads the whole dump: `grep -m1` closes the pipe early, and the app logs an EPIPE stack trace per poll.
         m = TOTAL_FRAMES_RE.search(
-            self.shell(f"dumpsys gfxinfo {package} 2>/dev/null | grep -m1 'Total frames rendered'")
+            self.shell(f"dumpsys gfxinfo {package} 2>/dev/null | grep 'Total frames rendered'")
         )
         return int(m.group(1)) if m else None
 
@@ -272,6 +273,15 @@ class AdbDriver:
                 v = "1.0"
             self.shell(f"settings put global {k} {v}")
 
+    # A device left pointing at a dead proxy has no internet: whoever sets it must put it back.
+    def get_http_proxy(self) -> str:
+        v = self.shell("settings get global http_proxy").strip()
+        return "" if v in ("", "null", ":0") else v
+
+    def set_http_proxy(self, host_port: str) -> None:
+        # ":0" clears it at once; `settings delete` only takes effect after a reboot.
+        self.shell(f"settings put global http_proxy {host_port or ':0'}")
+
     # ── lock task ("screen pinning"): keeps the app in front; BACK at its root and other apps are blocked
     def top_task_id(self, package: str) -> int | None:
         out = self.shell("dumpsys activity activities | grep -m1 topResumedActivity")
@@ -287,6 +297,15 @@ class AdbDriver:
 
     def unpin(self) -> None:
         self.shell("am task lock stop")
+
+    def pidof(self, package: str) -> int | None:
+        out = self.shell(f"pidof -s {package}").strip()
+        return int(out) if out.isdigit() else None
+
+    def logcat_popen(self, pid: int) -> subprocess.Popen:
+        """Follow one process's log (`-v epoch` for absolute times); the caller stops it."""
+        cmd = [self.adb_path, "-s", self.serial, "logcat", "-v", "epoch", "--pid", str(pid), "-T", "1"]
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
 
     def clear_crash_log(self) -> None:
         self.shell("logcat -b crash -c")

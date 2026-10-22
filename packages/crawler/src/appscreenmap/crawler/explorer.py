@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import heapq
 import json
+import math
 import re
 import time
 from datetime import UTC, datetime
@@ -23,6 +24,7 @@ from appscreenmap.core.analyzer import (
 from appscreenmap.core.config import CrawlConfig, placeholders, resolve
 from appscreenmap.core.media import save_thumbnail
 from appscreenmap.core.model import AppMap, Element, Screen, Step, Transition, selector_for
+from appscreenmap.core.timeline import TIMELINE
 from appscreenmap.drivers.android import AdbDriver
 from appscreenmap.drivers.base import DriverError
 
@@ -40,6 +42,32 @@ class CrawlAborted(RuntimeError):
     pass
 
 
+class _TimedInputs:
+    """The driver, noting the wall-clock time of the latest input: a screen starts when the tap that opens it lands,
+    not when it has finished loading, and the requests it makes while loading are its own."""
+
+    INPUTS = frozenset({"tap", "long_press", "back", "swipe", "launch"})
+
+    def __init__(self, driver) -> None:
+        object.__setattr__(self, "_d", driver)
+        object.__setattr__(self, "input_at", 0.0)
+
+    def __setattr__(self, name, value) -> None:
+        # Tests and callers set attributes on `explorer.d`; they belong to the real driver.
+        object.__setattr__(self, name, value) if name == "input_at" else setattr(self._d, name, value)
+
+    def __getattr__(self, name):
+        attr = getattr(self._d, name)
+        if name not in self.INPUTS:
+            return attr
+
+        def timed(*a, **kw):
+            self.input_at = time.time()
+            return attr(*a, **kw)
+
+        return timed
+
+
 class Explorer:
     def __init__(
         self,
@@ -51,7 +79,7 @@ class Explorer:
         appmap: AppMap,
         log=print,
     ):
-        self.d = driver
+        self.d = _TimedInputs(driver)
         self.pkg = package
         self.launch_activity = launch_activity
         self.cfg = cfg
@@ -74,6 +102,7 @@ class Explorer:
         self.stop_reason: str | None = None
         (run_dir / "screens").mkdir(parents=True, exist_ok=True)
         self._trace = (run_dir / "trace.jsonl").open("a")
+        self._arrived: tuple[str, int, float] | None = None
 
     # ── public ───────────────────────────────────────────────────────────────
     def run(self) -> None:
@@ -346,6 +375,7 @@ class Explorer:
         else:
             screen, is_new = self.identify(obs, hint)
         self.cur, self.obs = screen, obs
+        self._mark_arrival(screen)
         if screen.kind == "app":
             screen.visits += 1
             self.map.add_back(screen)
@@ -354,6 +384,23 @@ class Explorer:
             if self.cfg.fill_forms:
                 self.autofill(screen)
         return self.cur, is_new
+
+    def _mark_arrival(self, screen: Screen) -> None:
+        """One timeline entry per screen per step, timed at the input that led here (or now, if it changed by itself)."""
+        if self._arrived and self._arrived[:2] == (screen.id, self.step):
+            return
+        last_t = self._arrived[2] if self._arrived else 0.0
+        t = self.d.input_at if self.d.input_at > last_t else time.time()
+        self._arrived = (screen.id, self.step, t)
+        # Rounded down: rounding up could move the switch past a request made a moment after the tap.
+        entry = {
+            "t": math.floor(t * 1000) / 1000,
+            "step": self.step,
+            "screen": screen.id,
+            "title": screen.title,
+        }
+        with (self.dir / TIMELINE).open("a") as f:  # wall clock, to tie network and log rows to screens
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
     @staticmethod
     def _same_after_in_place_change(hint: Screen, obs: Observation) -> bool:
