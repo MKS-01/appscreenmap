@@ -24,6 +24,14 @@ export interface Link {
   label?: string;
   discovery: boolean;
 }
+/** A sticky note, placed in the same flow space as the cards. */
+export interface Note {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  text: string;
+}
 export interface Head {
   title: string;
   subtitle: string;
@@ -38,7 +46,9 @@ const THEME = { bg: "#ffffff", card: "#f6f7f9", line: "#c9ced6", text: "#1a1d23"
 const FONT = "Geist, Inter, Helvetica, Arial, sans-serif";
 const MONO = "Geist Mono, Menlo, Consolas, monospace";
 // Font sizes mirror the --text-* tokens in packages/design-tokens/tokens.css (an SVG file cannot use CSS variables).
-const TEXT = { "2xs": 8, xs: 11, sm: 12, lg: 16, "2xl": 26 };
+const TEXT = { "2xs": 8, xs: 11, sm: 12, base: 13, lg: 16, "2xl": 26 };
+const NOTE_BAR = 24; // sticky note header strip
+const NOTE_LINE = 18; // --text-base × --leading-snug
 export const HDR_H = 14;
 const MARGIN = 80;
 const HEAD_H = 70;
@@ -86,6 +96,45 @@ function card(c: Card, badge: string, withHeader: boolean): string {
   return parts.join("");
 }
 
+/** Break a note into lines that fit `chars` columns, keeping its own line breaks and splitting over-long words. */
+function wrap(text: string, chars: number): string[] {
+  const lines: string[] = [];
+  for (const para of text.trim().split("\n")) {
+    let line = "";
+    for (let word of para.split(/\s+/).filter(Boolean)) {
+      while (word.length > chars) {
+        if (line) (lines.push(line), (line = ""));
+        lines.push(word.slice(0, chars));
+        word = word.slice(chars);
+      }
+      if (!line) line = word;
+      else if (line.length + 1 + word.length <= chars) line += ` ${word}`;
+      else (lines.push(line), (line = word));
+    }
+    lines.push(line);
+  }
+  return lines;
+}
+
+const noteHeight = (n: Note) => NOTE_BAR + wrap(n.text, Math.floor((n.w - 20) / 6.4)).length * NOTE_LINE + 14;
+
+/** The same flat note as on screen: hairline box, mono NOTE kicker over a rule, then the text. */
+function note(n: Note): string {
+  const lines = wrap(n.text, Math.floor((n.w - 20) / 6.4));
+  const h = noteHeight(n);
+  return [
+    `<g id="note-${esc(n.id)}">`,
+    `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${h}" rx="8" fill="${THEME.card}" stroke="${THEME.line}"/>`,
+    `<text x="${n.x + 10}" y="${n.y + 16}" font-family="${esc(MONO)}" font-size="${TEXT.xs}" letter-spacing="0.66" fill="${THEME.dim}">NOTE</text>`,
+    `<path d="M${n.x} ${n.y + NOTE_BAR}H${n.x + n.w}" stroke="${THEME.line}"/>`,
+    ...lines.map(
+      (l, i) =>
+        `<text x="${n.x + 10}" y="${n.y + NOTE_BAR + 16 + i * NOTE_LINE}" font-family="${esc(FONT)}" font-size="${TEXT.base}" fill="${THEME.text}">${esc(l)}</text>`,
+    ),
+    "</g>",
+  ].join("");
+}
+
 function frame(head: Head, width: number, height: number, body: string): string {
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
@@ -99,11 +148,13 @@ function frame(head: Head, width: number, height: number, body: string): string 
 }
 
 /** Tree or Graph: the cards exactly where the viewer has them, and the links it draws. */
-export function flowSvg(cards: Card[], links: Link[], dir: "LR" | "TB", variant: "tree" | "graph", head: Head): string {
+export function flowSvg(cards: Card[], links: Link[], dir: "LR" | "TB", variant: "tree" | "graph", head: Head, notes: Note[] = []): string {
   if (!cards.length) throw new Error("This run has no screens to draw.");
-  const minX = Math.min(...cards.map((c) => c.x));
-  const minY = Math.min(...cards.map((c) => c.y));
-  const placed = cards.map((c) => ({ ...c, x: Math.round(c.x - minX + MARGIN), y: Math.round(c.y - minY + MARGIN + HEAD_H) }));
+  const minX = Math.min(...cards.map((c) => c.x), ...notes.map((n) => n.x));
+  const minY = Math.min(...cards.map((c) => c.y), ...notes.map((n) => n.y));
+  const shift = <T extends { x: number; y: number }>(o: T): T => ({ ...o, x: Math.round(o.x - minX + MARGIN), y: Math.round(o.y - minY + MARGIN + HEAD_H) });
+  const placed = cards.map(shift);
+  const stickies = notes.map(shift);
   const byId = new Map(placed.map((c) => [c.id, c]));
   const [sp, tp] = dir === "LR" ? [Position.Right, Position.Left] : [Position.Bottom, Position.Top];
   const edges = links
@@ -127,9 +178,11 @@ export function flowSvg(cards: Card[], links: Link[], dir: "LR" | "TB", variant:
       return out;
     })
     .join("");
-  const width = Math.ceil(Math.max(...placed.map((c) => c.x + c.w)) + MARGIN);
-  const height = Math.ceil(Math.max(...placed.map((c) => c.y + c.h)) + MARGIN);
-  const body = `<g id="links">${edges}</g><g id="screens">${placed.map((c) => card(c, c.kind === "app" ? c.id : "ext", true)).join("")}</g>`;
+  const width = Math.ceil(Math.max(...placed.map((c) => c.x + c.w), ...stickies.map((n) => n.x + n.w)) + MARGIN);
+  const height = Math.ceil(Math.max(...placed.map((c) => c.y + c.h), ...stickies.map((n) => n.y + noteHeight(n))) + MARGIN);
+  const body =
+    `<g id="links">${edges}</g><g id="screens">${placed.map((c) => card(c, c.kind === "app" ? c.id : "ext", true)).join("")}</g>` +
+    (stickies.length ? `<g id="notes">${stickies.map(note).join("")}</g>` : "");
   return frame(head, width, height, body);
 }
 

@@ -6,11 +6,12 @@ import type { Screen } from "../types";
 // Editing the map: a floating toolbar (select, comment, add, move under, rename, delete), Figma-style comment pins
 // with threads, and a list of what was changed. Everything is saved in notes.json; map.json is never touched.
 
-export type Tool = "select" | "comment" | "add" | "move" | "rename" | "delete";
+export type Tool = "select" | "comment" | "sticky" | "add" | "move" | "rename" | "delete";
 
 export const TOOLS: { id: Tool; label: string; key: string; icon: IconName; hint: string }[] = [
   { id: "select", label: "Select", key: "V", icon: "cursor", hint: "Click a screen to light up its path" },
   { id: "comment", label: "Comment", key: "C", icon: "message", hint: "Click anywhere to drop a pin; on a screen it follows that screen" },
+  { id: "sticky", label: "Note", key: "S", icon: "sticky", hint: "Click anywhere to drop a sticky note; on a screen it follows that screen" },
   { id: "add", label: "Add", key: "A", icon: "plus", hint: "Click a screen to add a planned screen under it (empty space: a new root)" },
   { id: "move", label: "Move under", key: "M", icon: "reparent", hint: "Click the screen to move, then its new parent (empty space: its own root)" },
   { id: "rename", label: "Rename", key: "R", icon: "pencil", hint: "Click a screen to rename it, or a link to relabel it" },

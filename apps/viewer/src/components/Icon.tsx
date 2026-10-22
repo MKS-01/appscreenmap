@@ -223,6 +223,12 @@ const PATHS = {
       <path d="m15 5 4 4" />
     </>
   ),
+  sticky: (
+    <>
+      <path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" />
+      <path d="M15 3v5a1 1 0 0 0 1 1h5" />
+    </>
+  ),
   trash: (
     <>
       <path d="M3 6h18" />

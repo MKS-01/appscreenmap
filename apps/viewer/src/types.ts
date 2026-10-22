@@ -132,6 +132,17 @@ export interface RunMeta {
   steps?: number;
   elapsed_s?: number;
   error?: string;
+  scenarios?: Scenario[]; // a canvas: one per merged run
+}
+
+export interface Scenario {
+  id: string;
+  label?: string;
+  run_id?: string;
+  steps?: number | null;
+  screens: string[];
+  network?: { status?: string; events?: number; hosts?: number; cleartext_hosts?: string[] };
+  logs?: { lines?: number };
 }
 
 export interface Stats {

@@ -1,27 +1,41 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { runFile, useText } from "../api";
 import { CopyButton, ScreenLink, Thumb } from "../components/common";
-import { go, href, screenHref } from "../router";
+import { go, href, screenHref, useRoute } from "../router";
 import type { AppMapData, Screen, UIElement } from "../types";
 import { RULES, SEVERITY_COLOR, useA11y, type Severity } from "../a11y";
 import A11yIssueTable from "../components/A11yIssueTable";
+import { AppLogList, NetNote, NetStats, NetTable } from "../components/NetLog";
+import { hasCaptures, useAllSessionRows, useRunRows, type Captures } from "../captures";
 import { notesStatus, useNotes } from "../notes";
 import { keys, useStored } from "../storage";
 import { STATUS_HELP, STATUSES, screenMap, shortActivity, statusColor } from "../util";
 
 const SEVERITIES: Severity[] = ["error", "warning", "info"];
 
-type Tab = "elements" | "a11y" | "transitions" | "path" | "maestro" | "xml";
+type Tab = "elements" | "a11y" | "transitions" | "path" | "maestro" | "xml" | "network" | "logs";
 
-export default function ScreenDetail({ run, map, sid }: { run: string; map: AppMapData; sid: string }) {
+export default function ScreenDetail({ run, map, sid, caps }: { run: string; map: AppMapData; sid: string; caps?: Captures | null }) {
   const byId = useMemo(() => screenMap(map), [map]);
   const screen = byId.get(sid);
   const [prefs, setPrefs] = useStored(keys.detailPrefs, { tab: "elements" as Tab, belowFold: false });
   const setTab = (tab: Tab) => setPrefs((p) => ({ ...p, tab }));
   const setBelowFold = (belowFold: boolean) => setPrefs((p) => ({ ...p, belowFold }));
+  const route = useRoute();
+  // ?tab=network opens a tab from a link (Network · Logs, Crawl replay); the choice then sticks like a click.
+  useEffect(() => {
+    const q = route.query.get("tab");
+    if (q) setTab(q as Tab);
+  }, [sid]);
   const [hover, setHover] = useState<string | null>(null);
   const notes = useNotes(run);
   const a11y = useA11y(run, map, sid);
+  // Crawl rows and every manual session's, for this screen; each list keeps its origin (never interleaved).
+  const crawlRows = useRunRows(run, map, caps ?? null);
+  const sessionRows = useAllSessionRows(run, caps?.sessions ?? []);
+  const captured = !!caps && (hasCaptures(caps) || caps.sessions.length > 0);
+  const net = useMemo(() => [...crawlRows.net, ...sessionRows.net].filter((r) => r.screen === sid), [crawlRows, sessionRows, sid]);
+  const logs = useMemo(() => [...crawlRows.logs, ...sessionRows.logs].filter((r) => r.screen === sid), [crawlRows, sessionRows, sid]);
 
   if (!screen) return <div className="page empty">Screen {sid} isn't in this run.</div>;
 
@@ -43,6 +57,12 @@ export default function ScreenDetail({ run, map, sid }: { run: string; map: AppM
     ["path", "Path from launch"],
     ...(screen.kind === "app" ? ([["maestro", "Maestro flow"]] as [Tab, string][]) : []),
     ...(screen.hierarchy ? ([["xml", "Hierarchy XML"]] as [Tab, string][]) : []),
+    ...(captured && screen.kind === "app"
+      ? ([
+          ["network", `Network (${net.length})`],
+          ["logs", `Logs (${logs.length})`],
+        ] as [Tab, string][])
+      : []),
   ];
   const tab: Tab = tabs.some(([id]) => id === prefs.tab) ? prefs.tab : "elements";
 
@@ -181,6 +201,22 @@ export default function ScreenDetail({ run, map, sid }: { run: string; map: AppM
             ))}
           </nav>
           <div style={{ padding: ["elements", "transitions", "a11y"].includes(tab) ? 0 : 16, overflow: "auto" }}>
+            {tab === "network" && (
+              <div className="col" style={{ gap: 16 }}>
+                <div className="col" style={{ gap: 6 }}>
+                  <h2>What {screen.title} calls while it loads</h2>
+                  <NetNote />
+                </div>
+                {net.length > 0 && <NetStats rows={net} />}
+                <NetTable run={run} rows={net} empty="Nothing seen on this screen. The proxy only sees apps that use the system proxy." />
+              </div>
+            )}
+            {tab === "logs" && (
+              <div className="col" style={{ gap: 12 }}>
+                <h2>The app's own lines while {screen.title} was on screen</h2>
+                <AppLogList run={run} rows={logs} />
+              </div>
+            )}
             {tab === "elements" && <ElementTable run={run} screen={screen} byId={byId} hover={hover} setHover={setHover} />}
             {tab === "a11y" &&
               (a11y.done < a11y.total ? (

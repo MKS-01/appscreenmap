@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLive, type Live } from "./activity";
 import { runKey, useIndex, useMap } from "./api";
+import { useCaptures } from "./captures";
 import { ActivityDock, LiveChip } from "./components/Activity";
 import { ErrorBox, Loading, Logo, StatusBadge } from "./components/common";
 import { PlatformCtx, platformOf } from "./a11y";
@@ -13,6 +14,7 @@ import HowItWorks from "./views/HowItWorks";
 import Insights from "./views/Insights";
 import Logs from "./views/Logs";
 import MapView from "./views/MapView";
+import Network from "./views/Network";
 import Replay from "./views/Replay";
 import Runs from "./views/Runs";
 import ScreenDetail from "./views/ScreenDetail";
@@ -81,6 +83,9 @@ function RunShell({ route, activity }: { route: Route; activity: Activity }) {
   const run = route.run!;
   const { data, error } = useMap(run);
   const { data: index } = useIndex();
+  const [reloadN, setReloadN] = useState(0);
+  const { data: caps } = useCaptures(run, reloadN);
+  const reload = () => setReloadN((n) => n + 1);
 
   // Old links address a run by bare id (runs/<id>/); runs now live at runs/<project>/<id>/. Redirect.
   useEffect(() => {
@@ -96,14 +101,17 @@ function RunShell({ route, activity }: { route: Route; activity: Activity }) {
     ["insights", "Insights", undefined],
     ["a11y", "Accessibility", undefined],
     ["compare", "Compare", undefined],
+    // Only with `serve`: it lists the captures and starts manual sessions. One click from any run page.
+    ...(caps ? ([["network", "Network · Logs", (caps.network?.events ?? 0) + (caps.logs?.lines ?? 0) || undefined]] as [string, string, number | undefined][]) : []),
   ];
 
   let body: React.ReactNode = <Loading />;
   if (error) body = <ErrorBox error={error} />;
   else if (data) {
-    if (route.tab === "s" && route.arg) body = <ScreenDetail run={run} map={data} sid={route.arg} />;
+    if (route.tab === "s" && route.arg) body = <ScreenDetail run={run} map={data} sid={route.arg} caps={caps} />;
+    else if (tab === "network" && caps) body = <Network run={run} map={data} caps={caps} reload={reload} />;
     else if (tab === "screens") body = <Screens run={run} map={data} />;
-    else if (tab === "replay") body = <Replay run={run} map={data} />;
+    else if (tab === "replay") body = <Replay run={run} map={data} caps={caps} />;
     else if (tab === "insights") body = <Insights run={run} map={data} audit={route.arg} />;
     else if (tab === "a11y") body = <A11y run={run} map={data} view={route.arg} />;
     else if (tab === "compare") body = <Compare run={run} map={data} base={route.arg} />;

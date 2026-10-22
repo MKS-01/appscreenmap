@@ -44,6 +44,18 @@ export interface MapComment {
 }
 export type RunComments = Record<string, MapComment>;
 
+/** A Figma-style sticky note: free text on the canvas. With `screen`, x/y are an offset from that card's top-left. */
+export interface Sticky {
+  id: string;
+  x: number;
+  y: number;
+  screen?: string;
+  text: string;
+  created: string;
+  updated: string;
+}
+export type RunStickies = Record<string, Sticky>;
+
 /** A screen added in the viewer that the crawl has not found (yet): a step the flow should have. */
 export interface PlannedScreen {
   title: string;
@@ -68,6 +80,7 @@ interface Doc {
   notes: RunNotes;
   a11y: RunTriage;
   comments: RunComments;
+  stickies: RunStickies;
   edits: TreeEdits;
 }
 
@@ -82,7 +95,7 @@ interface State extends Doc {
 const SAVE_DELAY_MS = 500;
 
 class NotesStore {
-  state: State = { notes: {}, a11y: {}, comments: {}, edits: NO_EDITS, mode: "loading", saving: false };
+  state: State = { notes: {}, a11y: {}, comments: {}, stickies: {}, edits: NO_EDITS, mode: "loading", saving: false };
   private history: TreeEdits[] = []; // edits before each change, for undo (this session only)
   private listeners = new Set<() => void>();
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -116,12 +129,14 @@ class NotesStore {
       Object.keys(pending.notes ?? {}).length +
         Object.keys(pending.a11y ?? {}).length +
         Object.keys(pending.comments ?? {}).length +
+        Object.keys(pending.stickies ?? {}).length +
         (pending.edits ? editCount({ ...NO_EDITS, ...pending.edits }) : 0) >
       0;
     this.set({
       notes: mergeNewest(fromFile.notes ?? {}, pending.notes ?? {}),
       a11y: mergeNewest(fromFile.a11y ?? {}, pending.a11y ?? {}),
       comments: mergeNewest(fromFile.comments ?? {}, pending.comments ?? {}),
+      stickies: mergeNewest(fromFile.stickies ?? {}, pending.stickies ?? {}),
       edits: { ...NO_EDITS, ...(pending.edits && editCount({ ...NO_EDITS, ...pending.edits }) ? pending.edits : fromFile.edits) },
       mode: hasPending ? "browser" : "file",
     });
@@ -187,6 +202,35 @@ class NotesStore {
     this.schedule();
   }
 
+  // ── sticky notes ──
+  addSticky(n: Pick<Sticky, "x" | "y" | "screen">): string {
+    const now = new Date().toISOString();
+    const id = `k${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+    this.set({ stickies: { ...this.state.stickies, [id]: { ...n, id, text: "", created: now, updated: now } } });
+    this.schedule();
+    return id;
+  }
+
+  updateSticky(id: string, patch: Partial<Omit<Sticky, "id" | "created" | "updated">>) {
+    const cur = this.state.stickies[id];
+    if (!cur) return;
+    this.set({ stickies: { ...this.state.stickies, [id]: { ...cur, ...patch, updated: new Date().toISOString() } } });
+    this.schedule();
+  }
+
+  /** Put back a deleted sticky (undo). */
+  restoreSticky(n: Sticky) {
+    this.set({ stickies: { ...this.state.stickies, [n.id]: n } });
+    this.schedule();
+  }
+
+  deleteSticky(id: string) {
+    const next = { ...this.state.stickies };
+    delete next[id];
+    this.set({ stickies: next });
+    this.schedule();
+  }
+
   // ── tree edits ──
   edit(change: (e: TreeEdits) => TreeEdits) {
     const before = this.state.edits;
@@ -226,6 +270,7 @@ class NotesStore {
       notes: this.state.notes,
       a11y: this.state.a11y,
       comments: this.state.comments,
+      stickies: this.state.stickies,
       edits: this.state.edits,
     };
     const body = JSON.stringify({ appscreenmap_notes: 1, run: this.run, ...doc });
@@ -263,6 +308,10 @@ export function useNotes(run: string) {
       replyComment: store.replyComment.bind(store),
       deleteComment: store.deleteComment.bind(store),
       restoreComment: store.restoreComment.bind(store),
+      addSticky: store.addSticky.bind(store),
+      updateSticky: store.updateSticky.bind(store),
+      deleteSticky: store.deleteSticky.bind(store),
+      restoreSticky: store.restoreSticky.bind(store),
       edit: store.edit.bind(store),
       undoEdit: store.undoEdit.bind(store),
       canUndo: store.canUndo.bind(store),

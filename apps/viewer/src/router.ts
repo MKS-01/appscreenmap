@@ -5,7 +5,9 @@ import { useEffect, useState } from "react";
 //   #/how                      how it works
 //   #/design                   design system reference (not in the nav)
 //   #/logs?run=&open=          activity log: every command run, searchable (shown once a log exists)
-//   #/r/<run>/<tab>            map | screens | replay | insights | compare
+//   #/r/<run>/<tab>            map | screens | replay | insights | compare | network (with `serve`)
+//   #/r/<run>/network/debug    manual sessions: start, stop, read
+//   #/r/<run>/replay?step=     open Crawl replay at a step
 //   #/r/<run>/s/<screen>       screen detail
 //   #/r/<run>/compare/<base>   compare against a baseline run
 //   #/r/<run>/insights/<audit> one audit (coverage, a11y, perf, adaptive, store, platform, security, …)

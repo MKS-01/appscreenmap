@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseTrace, runFile, usePolled } from "../api";
 import { ErrorBox, Loading, ScreenLink } from "../components/common";
-import { screenHref, useRoute } from "../router";
+import { AppLogList, NetTable } from "../components/NetLog";
+import { hasCaptures, useRunRows, type Captures } from "../captures";
+import { href, screenHref, useRoute } from "../router";
 import type { AppMapData, RunEvent, Screen, TraceRow } from "../types";
 import { fmtDuration, screenMap } from "../util";
 
@@ -20,7 +22,7 @@ const EVENT_TEXT: Record<string, (e: RunEvent) => string> = {
   crash: (e) => `Crash detected: ${e.detail}`,
 };
 
-export default function Replay({ run, map }: { run: string; map: AppMapData }) {
+export default function Replay({ run, map, caps }: { run: string; map: AppMapData; caps?: Captures | null }) {
   const running = map.run.status === "running";
   const { data: trace, error } = usePolled<TraceRow[]>(runFile(run, "trace.jsonl"), parseTrace, running ? 2000 : 0, () => running);
   const route = useRoute();
@@ -33,8 +35,11 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
   const [playerH, setPlayerH] = useState<number | null>(null);
   const [q, setQ] = useState("");
   const jumped = useRef(false);
+  const captured = hasCaptures(caps);
+  const captures = useRunRows(run, map, caps ?? null);
 
-  const rows = trace ?? [];
+  // Playbook rows (`step` is their description) aren't crawl steps; the playbook shows on the run instead.
+  const rows = useMemo(() => (trace ?? []).filter((r) => typeof r.step === "number"), [trace]);
   const eventsByStep = useMemo(() => {
     const m = new Map<number, RunEvent[]>();
     for (const e of map.events) m.set(e.step, [...(m.get(e.step) ?? []), e]);
@@ -47,13 +52,17 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
     return rows.map((r) => (n += r.effect === "new_screen" && byId.get(r.to ?? "")?.kind === "app" ? 1 : 0));
   }, [rows, byId, map.screens]);
 
-  // Deep link: ?screen=s004 → the step that discovered it.
+  // Deep links: ?screen=s004 → the step that discovered it; ?step=42 → that step (from Network · Logs).
   useEffect(() => {
     const sid = route.query.get("screen");
-    if (jumped.current || !rows.length || !sid) return;
+    const step = Number(route.query.get("step"));
+    if (jumped.current || !rows.length || (!sid && !step)) return;
     jumped.current = true;
-    const at = rows.findIndex((r) => r.to === sid);
-    if (at >= 0) setI(at);
+    const at = step ? rows.findIndex((r) => r.step === step) : rows.findIndex((r) => r.to === sid);
+    if (at >= 0) {
+      setFollow(false);
+      setI(at);
+    }
   }, [rows, route.query]);
 
   useEffect(() => {
@@ -198,6 +207,8 @@ export default function Replay({ run, map }: { run: string; map: AppMapData }) {
               ))}
             </div>
           </div>
+
+          {captured && <StepCaptures run={run} step={row.step} to={to} rows={captures} />}
 
           <div className="panel panel-pad">
             <div className="row" style={{ marginBottom: 8 }}>
@@ -356,5 +367,41 @@ function Discovery({ values, at, onPick }: { values: number[]; at: number; onPic
       <path d={d} fill="none" stroke="var(--accent)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
       <line x1={x(at)} x2={x(at)} y1={0} y2={H} stroke="var(--text)" strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
     </svg>
+  );
+}
+
+/** What the app called and logged after this step's tap, on the screen it led to (rows carry the step since stage 3). */
+function StepCaptures({ run, step, to, rows }: { run: string; step: number; to?: Screen; rows: ReturnType<typeof useRunRows> }) {
+  const net = rows.net.filter((r) => r.step === step);
+  const logs = rows.logs.filter((r) => r.step === step);
+  const [tab, setTab] = useState<"network" | "logs">("network");
+  const attributed = rows.net.some((r) => r.step != null) || rows.logs.some((r) => r.step != null);
+  return (
+    <section className="panel panel-pad replay-net" aria-label="Network and logs at this step">
+      <div className="row wrap" style={{ gap: 10 }}>
+        <h3 className="grow">
+          At step {step}
+          {to ? ` · ${to.title}` : ""}
+        </h3>
+        <div className="seg" role="tablist" aria-label="Network or logs">
+          <button role="tab" aria-selected={tab === "network"} aria-pressed={tab === "network"} onClick={() => setTab("network")}>
+            Network <span className="mono faint">{net.length}</span>
+          </button>
+          <button role="tab" aria-selected={tab === "logs"} aria-pressed={tab === "logs"} onClick={() => setTab("logs")}>
+            Logs <span className="mono faint">{logs.length}</span>
+          </button>
+        </div>
+        <a className="small" href={href("r", run, "network")}>
+          All requests →
+        </a>
+      </div>
+      {!attributed ? (
+        <p className="small faint">This crawl's rows were recorded before they were tied to steps; see them all under Network · Logs.</p>
+      ) : tab === "network" ? (
+        <NetTable run={run} rows={net} empty="Nothing seen after this step." />
+      ) : (
+        <AppLogList run={run} rows={logs} empty="No app log lines after this step." />
+      )}
+    </section>
   );
 }

@@ -20,6 +20,7 @@ import { runFile } from "../api";
 import { downloadText, flowSvg, loadShots, storySvg, type Card } from "../exportSvg";
 import { ScreenLink, Thumb } from "../components/common";
 import { Icon, type IconName } from "../components/Icon";
+import { STICKY_W, StickyNote } from "../components/Sticky";
 import { discoveryTree, storyLanes, tidyLayout, type DiscoveryTree } from "../mapLayout";
 import { useNotes, type MapComment, type RunNotes, type ScreenNote, type TreeEdits } from "../notes";
 import {
@@ -264,7 +265,12 @@ function MapInner({ run, map: rawMap, focus, layout }: { run: string; map: AppMa
           label: typeof e.label === "string" ? e.label : undefined,
           discovery: !e.style?.strokeDasharray,
         }));
-        svg = flowSvg(cards, links, dir, variant, head);
+        const at = new Map(cards.map((c) => [c.id, c]));
+        const sticky = Object.values(editor.stickies).flatMap((n) => {
+          const base = n.screen ? at.get(n.screen) : { x: 0, y: 0 };
+          return base && n.text.trim() ? [{ id: n.id, x: base.x + n.x, y: base.y + n.y, w: STICKY_W, text: n.text }] : [];
+        });
+        svg = flowSvg(cards, links, dir, variant, head, sticky);
       }
       downloadText(`${map.run.id}-${name}.svg`, svg);
     } catch (e) {
@@ -497,7 +503,8 @@ function FlowCanvas({
 }) {
   const rf = useReactFlow();
   const vp = useViewport();
-  const { comments, edits } = editor;
+  const { comments, stickies, edits } = editor;
+  const [newSticky, setNewSticky] = useState<string | null>(null); // just dropped: focus its text
   const [tool, setTool] = useState<Tool>("select");
   const [showPins, setShowPins] = useState(true);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -724,8 +731,15 @@ function FlowCanvas({
     editor.edit((e) => addPlanned(e, id, parent));
     setRenaming(id); // name it straight away
   };
+  const dropSticky = (at: Point, screen?: string) => {
+    setNewSticky(editor.addSticky({ ...at, screen }));
+    setTool("select");
+  };
   const clickNode = (e: React.MouseEvent, n: Node) => {
-    if (tool === "comment") {
+    if (tool === "sticky") {
+      const f = flowAt(e);
+      dropSticky({ x: f.x - n.position.x, y: f.y - n.position.y }, n.id);
+    } else if (tool === "comment") {
       const f = flowAt(e);
       setActiveComment(null);
       setDraft({ x: f.x - n.position.x, y: f.y - n.position.y, screen: n.id });
@@ -749,7 +763,8 @@ function FlowCanvas({
     if (tool === "rename" && tree.parent.get(edge.target) === edge.source) (setRenaming(null), setRelabel(edge.target));
   };
   const clickPane = (e: React.MouseEvent) => {
-    if (tool === "comment") {
+    if (tool === "sticky") dropSticky(flowAt(e));
+    else if (tool === "comment") {
       setActiveComment(null);
       setDraft(flowAt(e));
     } else if (tool === "add") addScreen(null);
@@ -884,6 +899,26 @@ function FlowCanvas({
         />
       </ReactFlow>
       <div className="cm-layer">
+        {Object.values(stickies).map((n) => {
+          const p = pinPoint(n, nodePos);
+          if (!p) return null;
+          return (
+            <StickyNote
+              key={n.id}
+              note={n}
+              at={toCanvas(vp, p)}
+              zoom={vp.zoom}
+              autoFocus={newSticky === n.id}
+              onChange={(text) => editor.updateSticky(n.id, { text })}
+              onMoveEnd={(dx, dy) => editor.updateSticky(n.id, { x: n.x + dx, y: n.y + dy })}
+              onDelete={() => {
+                editor.deleteSticky(n.id);
+                say("Note deleted", () => editor.restoreSticky(n));
+              }}
+              onDiscard={() => editor.deleteSticky(n.id)}
+            />
+          );
+        })}
         {showPins &&
           pinned.map((c, i) => {
             const p = pinPoint(c, nodePos);

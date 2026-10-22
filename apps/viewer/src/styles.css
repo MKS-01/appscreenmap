@@ -4917,3 +4917,262 @@ a.bars-label,
     opacity: 0;
   }
 }
+
+/* ── network · logs (variant A: screen tabs, run view, replay panel) ───── */
+.kicker-plain {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.dim {
+  color: var(--dim);
+}
+.tone-warn {
+  color: var(--warn);
+}
+.tone-bad {
+  color: var(--bad);
+}
+.net-note {
+  margin: 0;
+  max-width: 72ch;
+}
+.net-table .tbl td {
+  vertical-align: middle;
+}
+.net-status {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+.net-status.warn {
+  color: var(--warn);
+}
+.net-status.bad {
+  color: var(--bad);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+}
+.net-req {
+  min-width: 260px;
+  overflow-wrap: anywhere;
+}
+.net-row-btn {
+  all: unset;
+  cursor: pointer;
+  color: var(--text);
+  border-radius: var(--radius-sm);
+}
+.net-row-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.net-method {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--faint);
+  margin-right: var(--space-1);
+}
+.net-flag {
+  margin-left: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--faint);
+  white-space: nowrap;
+}
+.net-t {
+  display: block;
+  margin-top: 2px;
+}
+.net-group td {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--dim);
+  background: var(--panel-2);
+}
+.net-live {
+  color: var(--good);
+}
+.net-time {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.net-time > .mono {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.net-time {
+  min-width: 160px;
+}
+.net-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+  max-width: calc(100% - 64px);
+}
+/* phases in greys, waiting on the server the lightest (it dominates most often); colour stays for status */
+.ph-wait {
+  background: var(--text);
+}
+.ph-all {
+  background: var(--dim);
+}
+.ph-connect {
+  background: var(--line-hi);
+}
+.ph-tls {
+  background: var(--faint);
+}
+.ph-send,
+.ph-receive {
+  background: var(--dim);
+}
+.net-bar > span {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+}
+.ph-all {
+  flex: 1;
+}
+.net-detail-row > td {
+  background: var(--panel-2);
+  padding: var(--space-4) var(--space-5, 20px);
+}
+.net-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-6);
+}
+.net-phases {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 120px 64px minmax(0, 1fr);
+  gap: 6px var(--space-3);
+  align-items: center;
+  font-size: var(--text-base);
+}
+.net-phases dt {
+  color: var(--dim);
+}
+.net-phases dd {
+  margin: 0;
+}
+.net-phase-bar {
+  display: block;
+  height: 6px;
+  border-radius: 2px;
+  min-width: 2px;
+}
+.net-facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px var(--space-4);
+  align-content: start;
+  font-size: var(--text-base);
+}
+.net-facts dt {
+  color: var(--faint);
+}
+.net-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.host-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 6px 10px;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+.host-chip .mono {
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+.host-chip.on {
+  border-color: var(--accent-28);
+  background: var(--accent-08);
+}
+.host-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .host-chip:hover {
+    border-color: var(--faint);
+  }
+}
+.host-chip:active {
+  transform: scale(0.97);
+  transition: transform var(--dur-press, 120ms) var(--ease-out);
+}
+.app-log {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  padding: var(--space-2) 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  max-height: 520px;
+  overflow: auto;
+}
+.app-log-line {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+.app-log-lvl {
+  width: 6ch;
+  color: var(--dim);
+}
+.app-log-line.warn .app-log-lvl,
+.app-log-line.error .app-log-lvl {
+  color: inherit;
+}
+.app-log-tag {
+  flex-shrink: 0;
+  width: 18ch;
+  color: var(--dim);
+}
+.app-log-group {
+  padding: var(--space-2) var(--space-4) var(--space-1);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.app-log-screen {
+  margin-left: var(--space-2);
+  font-size: var(--text-xs);
+}
+@media (max-width: 640px) {
+  .app-log-tag {
+    width: 10ch;
+  }
+}
+.debug-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+.replay-net {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

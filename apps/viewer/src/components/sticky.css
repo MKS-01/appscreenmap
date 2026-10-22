@@ -1,0 +1,77 @@
+/* Sticky notes on the map canvas: a flat Ghost surface (hairline, 8px radius, no resting shadow, no fill colour:
+   colour is kept for meaning). Only the drag lifts it, like a dragged map node. */
+.sticky {
+  position: absolute;
+  transform-origin: 0 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line-hi);
+  border-radius: var(--radius-md);
+  background: var(--panel-2);
+  box-shadow: var(--shadow);
+}
+.sticky:focus-within {
+  border-color: var(--accent);
+}
+.sticky.dragging {
+  box-shadow: var(--shadow-lg);
+  z-index: 8;
+}
+.sticky-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-2) var(--space-1) 10px;
+  cursor: grab;
+  touch-action: none;
+  border-bottom: 1px solid var(--line);
+}
+.sticky.dragging .sticky-bar {
+  cursor: grabbing;
+}
+.sticky-kicker {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.sticky-x {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-fast) ease;
+}
+.sticky:hover .sticky-x,
+.sticky:focus-within .sticky-x {
+  opacity: 1;
+}
+.sticky-x:hover {
+  color: var(--bad);
+}
+.sticky-text {
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-2) 10px 10px;
+  border: 0;
+  outline: 0;
+  resize: none;
+  overflow: hidden;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-base);
+  line-height: var(--leading-snug);
+}
+.sticky-text::placeholder {
+  color: var(--faint);
+}
+.map-canvas.tool-sticky .react-flow__pane,
+.map-canvas.tool-sticky .react-flow__node {
+  cursor: crosshair;
+}

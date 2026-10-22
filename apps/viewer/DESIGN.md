@@ -90,6 +90,10 @@ tabular-nums` for stats). Scale: display (`.how-title`, `.hero-title`) → `h1` 
 | Live chip | `LiveChip`, `.live-chip` (`components/Activity.tsx`) | Top bar, only while a command runs or just ended: status word + "crawl · AI agent". Toggles the drawer (`aria-pressed`); never opens it by itself |
 | Activity drawer | `ActivityDock`, `.dock` | Bottom of the shell, outside `.main` (so it shrinks the page, never covers it). Live tail of the running command; hidden when idle, on the Logs page, and after a reload with nothing running |
 | Log lines | `LogLines`, `.log-lines`, `.log-line.warn/.error/.match` | Mono, time in the gutter, WARN/ERROR as a word; sticks to the bottom while following unless scrolled up; a search result opens at its first match |
+| Network table | `NetTable` (`components/NetLog.tsx`), `.net-*` | STATUS · REQUEST · SIZE · TIME (+ SCREEN, STEP outside a screen page), grouped by origin (scenario or manual session), never interleaved. FAILED in `--bad` as a word, http:// and `● CLEARTEXT` in `--warn`; a failed tunnel is one row. Phase bar in greys (status keeps the colour), only when the row has `timing`. A row opens its detail (query keys, content type, "Body: not stored, by design") |
+| Hosts strip | `HostStrip`, `.host-chip` | One chip per host with flags (HTTP, N FAILED, screens); a pressed chip filters the table (`aria-pressed`) |
+| App log | `AppLogList`, `.app-log` | The app's own lines (logcat), `.log-line` rows: time from the group's first line, level word, tag, message; search + "Warnings and errors" `.seg` |
+| Network · Logs | `views/Network.tsx` | Run tab, only with `serve` (`/api/captures`). Replay mode (crawl rows) and Debug mode (Start debugging → Stop, one `.btn.primary`, sessions table). Crawl replay gets a per-step panel; the screen page gets Network / Logs tabs (`?tab=network`) |
 | Device frame | `.ins-phone` | A crawl screenshot at its real aspect ratio, 1px `--line-hi` frame, 3–4px inset |
 
 Reuse before inventing. If a new pattern appears twice, add it here and to `#/design`.
