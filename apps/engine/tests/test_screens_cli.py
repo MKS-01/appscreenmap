@@ -160,3 +160,19 @@ def test_bad_types_and_paths_are_a_clean_400_or_404(server):
     assert call(port, "PATCH", "/api/runs/../../canvas/screens/s001", b"{}")[0] == 404
     assert call(port, "POST", "/api/runs/../../canvas/screens", body, ctype)[0] == 404
     assert call(port, "PATCH", path, json.dumps({"title": "Still fine"}).encode())[0] == 200
+
+
+def test_only_what_changed_is_rewritten(canvas, tmp_path, monkeypatch):
+    """The HTML report embeds every screenshot (about a second on a big canvas): a screen with no hierarchy leaves it."""
+    from appscreenmap.engine.cli import screens
+
+    calls = []
+    for name in ("export_run", "audit_run", "write_reports"):
+        monkeypatch.setattr(screens, name, lambda *_a, _n=name: calls.append(_n))
+    img = tmp_path / "s.png"
+    img.write_bytes(png_bytes())
+    main(["add-screen", str(canvas), "--image", str(img), "--title", "Plain"])
+    assert calls == ["export_run", "audit_run"]
+    calls.clear()
+    main(["add-screen", str(canvas), "--image", str(img), "--title", "Batched", "--no-refresh"])
+    assert calls == []

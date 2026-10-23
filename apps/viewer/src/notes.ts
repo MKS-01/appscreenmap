@@ -98,6 +98,7 @@ interface State extends Doc {
 }
 
 const SAVE_DELAY_MS = 500;
+const UNDO_STEPS = 100;
 
 class NotesStore {
   state: State = { notes: {}, a11y: {}, comments: {}, stickies: {}, edits: NO_EDITS, layout: {}, tree_order: [], mode: "loading", saving: false };
@@ -244,6 +245,7 @@ class NotesStore {
     const after = change(structuredClone(before));
     if (JSON.stringify(after) === JSON.stringify(before)) return;
     this.history.push(before);
+    if (this.history.length > UNDO_STEPS) this.history.shift(); // a long session must not keep every snapshot
     this.set({ edits: after });
     this.schedule();
   }

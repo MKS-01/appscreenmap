@@ -26,6 +26,8 @@ from appscreenmap.security import network
 
 from . import screens
 
+_UPLOADS = threading.BoundedSemaphore(2)  # screens being uploaded at once
+
 
 def _web_dist() -> Path | None:
     candidates = [
@@ -311,6 +313,10 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             or not 0 < length <= manual.MAX_IMAGE_BYTES + 3_000_000
         ):
             return self.send_error(415 if not ctype.startswith("multipart/form-data") else 413)
+        if not _UPLOADS.acquire(
+            timeout=20
+        ):  # each upload is read whole, then parsed: a few copies of up to 23 MB
+            return self._json({"error": "busy, try again"}, 503)
         try:
             f = screens.parse_multipart(ctype, self.rfile.read(length))
             text = lambda k: f[k].decode() if f.get(k) else None
@@ -325,6 +331,8 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             )
         except (ValueError, TypeError, AttributeError) as e:  # ManualError is a ValueError; so is bad UTF-8
             return self._json({"error": str(e)}, 400)
+        finally:
+            _UPLOADS.release()
         self._json(row, 201)
 
     def do_PATCH(self):

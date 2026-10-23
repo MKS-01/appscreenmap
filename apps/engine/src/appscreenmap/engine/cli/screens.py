@@ -16,21 +16,28 @@ from appscreenmap.core.runs import resolve_run
 from appscreenmap.exporters.export import export_run
 
 
-def refresh(run_dir: Path) -> None:
+def refresh(run_dir: Path, reports: bool = True) -> None:
+    """Flows and the a11y findings are cheap (~20 ms); the HTML report embeds every screenshot (~1 s on 200 screens),
+    so it is rewritten only when what it shows may have changed."""
     export_run(run_dir)
     audit_run(run_dir)
-    write_reports(run_dir)
+    if reports:
+        write_reports(run_dir)
 
 
-def file_screen(run_dir: Path, image: bytes, title: str, **kw) -> dict:
+def file_screen(run_dir: Path, image: bytes, title: str, *, refresh_derived: bool = True, **kw) -> dict:
     row = manual.add_screen(run_dir, image, title, **kw)
-    refresh(run_dir)
+    if refresh_derived:
+        refresh(
+            run_dir, reports=bool(kw.get("hierarchy"))
+        )  # no hierarchy: no findings, nothing new in the report
     return row
 
 
-def fix_screen(run_dir: Path, sid: str, **kw) -> dict:
+def fix_screen(run_dir: Path, sid: str, *, refresh_derived: bool = True, **kw) -> dict:
     row = manual.update_screen(run_dir, sid, **kw)
-    refresh(run_dir)
+    if refresh_derived:
+        refresh(run_dir, reports=any(kw.get(k) for k in ("image", "hierarchy", "captures")))
     return row
 
 
@@ -68,6 +75,7 @@ def cmd_add(args) -> int:
             via=args.via,
             scenario=args.scenario,
             new_scenario=args.new_scenario,
+            refresh_derived=not args.no_refresh,
             hierarchy=Path(args.hierarchy).read_text(encoding="utf-8") if args.hierarchy else None,
         )
     except (manual.ManualError, OSError) as e:
@@ -91,6 +99,7 @@ def cmd_edit(args) -> int:
             parent=args.parent,
             via=args.via,
             scenario=args.scenario,
+            refresh_derived=not args.no_refresh,
             image=Path(args.image).read_bytes() if args.image else None,
             hierarchy=Path(args.hierarchy).read_text(encoding="utf-8") if args.hierarchy else None,
             captures={n: Path(f).read_bytes() for n, f in (c.split("=", 1) for c in args.capture)},
@@ -118,6 +127,11 @@ def register(sub) -> None:
     a.add_argument(
         "--new-scenario", metavar="LABEL", help="start a tree of its own under this scenario name (no --from)"
     )
+    a.add_argument(
+        "--no-refresh",
+        action="store_true",
+        help="skip rewriting flows and reports (for a batch: leave it off on the last)",
+    )
     a.add_argument("--out", default="runs", help="runs directory (default: ./runs)")
     a.set_defaults(fn=cmd_add)
     e = sub.add_parser("edit-screen", help="fix a manually added screen: title, parent link or scenario")
@@ -136,5 +150,6 @@ def register(sub) -> None:
     e.add_argument("--from", dest="parent", metavar="SCREEN", help="move it under another screen")
     e.add_argument("--via", help="relabel the link")
     e.add_argument("--scenario")
+    e.add_argument("--no-refresh", action="store_true", help="skip rewriting flows and reports (for a batch)")
     e.add_argument("--out", default="runs", help="runs directory (default: ./runs)")
     e.set_defaults(fn=cmd_edit)
