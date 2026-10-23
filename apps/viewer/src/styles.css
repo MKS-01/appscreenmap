@@ -590,6 +590,7 @@ pre.code {
 }
 /* a screen in a device frame with its caption underneath: no card around it */
 .shot-card {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1402,7 +1403,7 @@ pre.code {
     padding: 16px 12px 48px;
   }
   .gallery {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 1fr alone can't shrink below a long title, so cards spilled past the page */
   }
 }
 .side-thumb,
@@ -4221,27 +4222,27 @@ a.bars-label,
 }
 .tree-frame-tag {
   position: absolute;
-  left: 8px;
+  left: var(--space-2);
   bottom: 100%;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-1);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 3px 10px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   font: var(--text-xs) var(--font-mono);
   letter-spacing: var(--tracking-label);
   color: var(--accent);
   background: var(--panel);
   border: 1px solid var(--accent);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   pointer-events: none;
   transform-origin: left bottom; /* scaled by 1/zoom so it stays readable when the map is zoomed out */
 }
 .edit-hint-order {
   display: inline-flex;
-  gap: 4px;
-  margin-left: 10px;
+  gap: var(--space-1);
+  margin-left: var(--space-3);
   vertical-align: middle;
 }
 .flip-x {

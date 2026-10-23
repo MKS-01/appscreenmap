@@ -266,7 +266,9 @@ run-level `network` or `logs`.
 the image goes to `screens/<id>.png` (+ thumb), the row gets `source: "manual"`, and with a parent one transition is
 added. `edit-screen` / `PATCH /api/runs/<canvas>/screens/<id>` changes a manual screen's title, parent link or
 scenario, rewriting `map.json`, `titles.json` and `notes.json` (`edits.titles`) together; crawled screens are never
-edited. Both then re-run the Maestro export and the accessibility audit. Ids continue the canvas's own; nothing existing
+edited. Both then re-run the Maestro export and the accessibility audit. Over HTTP, `POST` takes the image, title, parent, via, scenario
+and hierarchy and `PATCH` takes title, parent, via and scenario; replacing an image or hierarchy, extra captures and
+`--new-scenario` are CLI-only for now. Ids continue the canvas's own; nothing existing
 is renamed.
 
 **Comments and edits** live in `notes.json` next to `map.json` (`appscreenmap_notes: 1`, validated by `notes.py`), never in
