@@ -40,27 +40,27 @@ def test_every_check_names_a_ready_rule():
     assert {c[0] for c in CODE_CHECKS} <= ready
 
 
-@pytest.mark.parametrize(
-    ("data", "key", "severity"),
-    [
-        (dex("addJavascriptInterface"), "addjavascriptinterface", None),
-        (dex("ALLOW_ALL_HOSTNAME_VERIFIER"), "allow-all-hostname-verifier", None),
-        (b"Lorg/apache/http/conn/ssl/AllowAllHostnameVerifier;", "allow-all-hostname-verifier", None),
-        (dex("DES"), "des", "warning"),
-        (dex("DES/CBC/PKCS5Padding"), "des", "warning"),
-        (dex("RC4"), "rc4", "warning"),
-        (dex("MD5"), "md5", "info"),
-        (dex("SHA-1"), "sha-1", "info"),
-        (dex("sendStickyBroadcast"), "sendstickybroadcast", None),
-        (dex("setAllowFileAccessFromFileURLs"), "setallowfileaccessfromfileurls", None),
-        (dex("setAllowFileAccess"), "setallowfileaccess", "info"),
-        (b"Ldalvik/system/DexClassLoader;", "dexclassloader", None),
-    ],
-)
-def test_each_code_check_fires_on_its_string(data, key, severity):
-    found = scan_dex_bytes(data, "classes.dex")
-    assert keys(found) == [key]
-    assert found[0].get("severity") == severity and "classes.dex" in found[0]["detail"]
+CODE_CASES = [
+    (dex("addJavascriptInterface"), "addjavascriptinterface", None),
+    (dex("ALLOW_ALL_HOSTNAME_VERIFIER"), "allow-all-hostname-verifier", None),
+    (b"Lorg/apache/http/conn/ssl/AllowAllHostnameVerifier;", "allow-all-hostname-verifier", None),
+    (dex("DES"), "des", "warning"),
+    (dex("DES/CBC/PKCS5Padding"), "des", "warning"),
+    (dex("RC4"), "rc4", "warning"),
+    (dex("MD5"), "md5", "info"),
+    (dex("SHA-1"), "sha-1", "info"),
+    (dex("sendStickyBroadcast"), "sendstickybroadcast", None),
+    (dex("setAllowFileAccessFromFileURLs"), "setallowfileaccessfromfileurls", None),
+    (dex("setAllowFileAccess"), "setallowfileaccess", "info"),
+    (b"Ldalvik/system/DexClassLoader;", "dexclassloader", None),
+]
+
+
+def test_each_code_check_fires_on_its_string():
+    for data, key, severity in CODE_CASES:
+        found = scan_dex_bytes(data, "classes.dex")
+        assert keys(found) == [key], key
+        assert found[0].get("severity") == severity and "classes.dex" in found[0]["detail"], key
 
 
 def test_near_misses_are_not_findings():

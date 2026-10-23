@@ -80,16 +80,16 @@ def test_catalogue_loads_and_every_language_is_covered_by_the_tests():
     assert all(len(lang.blocked) >= 8 for lang in locales.load_languages())
 
 
-@pytest.mark.parametrize(("code", "labels"), sorted(DESTRUCTIVE.items()))
-def test_destructive_labels_are_blocked_in_every_language(code, labels):
+def test_destructive_labels_are_blocked_in_every_language():
     cfg = CrawlConfig()
-    assert [x for x in labels if not cfg.is_blocked(x)] == []
+    missed = {code: [x for x in labels if not cfg.is_blocked(x)] for code, labels in DESTRUCTIVE.items()}
+    assert {code: m for code, m in missed.items() if m} == {}
 
 
-@pytest.mark.parametrize(("code", "labels"), sorted(BENIGN.items()))
-def test_everyday_labels_stay_tappable_in_every_language(code, labels):
+def test_everyday_labels_stay_tappable_in_every_language():
     cfg = CrawlConfig()
-    assert [x for x in labels if cfg.is_blocked(x)] == []
+    blocked = {code: [x for x in labels if cfg.is_blocked(x)] for code, labels in BENIGN.items()}
+    assert {code: b for code, b in blocked.items() if b} == {}
 
 
 def test_english_and_user_rules_still_apply_and_languages_can_be_limited():
@@ -117,13 +117,10 @@ def test_locale_values_match_the_english_defaults():
     assert set(LOCALE_INPUT_VALUES.values()) <= set(DEFAULT_INPUTS.values())
 
 
-@pytest.mark.parametrize(
-    "tag", ["en", "en-GB", "fr-CA", "pt-BR", "zh-CN", "zh-TW", "zh-Hant", "ja", "ar", "iw", ""]
-)
-def test_known_languages_are_covered(tag):
-    assert (
-        locales.covers(tag) or tag == "iw"
-    )  # iw is Android's old tag for Hebrew: not matched, documented below
+def test_known_languages_are_covered():
+    tags = ["en", "en-GB", "fr-CA", "pt-BR", "zh-CN", "zh-TW", "zh-Hant", "ja", "ar", "iw", ""]
+    # iw is Android's old tag for Hebrew: not matched, documented below
+    assert [t for t in tags if not (locales.covers(t) or t == "iw")] == []
 
 
 def test_languages_without_words_are_not_covered():
@@ -131,19 +128,14 @@ def test_languages_without_words_are_not_covered():
     assert locales.covers("en-XA")  # the English pseudo-locale
 
 
-@pytest.mark.parametrize(
-    "rid",
-    ["app:id/btn_logout", "deleteAccount", "log_out_button", "app:id/signOut", "buy_now", "pay_now_btn"],
-)
-def test_resource_ids_block_whatever_the_screen_language(rid):
-    assert CrawlConfig().is_blocked_id(rid)
+def test_resource_ids_block_whatever_the_screen_language():
+    ids = ["app:id/btn_logout", "deleteAccount", "log_out_button", "app:id/signOut", "buy_now", "pay_now_btn"]
+    assert [r for r in ids if not CrawlConfig().is_blocked_id(r)] == []
 
 
-@pytest.mark.parametrize(
-    "rid", ["call_to_action", "report_list", "unsubscribe", "payment_methods", "ContinueButton", ""]
-)
-def test_ordinary_resource_ids_are_not_blocked(rid):
-    assert not CrawlConfig().is_blocked_id(rid)
+def test_ordinary_resource_ids_are_not_blocked():
+    ids = ["call_to_action", "report_list", "unsubscribe", "payment_methods", "ContinueButton", ""]
+    assert [r for r in ids if CrawlConfig().is_blocked_id(r)] == []
 
 
 def test_bad_word_lists_are_rejected(tmp_path):

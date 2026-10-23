@@ -81,24 +81,21 @@ def test_a_jpeg_is_stored_as_png_and_ids_keep_counting(tmp_path):
     assert read(d)["transitions"][-1]["id"] == "t1"  # no parent, no link
 
 
-@pytest.mark.parametrize(
-    "kw",
-    [
+def test_bad_input_raises_and_writes_nothing(tmp_path):
+    d = canvas(tmp_path)
+    before = (d / "map.json").read_text()
+    for kw in (
         {"image": b"not an image"},
         {"title": "  "},
         {"parent": "s099"},
         {"via": "Help"},  # a link label without a parent
         {"scenario": "sc9"},
         {"hierarchy": "<<<"},
-    ],
-)
-def test_bad_input_raises_and_writes_nothing(tmp_path, kw):
-    d = canvas(tmp_path)
-    before = (d / "map.json").read_text()
-    args = {"image": png(), "title": "Support", **kw}
-    with pytest.raises(manual.ManualError):
-        manual.add_screen(d, args.pop("image"), args.pop("title"), **args)
-    assert (d / "map.json").read_text() == before and not list((d / "screens").iterdir())
+    ):
+        args = {"image": png(), "title": "Support", **kw}
+        with pytest.raises(manual.ManualError):
+            manual.add_screen(d, args.pop("image"), args.pop("title"), **args)
+        assert (d / "map.json").read_text() == before and not list((d / "screens").iterdir()), kw
 
 
 def test_editing_keeps_map_titles_and_notes_in_step(tmp_path):
@@ -198,32 +195,20 @@ def snapshot(d):
     }
 
 
-@pytest.mark.parametrize(
-    "kw",
-    [
-        {"image": "IMG", "parent": "s099"},
-        {"image": "IMG", "scenario": "nope"},
-        {"image": "IMG", "captures": {"BAD name": "IMG"}},
-        {"hierarchy": XML, "parent": "s099"},
-    ],
-)
-def test_a_refused_edit_changes_nothing(tmp_path, kw):
+def test_a_refused_edit_changes_nothing(tmp_path):
     d = canvas(tmp_path)
     manual.add_screen(d, png(), "Tab", parent="s001")
     before = snapshot(d)
-    kw = {
-        k: (
-            png(size=(30, 30))
-            if v == "IMG"
-            else {n: png() if i == "IMG" else i for n, i in v.items()}
-            if k == "captures"
-            else v
-        )
-        for k, v in kw.items()
-    }
-    with pytest.raises(manual.ManualError):
-        manual.update_screen(d, "s002", **kw)
-    assert snapshot(d) == before
+    small = png(size=(30, 30))
+    for kw in (
+        {"image": small, "parent": "s099"},
+        {"image": small, "scenario": "nope"},
+        {"image": small, "captures": {"BAD name": png()}},
+        {"hierarchy": XML, "parent": "s099"},
+    ):
+        with pytest.raises(manual.ManualError):
+            manual.update_screen(d, "s002", **kw)
+        assert snapshot(d) == before, list(kw)
 
 
 def test_a_screen_cannot_go_under_itself_or_its_children(tmp_path):
@@ -241,21 +226,14 @@ def test_a_screen_cannot_go_under_itself_or_its_children(tmp_path):
         manual.update_screen(d, c, parent="x:other")
 
 
-@pytest.mark.parametrize(
-    "kw",
-    [
-        {"scenario": ["a"]},
-        {"via": 5, "parent": "s001"},
-        {"title": 7},
-    ],
-)
-def test_non_text_fields_are_a_clean_error(tmp_path, kw):
+def test_non_text_fields_are_a_clean_error(tmp_path):
     d = canvas(tmp_path)
     manual.add_screen(d, png(), "Tab")
-    with pytest.raises(manual.ManualError):
-        manual.update_screen(d, "s002", **kw)
-    with pytest.raises(manual.ManualError):
-        manual.add_screen(d, png(), kw.get("title", "X"), **{k: v for k, v in kw.items() if k != "title"})
+    for kw in ({"scenario": ["a"]}, {"via": 5, "parent": "s001"}, {"title": 7}):
+        with pytest.raises(manual.ManualError):
+            manual.update_screen(d, "s002", **kw)
+        with pytest.raises(manual.ManualError):
+            manual.add_screen(d, png(), kw.get("title", "X"), **{k: v for k, v in kw.items() if k != "title"})
 
 
 def test_a_decompression_bomb_is_refused_not_a_crash(tmp_path):

@@ -7,8 +7,6 @@ import re
 import tomllib
 from pathlib import Path
 
-import pytest
-
 from appscreenmap.testkit.helpers import REPO
 
 PREFIX = "appscreenmap-"
@@ -39,16 +37,19 @@ def imported_areas(path: Path, src: Path):
                 yield node.lineno, parts[1] if len(parts) > 1 else "(namespace root)"
 
 
-@pytest.mark.parametrize("pkg", PACKAGES, ids=lambda p: p.name)
-def test_package_imports_only_declared_dependencies(pkg):
-    area, allowed = allowed_areas(pkg)
-    src = pkg / "src"
-    assert (src / "appscreenmap" / area).is_dir(), f"{pkg.name}: code belongs in src/appscreenmap/{area}/"
-    assert not (src / "appscreenmap" / "__init__.py").exists(), "appscreenmap is a namespace package"
-    bad = [
-        f"{py.relative_to(REPO)}:{line} imports appscreenmap.{other}"
-        for py in sorted(src.rglob("*.py"))
-        for line, other in imported_areas(py, src)
-        if other not in allowed
-    ]
-    assert not bad, f"add the dependency to {pkg.name}/pyproject.toml or move the code:\n" + "\n".join(bad)
+def test_package_imports_only_declared_dependencies():
+    problems = []
+    for pkg in PACKAGES:
+        area, allowed = allowed_areas(pkg)
+        src = pkg / "src"
+        if not (src / "appscreenmap" / area).is_dir():
+            problems.append(f"{pkg.name}: code belongs in src/appscreenmap/{area}/")
+        if (src / "appscreenmap" / "__init__.py").exists():
+            problems.append(f"{pkg.name}: appscreenmap is a namespace package")
+        problems += [
+            f"{py.relative_to(REPO)}:{line} imports appscreenmap.{other}: add it to {pkg.name}/pyproject.toml or move the code"
+            for py in sorted(src.rglob("*.py"))
+            for line, other in imported_areas(py, src)
+            if other not in allowed
+        ]
+    assert not problems, "\n".join(problems)

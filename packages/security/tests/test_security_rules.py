@@ -41,27 +41,27 @@ def test_every_rule_is_in_the_skills_rules_page():
     assert not missing, f"add to {DOC.relative_to(ROOT)}: {missing}"
 
 
-@pytest.mark.parametrize(
-    ("patch", "message"),
-    [
-        ({"severity": "critical"}, "severity"),
-        ({"platform": "windows"}, "platform"),
-        ({"category": "nope"}, "category"),
-        ({"refs": []}, "official reference"),
-        ({"refs": [{"title": "Blog", "url": "https://example.com/post", "publisher": "x"}]}, "official"),
-        (
-            {"refs": [{"title": "Plain", "url": "http://developer.android.com/x", "publisher": "x"}]},
-            "official",
-        ),
-    ],
-)
-def test_a_bad_rule_is_rejected(tmp_path, patch, message):
-    data = json.loads(PATH.read_text())
-    data["rules"][0].update(patch)
-    f = tmp_path / "rules.json"
-    f.write_text(json.dumps(data))
-    with pytest.raises(RuleError, match=message):
-        load_rules(f)
+BAD_RULES = [
+    ({"severity": "critical"}, "severity"),
+    ({"platform": "windows"}, "platform"),
+    ({"category": "nope"}, "category"),
+    ({"refs": []}, "official reference"),
+    ({"refs": [{"title": "Blog", "url": "https://example.com/post", "publisher": "x"}]}, "official"),
+    (
+        {"refs": [{"title": "Plain", "url": "http://developer.android.com/x", "publisher": "x"}]},
+        "official",
+    ),
+]
+
+
+def test_a_bad_rule_is_rejected(tmp_path):
+    for patch, message in BAD_RULES:
+        data = json.loads(PATH.read_text())
+        data["rules"][0].update(patch)
+        f = tmp_path / "rules.json"
+        f.write_text(json.dumps(data))
+        with pytest.raises(RuleError, match=message):
+            load_rules(f)
 
 
 def test_duplicate_ids_are_rejected(tmp_path):

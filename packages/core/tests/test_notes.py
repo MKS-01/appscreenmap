@@ -44,9 +44,9 @@ def test_save_rejects_oversized(run_dir):
         notes.save(run_dir, b" " * (notes.MAX_BYTES + 1))
 
 
-@pytest.mark.parametrize("run_id", ["..", "../etc", "a/b", "", ".hidden", "missing-run"])
-def test_run_dir_for_rejects_unsafe_or_unknown(tmp_path, run_dir, run_id):
-    assert notes.run_dir_for(tmp_path, run_id) is None
+def test_run_dir_for_rejects_unsafe_or_unknown(tmp_path, run_dir):
+    ids = ["..", "../etc", "a/b", "", ".hidden", "missing-run"]
+    assert [i for i in ids if notes.run_dir_for(tmp_path, i) is not None] == []
 
 
 def test_run_dir_for_accepts_existing_run(tmp_path, run_dir):
@@ -176,9 +176,8 @@ def test_layout_and_tree_order_roundtrip_and_default(run_dir):
     assert loaded["layout"] == {"s001": {"x": 12.0, "y": -3.5}} and loaded["tree_order"] == ["s020", "s001"]
 
 
-@pytest.mark.parametrize(
-    "bad",
-    [
+def test_bad_layout_or_tree_order_is_refused():
+    bad_docs = [
         {"layout": []},
         {"layout": {"s001": {"x": "1", "y": 2}}},
         {"layout": {"s001": {"x": 1}}},
@@ -186,8 +185,7 @@ def test_layout_and_tree_order_roundtrip_and_default(run_dir):
         {"layout": {"s001": {"x": float("nan"), "y": 0}}},
         {"layout": {f"s{i}": {"x": 0, "y": 0} for i in range(notes.MAX_LAYOUT + 1)}},
         {"tree_order": "s001"},
-    ],
-)
-def test_bad_layout_or_tree_order_is_refused(bad):
-    with pytest.raises(notes.NotesError):
-        notes.validate({"appscreenmap_notes": 1, "notes": {}, **bad})
+    ]
+    for bad in bad_docs:
+        with pytest.raises(notes.NotesError):
+            notes.validate({"appscreenmap_notes": 1, "notes": {}, **bad})
