@@ -11,7 +11,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 - Python is a uv workspace (the root `pyproject.toml` is virtual). Everything imports as `appscreenmap.*` (a namespace
   package: never add `src/appscreenmap/__init__.py`). A package imports only what its `pyproject.toml` depends on
   (`packages/testkit/tests/test_layers.py` checks).
-  - `packages/core/`: `appscreenmap.core`: map.json model, analyzer, config, runs, notes, media; imports nothing else
+  - `packages/core/`: `appscreenmap.core`: map.json model, analyzer, config, runs, notes, media, manual (screens filed by hand); imports nothing else
   - `packages/drivers/`: Android (adb, dumpsys, device facts, apkinfo, logcat) and iOS Simulator; stdlib only
   - `packages/crawler/`: explorer, replay, load timing
   - `packages/a11y/`: WCAG checks (`checks.py`), criteria (`wcag.py`), HTML/MD report
@@ -23,7 +23,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
     `packages/exporters/`: Maestro, Mermaid
   - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`;
     `appscreenmap.testkit.fakedevice`: a scriptable fake app/driver)
-  - `apps/engine/`: `appscreenmap.engine`: the CLI (`engine/cli/`, one module per command group) and the MCP
+  - `apps/engine/`: `appscreenmap.engine`: the CLI (`engine/cli/`, one module per command group; `screens.py`: `add-screen` / `edit-screen`) and the MCP
     server (`engine/mcp_server.py`), on top of every package
   - tests live next to their code (`<package>/tests/`), on synthetic hierarchies; no device needed
 - `apps/cli/`: the `appscreenmap` binary (Bun + Ink): terminal home that runs the dashboard (the engine's `serve`),
@@ -57,6 +57,14 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
   folder; notes, comments and tree edits kept) and removes the run's own folder, so no extra run is left behind. The
   app's first run becomes its canvas. Start a separate run or a new canvas only when the developer asks for one. Ask
   before `--clear-data` (it logs the emulator out) and before deleting a canvas.
+- One finalised sign-up flow per app and path (`runs/<project>/maestro/<path>.yaml`): fix that file and overwrite it, never
+  copy its steps into a TOML playbook or keep `-v2` copies. Never `hideKeyboard` on Android (it presses Back); a new
+  account email every run.
+- English by default in every tree. For an app that shows another language, every screen title and every link label
+  on the canvas is English: crawled screens get English display titles in the canvas's `titles.json` (the crawler's
+  own `map.json` title stays), manual screens and links are filed with English titles and `--via` labels, and a
+  link labelled with a raw element id gets a readable name. Do this in the same pass as the capture, not when asked.
+  The app's own text (screenshots, hierarchy) stays as the app shows it, and the app's language is never changed.
 - No git tags or releases until asked.
 
 ## Commands

@@ -7,6 +7,7 @@ and can be committed. Written only through `appscreenmap serve` (PUT) or the vie
 from __future__ import annotations
 
 import json
+import math
 import re
 from pathlib import Path
 
@@ -20,6 +21,9 @@ COMMENT_TAGS = ("bug", "flow", "copy", "question")
 COMMENT_STATUSES = ("open", "resolved")
 MAX_REPLIES = 100
 MAX_STICKY_TEXT = 4000
+MAX_LAYOUT = 5000  # card positions
+MAX_TREE_ORDER = 1000
+MAX_COORD = 1e6
 _RUN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*")
 
 
@@ -72,6 +76,8 @@ def validate(data: object) -> dict:
         "comments": _comments(data.get("comments", {})),
         "stickies": _stickies(data.get("stickies", {})),
         "edits": _edits(data.get("edits", {})),
+        "layout": _layout(data.get("layout", {})),
+        "tree_order": _tree_order(data.get("tree_order", [])),
     }
 
 
@@ -79,6 +85,33 @@ def _num(v: object, what: str) -> float:
     if isinstance(v, bool) or not isinstance(v, (int, float)):
         raise NotesError(f"{what} must be a number")
     return float(v)
+
+
+def _layout(raw: object) -> dict[str, dict]:
+    """Where a card was dragged to on the canvas, by screen id (flow coordinates). Kept here, not in the browser, so a
+    cleared cache doesn't lose it and everyone who opens the canvas sees the same arrangement."""
+    if not isinstance(raw, dict):
+        raise NotesError("layout must be an object")
+    if len(raw) > MAX_LAYOUT:
+        raise NotesError("layout has too many cards")
+    out: dict[str, dict] = {}
+    for sid, p in raw.items():
+        if not isinstance(sid, str) or not sid or len(sid) > 64 or not isinstance(p, dict):
+            raise NotesError(f"bad layout entry {sid!r}")
+        x, y = _num(p.get("x"), f"{sid} x"), _num(p.get("y"), f"{sid} y")
+        if not (math.isfinite(x) and math.isfinite(y)) or abs(x) > MAX_COORD or abs(y) > MAX_COORD:
+            raise NotesError(f"layout position of {sid!r} is out of range")
+        out[sid] = {"x": x, "y": y}
+    return out
+
+
+def _tree_order(raw: object) -> list[str]:
+    """The roots of the canvas's trees, left to right; a root not listed keeps its place after the listed ones."""
+    if not isinstance(raw, list) or len(raw) > MAX_TREE_ORDER:
+        raise NotesError("tree_order must be a list of screen ids")
+    if not all(isinstance(i, str) and i and len(i) <= 64 for i in raw):
+        raise NotesError("tree_order holds screen ids")
+    return list(dict.fromkeys(raw))
 
 
 def _comments(raw: object) -> dict[str, dict]:
@@ -202,5 +235,7 @@ def load(run_dir: Path) -> dict:
             "comments": {},
             "stickies": {},
             "edits": {"titles": {}, "deleted": [], "parents": {}, "added": {}, "labels": {}},
+            "layout": {},
+            "tree_order": [],
         }
     return validate(json.loads(p.read_text()))

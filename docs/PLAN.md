@@ -631,6 +631,57 @@ graded when stages 6–8 ship.
 
 Next features, first batch. Unchecked means not started; the open questions need a decision before design.
 
+- [ ] **Viewer: show filed screenshots** (`apps/viewer/`, for the viewer session). Two schema fields hold images
+  the viewer does not draw yet: a manual session's `screenshots` (`sessions/<id>/session.json`, paths relative to
+  the session folder) and a screen's `captures` (`{ "<name>": "screens/…png" }`). Show the first as a strip in the
+  session view, and the second as extra thumbnails on the screen page. Both are additive in schema 1 and
+  documented in `docs/MAP_SCHEMA.md`; no engine change is needed. Check with a canvas that has a session with
+  screenshots filed by hand.
+- [ ] **Add a missing screen by hand, from the dashboard** (2026-10-23). ✅ engine (`core/manual.py`, `add-screen`, `edit-screen`,
+  `POST /api/runs/<canvas>/screens`, `PATCH …/screens/<id>`); open: the viewer UI. A crawl and a recording can both miss a screen
+  (a screen behind a first-run choice, a support page, a sign-in option), and today nothing can put one on the canvas without a re-crawl. Decision:
+  the **engine owns the write** (one function, so the CLI, the MCP server and the dashboard all do the same thing) and
+  the viewer only calls it. Done means:
+  1. `appscreenmap add-screen <canvas> --image <png> --title "…" [--from <screen-id> --via "<label>"] [--scenario <id>]
+     [--hierarchy <xml>]` adds a screen to the canvas's `map.json`, copies the image to `screens/`, and, with `--from`,
+     adds the transition. Ids continue the canvas's own, and nothing existing is renamed.
+  2. The new screen carries `source: "manual"` (additive in schema 1, documented in `docs/MAP_SCHEMA.md` in the same
+     change) and takes part in everything a crawled one does: `route`, `find_screens`, `report`, `a11y` (when a
+     hierarchy is given), the MCP tools and the exports.
+  3. `POST /api/runs/<canvas>/screens` (multipart: image, title, optional from/via/scenario/hierarchy) calls the same
+     function; local pages only, size-capped, PNG/JPEG only, like the notes `PUT`.
+  4. **Post-fix updates:** editing a manual screen's title, links or scenario rewrites `map.json`, `titles.json` and
+     `notes.json` together, and re-runs the Maestro export for the canvas so `flows/` match. One test per file.
+  5. A synthetic regression test in `packages/core/tests/` (no device), plus one HTTP test for the endpoint.
+  Viewer (`apps/viewer/`, for the viewer session): an "Add screen" action on the canvas and on a screen's missing
+  neighbour, with the screenshot drop, title, parent and scenario fields. Mockup first, per the design system.
+- [x] **Move a whole tree on the canvas** (2026-10-23). ✅ engine (`notes.py` validates `layout` and `tree_order`, `merge`
+  carries them, `docs/MAP_SCHEMA.md`, tests). ✅ viewer: toolbar tool "Move tree" (T), done at the user's request from
+  crawler work (`MapView.tsx`, `MapEdit.tsx`, `mapLayout.ts`, `notes.ts`). No mockup was shown first. Today a card drags alone
+  (positions are saved in the browser, `keys.positions`) and "Move under" re-parents one screen with its children, so
+  placing a tree means dragging every card. Wanted, as one gesture: drag a tree (any root, or a subtree from a screen)
+  as a unit, drop a root onto another tree's screen to attach it ("Move under" with the whole subtree), and put trees
+  in order. Decision: the **layout is saved in `notes.json`** (additive `layout`: `{ "<screen id>": { "x", "y" } }`
+  plus `tree_order: [root ids]`), not in the browser, so it survives a cache clear and is the same for everyone who opens
+  the canvas; the engine validates it in `notes.py` like `edits` and `merge` carries it to the new ids. Done means:
+  1. Grabbing a tree's root (modifier or a "Move tree" tool) drags every card under it together; one undo restores it.
+  2. Dropping a root on a screen attaches the tree there (`edits.parents`), labelled in English like any link.
+  3. Tree order is a drag handle on the root; the new order survives a reload and a merge.
+  4. `notes.layout` and `notes.tree_order` are validated (known keys, finite numbers, size-capped), documented in
+     `docs/MAP_SCHEMA.md` in the same change, with a test in `packages/core/tests/test_notes.py`.
+  5. A selected tree is unmistakable: one dashed frame around all its cards labelled with its name and screen count
+     ("Onboarding · 7 screens"), other trees dimmed, a toolbar count with Esc to clear, and a single selected card
+     keeps its own ring so the two never look alike. Double-click a root or use the Move tree tool to select a tree.
+  Mockup first, per the design system. Engine part (validate, carry through merge) is small and can ship first.
+- [ ] **Maestro setup in a playbook.** A `maestro = "<flow.yaml>"` playbook step runs a verified Maestro flow as the
+  setup (sign-up, onboarding), then the crawl continues from where it ends, so a flow people already trust is not
+  copied into TOML steps. Today a TOML playbook types with the crawler's own input, can leave the keyboard over a
+  checkbox, and still logs `account marked as created`. Needs a regression test in `packages/crawler/tests/test_playbook.py`.
+  Open: the pages the flow passes through are not on the map (the crawler only sees where it ends); a flow that
+  records its screens into the canvas would need its own import.
+  Android traps to design around: `hideKeyboard` presses Back, a floating keyboard (AVD `hw.keyboard=yes`) covers
+  fields, and a sign-up needs a new email each run. A local reference note is kept in `docs/MAESTRO_SIGNUP_FLOW.md`
+  (git-ignored).
 - [ ] **Run history and versions.** Several runs of one app should read as a history, with the latest shown
   first. Open: how runs group (by package, by version, by device), and whether the viewer defaults to the
   newest run per project with older ones behind a history list. Touches `runs/index.json` and the Runs view

@@ -10,7 +10,7 @@ from pathlib import Path
 from appscreenmap.core import __version__, activity
 from appscreenmap.drivers.base import DriverError
 
-from . import analyse, crawl, logs, merge, record, security, serve, store, verify, watch
+from . import analyse, crawl, logs, merge, record, screens, security, serve, store, verify, watch
 
 GROUPS = (
     crawl,
@@ -19,6 +19,7 @@ GROUPS = (
     verify,
     analyse,
     merge,
+    screens,
     security,
     store,
     logs,

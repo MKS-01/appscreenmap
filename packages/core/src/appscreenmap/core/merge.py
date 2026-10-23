@@ -282,6 +282,8 @@ def _carry_notes(run_dirs: list[Path], idmaps: list[dict[str, str]], out_dir: Pa
         o["parents"].update({sid(k): sid(v) for k, v in e["parents"].items()})
         o["added"].update({k: {**a, "parent": sid(a["parent"])} for k, a in e["added"].items()})
         o["labels"].update({sid(k): v for k, v in e["labels"].items()})
+        out["layout"].update({sid(k): v for k, v in doc["layout"].items()})
+        out["tree_order"] = list(dict.fromkeys([*out["tree_order"], *map(sid, doc["tree_order"])]))
     if found:
         out["run"] = out_dir.name
         write_json_atomic(out_dir / notes_doc.NOTES_FILE, out)

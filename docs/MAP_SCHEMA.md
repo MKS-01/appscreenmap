@@ -105,6 +105,9 @@ rather than building them. Paths are relative to the run directory.
     "width": 1080, "height": 2400,
     "screenshot": "screens/s001.png", "thumb": "screens/s001.jpg", "hierarchy": "screens/s001.xml",
     "captures": { "bottom": "screens/s001-bottom.png" },  // extra shots of the screen; {} when none
+    "source": "manual",                 // optional: filed by hand (`add-screen`), absent on crawled screens. A manual
+                                        // screen has origin "unknown" and reach_path [] (nothing replayable, so no
+                                        // Maestro flow or `route` steps until a crawl reaches it); `added_at` is its time
     "reach_path": [                     // replayable steps from launch; [] for the launch screen
       { "screen": "s001", "key": "…", "action": "click", "label": "Settings",
         "selector": { "id"?: "pkg:id/x", "text"?: "…", "desc"?: "…", "point": [x, y] },
@@ -138,6 +141,7 @@ rather than building them. Paths are relative to the run directory.
     "count": 3,                         // times observed (0 if only inferred)
     "step": 14,                         // step when first observed
     "inferred": false,                  // true = predicted from the same nav item on another screen
+    "source": "manual",                 // optional: the link of a manually added screen (count 0, step 0)
     "load_ms": 640,                     // median load time over `timings` (null if none measured)
     "timings": [ {                      // one per traversal (max 20); absent fields = not measured
       "load_ms": 640,                   // action → app stopped drawing (host clock, ~50–100 ms resolution)
@@ -257,6 +261,14 @@ replay works on a canvas) rows are concatenated with a `scenario` id (any `scree
 `run.network` / `run.logs` summary moves to its scenario entry (`run.scenarios[].network`, `.logs`); a canvas has no
 run-level `network` or `logs`.
 
+**Screens added by hand.** `appscreenmap add-screen <canvas> --image <png> --title "…" [--from <screen> --via "<label>"]
+[--scenario <id>] [--hierarchy <xml>]` (or `POST /api/runs/<canvas>/screens`, multipart) files a screen a crawl missed:
+the image goes to `screens/<id>.png` (+ thumb), the row gets `source: "manual"`, and with a parent one transition is
+added. `edit-screen` / `PATCH /api/runs/<canvas>/screens/<id>` changes a manual screen's title, parent link or
+scenario, rewriting `map.json`, `titles.json` and `notes.json` (`edits.titles`) together; crawled screens are never
+edited. Both then re-run the Maestro export and the accessibility audit. Ids continue the canvas's own; nothing existing
+is renamed.
+
 **Comments and edits** live in `notes.json` next to `map.json` (`appscreenmap_notes: 1`, validated by `notes.py`), never in
 `map.json`, so the crawler's output stays the contract:
 
@@ -276,8 +288,14 @@ run-level `network` or `logs`.
   "parents": { "s010": "s004", "s018": null }, // moved under another screen (null: a root of its own)
   "added":   { "n-lx3k": { "title": "Forgot password", "parent": "s003", "created": "…" } }, // planned screens
   "labels":  { "s004": "Sign in" }             // label of the tree link into a screen (from its tree parent)
-}
+},
+"layout": { "s010": { "x": 640, "y": -120 } },   // where a card was dragged to (flow coordinates), by screen id; optional
+"tree_order": ["s001", "s010", "s020"]           // the trees' roots, left to right; roots not listed follow, optional
 ```
+
+`layout` and `tree_order` are additive in `notes.json` (absent on old files, read as `{}` and `[]`). They live here, not
+in the browser, so a cleared cache keeps them. Positions are finite numbers within ±1,000,000, at most 5,000 cards;
+`tree_order` holds at most 1,000 unique ids. A merge carries both to the new screen ids.
 
 The viewer applies `edits` on top of the map (toolbar: select, comment, sticky note, add, move under, rename, remove, undo; dropping
 a card on another in the Tree also moves it under). Planned screens are drawn dashed, without a screenshot, and have

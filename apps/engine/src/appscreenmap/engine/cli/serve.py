@@ -17,12 +17,14 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, unquote
 
-from appscreenmap.core import activity, notes
+from appscreenmap.core import activity, manual, notes
 from appscreenmap.core.model import load_map
 from appscreenmap.core.runs import RunDeleteError, delete_run, resolve_run, update_index
 from appscreenmap.drivers.logcat import LOG as LOGS_LOG
 from appscreenmap.exporters.svg import LAYOUTS, THEMES, map_svg
 from appscreenmap.security import network
+
+from . import screens
 
 
 def _web_dist() -> Path | None:
@@ -269,11 +271,14 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         return body if isinstance(body, dict) else None
 
     def do_POST(self):
-        """Manual sessions from the dashboard (see `watch`):
+        """Manual sessions from the dashboard (see `watch`), and screens filed by hand (see `add-screen`):
+        POST /api/runs/<canvas>/screens  multipart: image, title, parent?, via?, scenario?, hierarchy?   201 + the screen
         POST /api/sessions  {"run": "<canvas id>", "network": true, "serial"?: "…"}   start one; 201 + its session.json
         POST /api/sessions/<id>/stop                                                stop it; 200 + its final session.json
         """
         path = self.path.split("?", 1)[0]
+        if m := re.fullmatch(r"/api/runs/([A-Za-z0-9_./-]{1,200})/screens", path):
+            return self._add_screen(m.group(1))
         if not path.startswith("/api/sessions"):
             return self.send_error(404)
         if not self._local_page():
@@ -289,6 +294,61 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         if sdir is None or not self.recorder.stop(sid):
             return self.send_error(404, "no session recording with that id from this dashboard")
         return self._json(json.loads((sdir / "session.json").read_text()))
+
+    def _add_screen(self, key: str) -> None:
+        if not self._local_page():
+            return self.send_error(403)
+        run_dir = self._run_dir(key)
+        if run_dir is None:
+            return self.send_error(404, "no such run")
+        ctype = self.headers.get("Content-Type") or ""
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return self.send_error(411)
+        if (
+            not ctype.startswith("multipart/form-data")
+            or not 0 < length <= manual.MAX_IMAGE_BYTES + 3_000_000
+        ):
+            return self.send_error(415 if not ctype.startswith("multipart/form-data") else 413)
+        try:
+            f = screens.parse_multipart(ctype, self.rfile.read(length))
+            text = lambda k: f[k].decode() if f.get(k) else None
+            row = screens.file_screen(
+                run_dir,
+                f.get("image", b""),
+                text("title") or "",
+                parent=text("parent"),
+                via=text("via"),
+                scenario=text("scenario"),
+                hierarchy=text("hierarchy"),
+            )
+        except (manual.ManualError, UnicodeDecodeError) as e:
+            return self._json({"error": str(e)}, 400)
+        self._json(row, 201)
+
+    def do_PATCH(self):
+        """Fix a manual screen: PATCH /api/runs/<canvas>/screens/<id>  {"title"?, "parent"?, "via"?, "scenario"?}."""
+        m = re.fullmatch(r"/api/runs/([A-Za-z0-9_./-]{1,200})/screens/(s\d{3,6})", self.path.split("?", 1)[0])
+        if not m:
+            return self.send_error(404)
+        if not self._local_page():
+            return self.send_error(403)
+        run_dir = self._run_dir(m.group(1))
+        if run_dir is None:
+            return self.send_error(404, "no such run")
+        body = self._read_json()
+        if body is None:
+            return
+        try:
+            row = screens.fix_screen(
+                run_dir,
+                m.group(2),
+                **{k: body[k] for k in ("title", "parent", "via", "scenario") if k in body},
+            )
+        except manual.ManualError as e:
+            return self._json({"error": str(e)}, 400)
+        self._json(row)
 
     def _start_session(self) -> None:
         body = self._read_json()
@@ -375,8 +435,11 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def end_headers(self):
-        if self.path.startswith("/runs/") and self.path.split("?")[0].endswith(".json"):
-            self.send_header("Cache-Control", "no-store")
+        if self.path.startswith("/runs/"):
+            # Screenshots keep their URL when a merge renumbers screens: the browser must ask again every time
+            # (Last-Modified makes that a cheap 304), or it shows the old image under the new id.
+            json_file = self.path.split("?")[0].endswith(".json")
+            self.send_header("Cache-Control", "no-store" if json_file else "no-cache")
         super().end_headers()
 
     def log_message(self, fmt, *args):  # quiet

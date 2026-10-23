@@ -161,3 +161,36 @@ def test_save_rejects_bad_sticky(run_dir):
         notes.save(
             run_dir, b'{"appscreenmap_notes": 1, "notes": {}, "stickies": {"k": {"x": "a", "text": "t"}}}'
         )
+
+
+def test_layout_and_tree_order_roundtrip_and_default(run_dir):
+    assert notes.load(run_dir)["layout"] == {} and notes.load(run_dir)["tree_order"] == []
+    doc = {
+        "appscreenmap_notes": 1,
+        "notes": {},
+        "layout": {"s001": {"x": 12, "y": -3.5}},
+        "tree_order": ["s020", "s001", "s020"],  # a repeat is dropped, order kept
+    }
+    notes.save(run_dir, json.dumps(doc).encode())
+    loaded = notes.load(run_dir)
+    assert loaded["layout"] == {"s001": {"x": 12.0, "y": -3.5}} and loaded["tree_order"] == ["s020", "s001"]
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"layout": []},
+        {"layout": {"s001": {"x": "1", "y": 2}}},
+        {"layout": {"s001": {"x": 1}}},
+        {"layout": {"s001": {"x": 1e9, "y": 0}}},
+        {"layout": {"s001": {"x": float("nan"), "y": 0}}},
+        {"layout": {"": {"x": 1, "y": 0}}},
+        {"layout": {f"s{i}": {"x": 0, "y": 0} for i in range(notes.MAX_LAYOUT + 1)}},
+        {"tree_order": "s001"},
+        {"tree_order": [1]},
+        {"tree_order": [f"s{i}" for i in range(notes.MAX_TREE_ORDER + 1)]},
+    ],
+)
+def test_bad_layout_or_tree_order_is_refused(bad):
+    with pytest.raises(notes.NotesError):
+        notes.validate({"appscreenmap_notes": 1, "notes": {}, **bad})

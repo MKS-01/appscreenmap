@@ -128,6 +128,8 @@ def test_notes_and_titles_follow_their_screens_into_the_canvas(tmp_path):
                     "added": {"n-1": {"title": "Filters", "parent": "s001"}},
                     "labels": {"s002": "Explore tab"},
                 },
+                "layout": {"s002": {"x": 10, "y": -20.5}},
+                "tree_order": ["s002", "s001"],
             }
         )
     )
@@ -139,6 +141,7 @@ def test_notes_and_titles_follow_their_screens_into_the_canvas(tmp_path):
     doc = json.loads((out / "notes.json").read_text())
     assert doc["run"] == "merged" and doc["notes"] == {"s004": {"star": True, "updated": "t"}}
     assert list(doc["a11y"]) == ["s003::touch-target::btn::Go::0,0"]
+    assert doc["layout"] == {"s004": {"x": 10.0, "y": -20.5}} and doc["tree_order"] == ["s004", "s003"]
     assert doc["comments"]["c1"]["screen"] == "s004"
     assert doc["stickies"]["k1"]["screen"] == "s004"
     assert doc["edits"] == {
