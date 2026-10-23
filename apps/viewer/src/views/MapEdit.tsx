@@ -132,6 +132,7 @@ export function EditToolbar({
   titleOf,
   onChange,
   treeStatus,
+  treeOrder,
 }: {
   tool: Tool;
   setTool: (t: Tool) => void;
@@ -144,6 +145,7 @@ export function EditToolbar({
   titleOf: (id: string) => string;
   onChange: (change: (e: TreeEdits) => TreeEdits) => void;
   treeStatus?: string | null; // a selected tree: shown instead of the tool's hint
+  treeOrder?: { i: number; n: number; move: (by: -1 | 1) => void } | null; // a picked root: where it stands among the trees
 }) {
   const [listOpen, setListOpen] = useState(false);
   const n = editCount(edits);
@@ -190,7 +192,21 @@ export function EditToolbar({
           <span className="sr-only"> open comments</span>
         </button>
       </div>
-      {tool !== "select" && <div className="edit-hint">{hint}</div>}
+      {tool !== "select" && (
+        <div className="edit-hint" role="status" aria-live="polite">
+          <span>{hint}</span>
+          {tool === "tree" && treeOrder && (
+            <span className="edit-hint-order" role="group" aria-label={`Tree ${treeOrder.i + 1} of ${treeOrder.n}`}>
+              <button className="btn" disabled={treeOrder.i === 0} onClick={() => treeOrder.move(-1)} aria-label="Move tree earlier" title="Move this tree earlier">
+                <Icon name="arrow" size={13} className="flip-x" />
+              </button>
+              <button className="btn" disabled={treeOrder.i === treeOrder.n - 1} onClick={() => treeOrder.move(1)} aria-label="Move tree later" title="Move this tree later">
+                <Icon name="arrow" size={13} />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
       {listOpen && n > 0 && (
         <div className="edit-list panel">
           {Object.entries(edits.added).map(([id, a]) => (

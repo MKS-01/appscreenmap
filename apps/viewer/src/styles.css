@@ -4227,7 +4227,7 @@ a.bars-label,
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 4px 3px 10px;
+  padding: 3px 10px;
   font: var(--text-xs) var(--font-mono);
   letter-spacing: var(--tracking-label);
   color: var(--accent);
@@ -4235,18 +4235,21 @@ a.bars-label,
   border: 1px solid var(--accent);
   border-radius: var(--radius-md);
   white-space: nowrap;
-  pointer-events: auto;
+  pointer-events: none;
   transform-origin: left bottom; /* scaled by 1/zoom so it stays readable when the map is zoomed out */
 }
-.tree-frame-order {
+.edit-hint-order {
   display: inline-flex;
-  gap: 2px;
+  gap: 4px;
+  margin-left: 10px;
+  vertical-align: middle;
 }
-.tree-frame-order .flip-x {
+.flip-x {
   transform: rotate(180deg);
 }
-.tree-frame-order .btn {
-  padding: 2px 6px;
+/* The other trees stay readable (titles) while one tree is picked. */
+.map-canvas.tool-tree .snode.dim {
+  opacity: 0.42;
 }
 .react-flow__node.node-move-from .snode {
   outline: 2px dashed var(--accent);
@@ -4311,10 +4314,14 @@ a.bars-label,
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  width: max-content; /* its own width, not the half left of `left: 50%`; capped below, where the row wraps */
   max-width: calc(100% - 24px);
 }
 .edit-bar-row {
   display: flex;
+  flex-wrap: wrap; /* a phone-width toolbar wraps instead of spilling past both edges */
+  justify-content: center;
+  max-width: 100%;
   align-items: center;
   gap: 4px;
   padding: 4px;
@@ -4325,6 +4332,8 @@ a.bars-label,
 }
 .edit-tools {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 2px;
 }
 .edit-tool {

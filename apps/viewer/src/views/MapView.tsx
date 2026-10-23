@@ -62,18 +62,9 @@ const nodeSize = (s: Screen | undefined) => {
   return { w: b.w, h: img + HDR_H + CARD_BORDER, img };
 };
 
-/** A dashed frame around a picked tree, in flow space, with its name and size and (for a whole tree) order arrows. */
-function TreeFrame({
-  nodes,
-  members,
-  label,
-  order,
-}: {
-  nodes: ScreenNode[];
-  members: Set<string>;
-  label: string;
-  order: { i: number; n: number; move: (by: -1 | 1) => void } | null;
-}) {
+/** A dashed frame around a picked tree, in flow space, with its name and size. The tag and the border keep a readable
+ *  on-screen size when the map is zoomed out. */
+function TreeFrame({ nodes, members, label }: { nodes: ScreenNode[]; members: Set<string>; label: string }) {
   const pad = 14;
   const zoom = useViewport().zoom;
   let [x1, y1, x2, y2] = [Infinity, Infinity, -Infinity, -Infinity];
@@ -87,19 +78,12 @@ function TreeFrame({
   if (!Number.isFinite(x1)) return null;
   return (
     <ViewportPortal>
-      <div className="tree-frame" style={{ transform: `translate(${x1 - pad}px, ${y1 - pad}px)`, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad }}>
-        <div className="tree-frame-tag" style={{ transform: `scale(${Math.min(2.6, 1 / zoom)})` }} onClick={(e) => e.stopPropagation()}>
-          <span>{label}</span>
-          {order && (
-            <span className="tree-frame-order" role="group" aria-label="Tree order">
-              <button className="btn" disabled={order.i === 0} onClick={() => order.move(-1)} aria-label="Move tree earlier" title="Move this tree earlier">
-                <Icon name="arrow" size={12} className="flip-x" />
-              </button>
-              <button className="btn" disabled={order.i === order.n - 1} onClick={() => order.move(1)} aria-label="Move tree later" title="Move this tree later">
-                <Icon name="arrow" size={12} />
-              </button>
-            </span>
-          )}
+      <div
+        className="tree-frame"
+        style={{ transform: `translate(${x1 - pad}px, ${y1 - pad}px)`, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad, borderWidth: Math.min(6, 1.5 / zoom) }}
+      >
+        <div className="tree-frame-tag" style={{ transform: `scale(${Math.min(4, 1 / zoom)})` }}>
+          {label}
         </div>
       </div>
     </ViewportPortal>
@@ -475,6 +459,8 @@ function MapInner({ run, map: rawMap, focus, layout }: { run: string; map: AppMa
               <b>Click</b> a screen to see how the crawler reached it; the path from launch lights up.
               <br />
               <b>Double-click</b> to open the screen with its tappable elements.
+              <br />
+              <b>Scroll</b> to pan the map; <b>⌘/Ctrl + scroll</b> or a pinch zooms.
             </div>
             {tree.root && (
               <div className="small">
@@ -919,6 +905,16 @@ function FlowCanvas({
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
+    // A focused card answers Enter and Space like a click (not the tools that need a point on the canvas).
+    const card = (e.target as HTMLElement | null)?.closest?.(".react-flow__node");
+    if ((e.key === "Enter" || e.key === " ") && card && tool !== "comment" && tool !== "sticky") {
+      const node = rf.getNode(card.getAttribute("data-id") ?? "");
+      if (node) {
+        e.preventDefault();
+        const r = card.getBoundingClientRect();
+        return clickNode({ clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 } as React.MouseEvent, node);
+      }
+    }
     const t = TOOLS.find((x) => x.id !== "delete" && x.key.toLowerCase() === k);
     if (t) return pickTool(t.id);
     if (k === "escape") return (pickTool("select"), setActiveComment(null));
@@ -963,6 +959,7 @@ function FlowCanvas({
         tool={tool}
         setTool={pickTool}
         treeStatus={members ? `Tree selected: ${members.size} screen${members.size === 1 ? "" : "s"} · drag to move, drop on a screen to attach · Esc to clear` : null}
+        treeOrder={members && treeRoot && tree.roots.includes(treeRoot) ? { i: tree.roots.indexOf(treeRoot), n: tree.roots.length, move: reorderTree } : null}
         edits={edits}
         canUndo={editor.canUndo()}
         onUndo={editor.undoEdit}
@@ -972,7 +969,7 @@ function FlowCanvas({
         titleOf={titleOf}
         onChange={editor.edit}
       />
-      {Object.keys(dragged).length > 0 && (
+      {(Object.keys(dragged).length > 0 || (variant === "tree" && Object.keys(editor.layout).length > 0)) && (
         <button className="btn map-reset" onClick={() => (setDragged({}), editor.setLayout(Object.fromEntries(Object.keys(editor.layout).map((id) => [id, null]))))} title="Forget the positions you dragged screens to">
           Reset layout
         </button>
@@ -1004,7 +1001,6 @@ function FlowCanvas({
             nodes={nodes}
             members={members}
             label={`${titleOf(treeRoot)} · ${members.size} screen${members.size === 1 ? "" : "s"}`}
-            order={tree.roots.includes(treeRoot) ? { i: tree.roots.indexOf(treeRoot), n: tree.roots.length, move: reorderTree } : null}
           />
         )}
         <Background gap={24} size={1} color="var(--border)" />

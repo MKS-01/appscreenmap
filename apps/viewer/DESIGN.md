@@ -76,6 +76,8 @@ tabular-nums` for stats). Scale: display (`.how-title`, `.hero-title`) → `h1` 
 | Explorer | `.explorer` | List/detail picker for reference content |
 | Mini phone | `.mini-phone` | Screenshot in a device frame for explanations (not for data views) |
 | Map node | `.snode` (MapView) | One-line 22px header (title + id) over the **whole** screenshot at the device's aspect (`shotBox`). `.root` green, `.orphan` dashed amber (no recorded path), `.ext` dashed |
+| Tree frame | `TreeFrame`, `.tree-frame` (MapView) | The tree picked with **Move tree** (T): one dashed `--accent` frame (`--accent-08` wash) around all its cards, a mono tag "title · N screens", the rest of the map dimmed (`.snode.dim`, 0.42 here). Tag and border are scaled by 1/zoom so they stay readable. Status line and the two order arrows are in the toolbar hint (`role="status"`), never over the canvas. Same dashed-accent language as `.node-move-from` |
+| Map navigation | `FlowCanvas` | Scroll (wheel, trackpad) pans; ⌘/Ctrl + scroll or a pinch zooms; dragging empty space pans. Said in the side panel |
 | Storyboard | `.story`, `.lane`, `.story-card` | Sections as content-sized panels that wrap; cards show "via <tap>" and a +depth badge |
 | Charts | `insights/charts.tsx`: `Bars`, `Columns`, `Split`, `Chart` | See Charts. No chart library |
 | Meter | `Meter`, `.meter` | 0–100 score; fill = tone, track = same hue at 16% |
