@@ -298,7 +298,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
     def _add_screen(self, key: str) -> None:
         if not self._local_page():
             return self.send_error(403)
-        run_dir = self._run_dir(key)
+        run_dir = None if ".." in key else self._run_dir(key)
         if run_dir is None:
             return self.send_error(404, "no such run")
         ctype = self.headers.get("Content-Type") or ""
@@ -323,7 +323,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
                 scenario=text("scenario"),
                 hierarchy=text("hierarchy"),
             )
-        except (manual.ManualError, UnicodeDecodeError) as e:
+        except (ValueError, TypeError, AttributeError) as e:  # ManualError is a ValueError; so is bad UTF-8
             return self._json({"error": str(e)}, 400)
         self._json(row, 201)
 
@@ -334,7 +334,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             return self.send_error(404)
         if not self._local_page():
             return self.send_error(403)
-        run_dir = self._run_dir(m.group(1))
+        run_dir = None if ".." in m.group(1) else self._run_dir(m.group(1))
         if run_dir is None:
             return self.send_error(404, "no such run")
         body = self._read_json()
@@ -346,7 +346,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
                 m.group(2),
                 **{k: body[k] for k in ("title", "parent", "via", "scenario") if k in body},
             )
-        except manual.ManualError as e:
+        except (ValueError, TypeError, AttributeError) as e:
             return self._json({"error": str(e)}, 400)
         self._json(row)
 

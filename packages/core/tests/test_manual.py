@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
+import threading
 
 import pytest
 from PIL import Image
@@ -187,3 +189,109 @@ def test_a_manual_screen_takes_a_new_hierarchy_and_a_bottom_capture(tmp_path):
     assert read(d)["screens"][-1]["captures"]["bottom"] == "screens/s002-bottom.png"
     with pytest.raises(manual.ManualError):
         manual.update_screen(d, "s002", captures={"Bad Name": png()})
+
+
+def snapshot(d):
+    """Every file under the canvas, by content, to prove a refused edit changed nothing."""
+    return {
+        str(p.relative_to(d)): hashlib.md5(p.read_bytes()).hexdigest()
+        for p in sorted(d.rglob("*"))
+        if p.is_file()
+    }
+
+
+@pytest.mark.parametrize(
+    "kw",
+    [
+        {"image": "IMG", "parent": "s099"},
+        {"image": "IMG", "scenario": "nope"},
+        {"image": "IMG", "captures": {"BAD name": "IMG"}},
+        {"hierarchy": XML, "parent": "s099"},
+        {"hierarchy": "<<<"},
+        {"title": "New", "captures": {"ok": b"not an image"}},
+        {"image": "IMG", "title": " "},
+    ],
+)
+def test_a_refused_edit_changes_nothing(tmp_path, kw):
+    d = canvas(tmp_path)
+    manual.add_screen(d, png(), "Tab", parent="s001")
+    before = snapshot(d)
+    kw = {
+        k: (
+            png(size=(30, 30))
+            if v == "IMG"
+            else {n: png() if i == "IMG" else i for n, i in v.items()}
+            if k == "captures"
+            else v
+        )
+        for k, v in kw.items()
+    }
+    with pytest.raises(manual.ManualError):
+        manual.update_screen(d, "s002", **kw)
+    assert snapshot(d) == before
+
+
+def test_a_screen_cannot_go_under_itself_or_its_children(tmp_path):
+    d = canvas(tmp_path)
+    a = manual.add_screen(d, png(), "A", parent="s001")["id"]
+    b = manual.add_screen(d, png(), "B", parent=a)["id"]
+    c = manual.add_screen(d, png(), "C", parent=b)["id"]
+    before = snapshot(d)
+    for bad in (a, b, c):  # itself, a child, a grandchild
+        with pytest.raises(manual.ManualError, match="itself or one of its own children"):
+            manual.update_screen(d, a, parent=bad)
+    assert snapshot(d) == before
+    manual.update_screen(d, c, parent="s001")  # a move that makes no loop is fine
+    with pytest.raises(manual.ManualError, match="app screen"):
+        manual.update_screen(d, c, parent="x:other")
+
+
+@pytest.mark.parametrize(
+    "kw",
+    [
+        {"scenario": ["a"]},
+        {"via": 5, "parent": "s001"},
+        {"title": 7},
+        {"parent": {"x": 1}},
+        {"hierarchy": 3},
+    ],
+)
+def test_non_text_fields_are_a_clean_error(tmp_path, kw):
+    d = canvas(tmp_path)
+    manual.add_screen(d, png(), "Tab")
+    with pytest.raises(manual.ManualError):
+        manual.update_screen(d, "s002", **kw)
+    with pytest.raises(manual.ManualError):
+        manual.add_screen(d, png(), kw.get("title", "X"), **{k: v for k, v in kw.items() if k != "title"})
+
+
+def test_a_decompression_bomb_is_refused_not_a_crash(tmp_path):
+    d = canvas(tmp_path)
+    out = io.BytesIO()
+    Image.new("1", (20000, 20000)).save(out, "PNG")  # a few KB on disk, 400 MP decoded
+    with pytest.raises(manual.ManualError):
+        manual.add_screen(d, out.getvalue(), "Bomb")
+    assert not list((d / "screens").iterdir()) and len(read(d)["screens"]) == 2
+
+
+def test_control_characters_are_dropped_from_titles_and_labels(tmp_path):
+    d = canvas(tmp_path)
+    row = manual.add_screen(d, png(), "a\x00b\x1b[31m\nX", parent="s001", via="go\x07 now")
+    assert row["title"] == "a b [31m X" and read(d)["transitions"][-1]["label"] == "go now"
+
+
+def test_writers_in_parallel_do_not_collide(tmp_path):
+    d = canvas(tmp_path)
+    ids, errors = [], []
+
+    def add(i):
+        try:
+            ids.append(manual.add_screen(d, png(), f"Shot {i}", parent="s001")["id"])
+        except Exception as e:  # noqa: BLE001
+            errors.append(e)
+
+    threads = [threading.Thread(target=add, args=(i,)) for i in range(8)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert not errors and len(set(ids)) == 8
+    assert len([s for s in read(d)["screens"] if s.get("source") == "manual"]) == 8

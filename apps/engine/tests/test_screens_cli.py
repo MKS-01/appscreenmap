@@ -147,3 +147,16 @@ def test_edit_screen_cli_replaces_the_image(canvas, tmp_path):
     assert main(["edit-screen", str(canvas), row["id"], "--image", str(second)]) == 0
     assert (canvas / row["screenshot"]).read_bytes() == second.read_bytes()
     assert next(s for s in screens_of(canvas) if s["id"] == row["id"])["width"] == 60
+
+
+def test_bad_types_and_paths_are_a_clean_400_or_404(server):
+    _, port = server
+    body, ctype = multipart({"image": png_bytes(), "title": b"Page"})
+    sid = json.loads(call(port, "POST", "/api/runs/proj/canvas/screens", body, ctype)[1])["id"]
+    path = f"/api/runs/proj/canvas/screens/{sid}"
+    for bad in ({"scenario": ["a"]}, {"via": 5, "parent": "s001"}, {"title": 7}, {"parent": sid}):
+        status, out = call(port, "PATCH", path, json.dumps(bad).encode())
+        assert status == 400 and "error" in json.loads(out), bad
+    assert call(port, "PATCH", "/api/runs/../../canvas/screens/s001", b"{}")[0] == 404
+    assert call(port, "POST", "/api/runs/../../canvas/screens", body, ctype)[0] == 404
+    assert call(port, "PATCH", path, json.dumps({"title": "Still fine"}).encode())[0] == 200
