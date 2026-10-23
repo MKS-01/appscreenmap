@@ -23,6 +23,7 @@ export interface ShapeEdits {
   deleted: Set<string>;
   parents: Record<string, string | null>; // null: a root of its own
   labels?: Record<string, string>;
+  treeOrder?: string[]; // roots, left to right; an unlisted root keeps its place after the listed ones
 }
 
 export function discoveryTree(map: AppMapData, visible: Screen[], edits?: ShapeEdits): DiscoveryTree {
@@ -96,11 +97,15 @@ export function discoveryTree(map: AppMapData, visible: Screen[], edits?: ShapeE
   const entry = new Set(visible.filter((s) => s.id === root || s.origin === "launch" || moved.has(s.id)).map((s) => s.id));
   const orphan = new Set(visible.filter((s) => !entry.has(s.id) && !parent.has(s.id)).map((s) => s.id));
   const byBirth = (a: Screen, b: Screen) => a.first_step - b.first_step;
-  const roots = [
+  const natural = [
     ...(root && ids.has(root) ? [root] : []),
     ...visible.filter((s) => s.id !== root && entry.has(s.id)).sort(byBirth).map((s) => s.id),
     ...visible.filter((s) => orphan.has(s.id)).sort(byBirth).map((s) => s.id),
   ];
+  const rank = new Map((edits?.treeOrder ?? []).map((id, i) => [id, i]));
+  const roots = rank.size
+    ? [...natural].sort((a, b) => (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity)) // stable: unlisted stay in order
+    : natural;
 
   const depth = new Map<string, number>();
   const order: string[] = [];

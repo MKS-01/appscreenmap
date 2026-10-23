@@ -10,6 +10,7 @@ import {
   ReactFlowProvider,
   useReactFlow,
   useViewport,
+  ViewportPortal,
   type Edge,
   type Node,
   type NodeChange,
@@ -60,6 +61,50 @@ const nodeSize = (s: Screen | undefined) => {
   const img = Math.round((b.w - CARD_BORDER) * b.ratio); // exact device aspect at the width it is drawn
   return { w: b.w, h: img + HDR_H + CARD_BORDER, img };
 };
+
+/** A dashed frame around a picked tree, in flow space, with its name and size and (for a whole tree) order arrows. */
+function TreeFrame({
+  nodes,
+  members,
+  label,
+  order,
+}: {
+  nodes: ScreenNode[];
+  members: Set<string>;
+  label: string;
+  order: { i: number; n: number; move: (by: -1 | 1) => void } | null;
+}) {
+  const pad = 14;
+  const zoom = useViewport().zoom;
+  let [x1, y1, x2, y2] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const n of nodes) {
+    if (!members.has(n.id)) continue;
+    const { w, h } = nodeSize(n.data.screen);
+    const [w2, h2] = [n.measured?.width ?? w, n.measured?.height ?? h];
+    [x1, y1] = [Math.min(x1, n.position.x), Math.min(y1, n.position.y)];
+    [x2, y2] = [Math.max(x2, n.position.x + w2), Math.max(y2, n.position.y + h2)];
+  }
+  if (!Number.isFinite(x1)) return null;
+  return (
+    <ViewportPortal>
+      <div className="tree-frame" style={{ transform: `translate(${x1 - pad}px, ${y1 - pad}px)`, width: x2 - x1 + 2 * pad, height: y2 - y1 + 2 * pad }}>
+        <div className="tree-frame-tag" style={{ transform: `scale(${Math.min(2.6, 1 / zoom)})` }} onClick={(e) => e.stopPropagation()}>
+          <span>{label}</span>
+          {order && (
+            <span className="tree-frame-order" role="group" aria-label="Tree order">
+              <button className="btn" disabled={order.i === 0} onClick={() => order.move(-1)} aria-label="Move tree earlier" title="Move this tree earlier">
+                <Icon name="arrow" size={12} className="flip-x" />
+              </button>
+              <button className="btn" disabled={order.i === order.n - 1} onClick={() => order.move(1)} aria-label="Move tree later" title="Move this tree later">
+                <Icon name="arrow" size={12} />
+              </button>
+            </span>
+          )}
+        </div>
+      </div>
+    </ViewportPortal>
+  );
+}
 
 const VARIANTS: { id: Variant; label: string; icon: IconName; hint: string }[] = [
   { id: "tree", label: "Tree", icon: "route", hint: "Each screen under the screen it was found from" },
@@ -178,8 +223,8 @@ function MapInner({ run, map: rawMap, focus, layout }: { run: string; map: AppMa
   const patterns = useMemo(() => [...new Set(map.screens.flatMap((s) => s.patterns))].sort(), [map]);
   const visible = useMemo(() => map.screens.filter((s) => (showExternal || s.kind === "app") && !deleted.has(s.id)), [map, showExternal, deleted]);
   const tree = useMemo(
-    () => discoveryTree(map, visible, { deleted, parents, labels: edits.labels }),
-    [map, visible, deleted, parents, edits.labels],
+    () => discoveryTree(map, visible, { deleted, parents, labels: edits.labels, treeOrder: editor.tree_order }),
+    [map, visible, deleted, parents, edits.labels, editor.tree_order],
   );
   // Auto direction: tall (portrait) cards pack best side by side, so lay the tree out top-down;
   // wide (landscape/tablet) cards pack best stacked, so left-to-right.
@@ -511,12 +556,26 @@ function FlowCanvas({
   const [renaming, setRenaming] = useState<string | null>(null);
   const [relabel, setRelabel] = useState<string | null>(null); // the child whose incoming tree link is relabelled
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
+  const [treeRoot, setTreeRoot] = useState<string | null>(null); // the top of the tree picked with "Move tree"
   const [dropOn, setDropOn] = useState<string | null>(null);
   const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Hand-placed positions, remembered per run, layout and direction.
   const [dragged, setDragged] = useStored<Record<string, { x: number; y: number }>>(keys.positions(run, `${variant}-${dir}`), {});
   const [live, setLive] = useState<Record<string, { x: number; y: number }>>({}); // mid-drag, not yet saved
+  // In the tree layout hand-placed positions live in notes.json (shared, survive a cleared cache); the graph keeps
+  // them in the browser.
+  const saved = variant === "tree" ? editor.layout : undefined;
+  // The picked screen and everything under it; a root gives the whole tree.
+  const members = useMemo(() => {
+    if (!treeRoot || !tree.parent.has(treeRoot) && !tree.roots.includes(treeRoot)) return null;
+    const out = new Set([treeRoot]);
+    const walk = (id: string) => {
+      for (const c of tree.children.get(id) ?? []) if (!out.has(c)) (out.add(c), walk(c));
+    };
+    walk(treeRoot);
+    return out;
+  }, [treeRoot, tree]);
   // Card sizes React Flow measured. Kept on the nodes so rebuilding them (on every edit or selection) doesn't
   // un-measure and hide every card until it is measured again.
   const [measured, setMeasured] = useState<Record<string, { width: number; height: number }>>({});
@@ -587,7 +646,7 @@ function FlowCanvas({
         id: s.id,
         type: "screen",
         className: s.id === moveFrom ? "node-move-from" : undefined,
-        position: live[s.id] ?? dragged[s.id] ?? layout.get(s.id) ?? { x: 0, y: 0 },
+        position: live[s.id] ?? saved?.[s.id] ?? dragged[s.id] ?? layout.get(s.id) ?? { x: 0, y: 0 },
         measured: measured[s.id],
         data: {
           screen: s,
@@ -597,12 +656,12 @@ function FlowCanvas({
           orphan: tree.orphan.has(s.id),
           sel: s.id === selected,
           onpath: onPath.has(s.id),
-          dim: dim(s),
+          dim: dim(s) || (members ? !members.has(s.id) : false),
           star: !!notes[s.id]?.star,
           drop: s.id === dropOn,
         },
       })),
-    [visible, live, dragged, layout, run, dir, tree, selected, onPath, dim, notes, moveFrom, dropOn, measured],
+    [visible, live, saved, dragged, layout, run, dir, tree, selected, onPath, dim, members, notes, moveFrom, dropOn, measured],
   );
 
   const edges: Edge[] = useMemo(() => {
@@ -651,9 +710,17 @@ function FlowCanvas({
     });
   }, [tree, map.transitions, ids, links, selected, pathPairs, showLabels, variant, editor.edits.labels]);
 
-  // Track positions in memory while dragging; save to storage once, when the drag ends.
+  // Track positions in memory while dragging; save once, when the drag ends. With a tree picked, dragging any of its
+  // cards moves them all by the same amount.
   const liveRef = useRef(live);
   liveRef.current = live;
+  const savePositions = useCallback(
+    (done: Record<string, { x: number; y: number }>) => {
+      if (variant === "tree") editor.setLayout(done);
+      else setDragged((d) => ({ ...d, ...done }));
+    },
+    [variant, editor, setDragged],
+  );
   const onNodesChange = useCallback(
     (changes: NodeChange<ScreenNode>[]) => {
       const next = { ...liveRef.current };
@@ -664,19 +731,36 @@ function FlowCanvas({
           sized.every(([id, d]) => m[id]?.width === d.width && m[id]?.height === d.height) ? m : { ...m, ...Object.fromEntries(sized) },
         );
       for (const c of changes) {
-        if (c.type !== "position" || tool !== "select") continue; // other tools click cards; they never drag them
+        if (c.type !== "position" || (tool !== "select" && tool !== "tree")) continue; // other tools click cards; they never drag them
         const pos = c.position ?? next[c.id];
+        const group = tool === "tree" && members?.has(c.id) ? members : null;
+        const at = (id: string) => next[id] ?? rf.getNode(id)?.position;
         if (c.dragging) {
-          if (pos) next[c.id] = pos;
+          if (!pos) continue;
+          const before = at(c.id);
+          if (group && before) {
+            const [dx, dy] = [pos.x - before.x, pos.y - before.y];
+            for (const m of group) {
+              const p = at(m);
+              if (m !== c.id && p) next[m] = { x: p.x + dx, y: p.y + dy };
+            }
+          }
+          next[c.id] = pos;
         } else {
           if (pos) done[c.id] = pos;
           delete next[c.id];
+          if (group)
+            for (const m of group) {
+              const p = at(m);
+              if (m !== c.id && p) done[m] = p;
+              delete next[m];
+            }
         }
       }
       setLive(next);
-      if (Object.keys(done).length) setDragged((d) => ({ ...d, ...done }));
+      if (Object.keys(done).length) savePositions(done);
     },
-    [setDragged, tool],
+    [savePositions, tool, members, rf],
   );
 
   // ── editing: tools, comments ──
@@ -700,6 +784,7 @@ function FlowCanvas({
     setRenaming(null);
     setRelabel(null);
     setMoveFrom(null);
+    setTreeRoot(null);
     if (t !== "select") setActiveComment(null);
   };
   const nameOf = (id: string) => byId.get(id)?.title ?? id;
@@ -746,6 +831,7 @@ function FlowCanvas({
     } else if (tool === "rename") (setRelabel(null), setRenaming(n.id));
     else if (tool === "add") addScreen(n.id);
     else if (tool === "delete") removeScreen(n.id);
+    else if (tool === "tree") setTreeRoot(n.id === treeRoot ? null : n.id);
     else if (tool === "move") {
       if (!moveFrom) {
         if (n.id === tree.root) say("The launch screen stays the root");
@@ -769,6 +855,7 @@ function FlowCanvas({
       setDraft(flowAt(e));
     } else if (tool === "add") addScreen(null);
     else if (tool === "move" && moveFrom) moveScreen(moveFrom, null);
+    else if (tool === "tree") setTreeRoot(null);
     else {
       setSelected(null);
       setActiveComment(null);
@@ -792,18 +879,37 @@ function FlowCanvas({
       );
     return hit && cantMove(n.id, hit.id) === null ? hit.id : null;
   };
-  const reparentOnDrop = variant === "tree" && tool === "select";
-  const onNodeDrag = (e: React.MouseEvent, n: Node) => reparentOnDrop && setDropOn(dropTarget(e, n));
+  // A card dropped on another goes under it; so does the picked tree's top card (the whole tree follows).
+  const reorderTree = (by: -1 | 1) => {
+    if (!treeRoot) return;
+    const roots = [...tree.roots];
+    const i = roots.indexOf(treeRoot);
+    const j = i + by;
+    if (i < 0 || j < 0 || j >= roots.length) return;
+    [roots[i], roots[j]] = [roots[j], roots[i]];
+    const both = [...subtreeIds(roots[i]), ...subtreeIds(roots[j])];
+    if (variant === "tree") editor.setLayout(Object.fromEntries(both.map((id) => [id, null]))); // re-flow the two trees
+    editor.setTreeOrder(roots);
+    say(`${nameOf(treeRoot)} is now tree ${j + 1} of ${roots.length}`);
+  };
+  const subtreeIds = (id: string) => [id, ...below(id)];
+  const reparentOnDrop = (n: Node) => variant === "tree" && (tool === "select" || (tool === "tree" && n.id === treeRoot));
+  const onNodeDrag = (e: React.MouseEvent, n: Node) => reparentOnDrop(n) && setDropOn(dropTarget(e, n));
   const onNodeDragStop = (e: React.MouseEvent, n: Node) => {
     setDropOn(null);
-    const to = reparentOnDrop ? dropTarget(e, n) : null;
+    const to = reparentOnDrop(n) ? dropTarget(e, n) : null;
     if (!to) return;
-    setDragged((d) => {
-      const next = { ...d };
-      delete next[n.id];
-      return next;
-    });
+    // The moved cards go back into the tidy layout under their new parent.
+    const moved = tool === "tree" && members ? [...members] : [n.id];
+    if (variant === "tree") editor.setLayout(Object.fromEntries(moved.map((id) => [id, null])));
+    else
+      setDragged((d) => {
+        const next = { ...d };
+        for (const id of moved) delete next[id];
+        return next;
+      });
     moveScreen(n.id, to);
+    setTreeRoot(null);
   };
   const onKey = (e: KeyboardEvent) => {
     if ((e.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable]")) return;
@@ -856,6 +962,7 @@ function FlowCanvas({
       <EditToolbar
         tool={tool}
         setTool={pickTool}
+        treeStatus={members ? `Tree selected: ${members.size} screen${members.size === 1 ? "" : "s"} · drag to move, drop on a screen to attach · Esc to clear` : null}
         edits={edits}
         canUndo={editor.canUndo()}
         onUndo={editor.undoEdit}
@@ -866,7 +973,7 @@ function FlowCanvas({
         onChange={editor.edit}
       />
       {Object.keys(dragged).length > 0 && (
-        <button className="btn map-reset" onClick={() => setDragged({})} title="Forget the positions you dragged screens to">
+        <button className="btn map-reset" onClick={() => (setDragged({}), editor.setLayout(Object.fromEntries(Object.keys(editor.layout).map((id) => [id, null]))))} title="Forget the positions you dragged screens to">
           Reset layout
         </button>
       )}
@@ -881,12 +988,25 @@ function FlowCanvas({
         onNodeDragStop={onNodeDragStop}
         onEdgeClick={clickEdge}
         onPaneClick={clickPane}
-        nodesDraggable={tool === "select"}
+        nodesDraggable={tool === "select" || tool === "tree"}
+        // A big map is crossed by scrolling (wheel, trackpad), like a design canvas; Cmd/Ctrl + scroll or a pinch zooms,
+        // and dragging empty space still pans.
+        panOnScroll
+        zoomOnScroll={false}
+        panOnDrag
         minZoom={0.1}
         maxZoom={2}
         proOptions={{ hideAttribution: true }}
         nodesConnectable={false}
       >
+        {members && treeRoot && (
+          <TreeFrame
+            nodes={nodes}
+            members={members}
+            label={`${titleOf(treeRoot)} · ${members.size} screen${members.size === 1 ? "" : "s"}`}
+            order={tree.roots.includes(treeRoot) ? { i: tree.roots.indexOf(treeRoot), n: tree.roots.length, move: reorderTree } : null}
+          />
+        )}
         <Background gap={24} size={1} color="var(--border)" />
         <Controls showInteractive={false} position="bottom-left" />
         <MiniMap

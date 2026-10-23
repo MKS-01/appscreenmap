@@ -76,12 +76,17 @@ const NO_EDITS: TreeEdits = emptyEdits();
 export const editCount = (e: TreeEdits) =>
   Object.keys(e.titles).length + e.deleted.length + Object.keys(e.parents).length + Object.keys(e.added).length + Object.keys(e.labels).length;
 
+/** Where a card was dragged to (flow coordinates), by screen id. Kept in notes.json, not the browser. */
+export type RunLayout = Record<string, { x: number; y: number }>;
+
 interface Doc {
   notes: RunNotes;
   a11y: RunTriage;
   comments: RunComments;
   stickies: RunStickies;
   edits: TreeEdits;
+  layout: RunLayout;
+  tree_order: string[]; // the trees' roots, left to right
 }
 
 /** file: saved in runs/<run>/notes.json · browser: server is read-only, kept in localStorage */
@@ -95,7 +100,7 @@ interface State extends Doc {
 const SAVE_DELAY_MS = 500;
 
 class NotesStore {
-  state: State = { notes: {}, a11y: {}, comments: {}, stickies: {}, edits: NO_EDITS, mode: "loading", saving: false };
+  state: State = { notes: {}, a11y: {}, comments: {}, stickies: {}, edits: NO_EDITS, layout: {}, tree_order: [], mode: "loading", saving: false };
   private history: TreeEdits[] = []; // edits before each change, for undo (this session only)
   private listeners = new Set<() => void>();
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -138,6 +143,8 @@ class NotesStore {
       comments: mergeNewest(fromFile.comments ?? {}, pending.comments ?? {}),
       stickies: mergeNewest(fromFile.stickies ?? {}, pending.stickies ?? {}),
       edits: { ...NO_EDITS, ...(pending.edits && editCount({ ...NO_EDITS, ...pending.edits }) ? pending.edits : fromFile.edits) },
+      layout: { ...(fromFile.layout ?? {}), ...(pending.layout ?? {}) },
+      tree_order: pending.tree_order?.length ? pending.tree_order : (fromFile.tree_order ?? []),
       mode: hasPending ? "browser" : "file",
     });
     if (hasPending) await this.persist(); // push edits made while the server was read-only
@@ -241,6 +248,22 @@ class NotesStore {
     this.schedule();
   }
 
+  /** Save card positions (null forgets one, so the tidy layout places it again). Not part of undo. */
+  setLayout(patch: Record<string, { x: number; y: number } | null>) {
+    const next = { ...this.state.layout };
+    for (const [id, p] of Object.entries(patch)) {
+      if (p) next[id] = { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 };
+      else delete next[id];
+    }
+    this.set({ layout: next });
+    this.schedule();
+  }
+
+  setTreeOrder(order: string[]) {
+    this.set({ tree_order: [...new Set(order)] });
+    this.schedule();
+  }
+
   canUndo() {
     return this.history.length > 0;
   }
@@ -272,6 +295,8 @@ class NotesStore {
       comments: this.state.comments,
       stickies: this.state.stickies,
       edits: this.state.edits,
+      layout: this.state.layout,
+      tree_order: this.state.tree_order,
     };
     const body = JSON.stringify({ appscreenmap_notes: 1, run: this.run, ...doc });
     try {
@@ -313,6 +338,8 @@ export function useNotes(run: string) {
       deleteSticky: store.deleteSticky.bind(store),
       restoreSticky: store.restoreSticky.bind(store),
       edit: store.edit.bind(store),
+      setLayout: store.setLayout.bind(store),
+      setTreeOrder: store.setTreeOrder.bind(store),
       undoEdit: store.undoEdit.bind(store),
       canUndo: store.canUndo.bind(store),
     }),

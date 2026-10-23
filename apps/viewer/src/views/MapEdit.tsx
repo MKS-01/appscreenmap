@@ -6,7 +6,7 @@ import type { Screen } from "../types";
 // Editing the map: a floating toolbar (select, comment, add, move under, rename, delete), Figma-style comment pins
 // with threads, and a list of what was changed. Everything is saved in notes.json; map.json is never touched.
 
-export type Tool = "select" | "comment" | "sticky" | "add" | "move" | "rename" | "delete";
+export type Tool = "select" | "comment" | "sticky" | "add" | "move" | "tree" | "rename" | "delete";
 
 export const TOOLS: { id: Tool; label: string; key: string; icon: IconName; hint: string }[] = [
   { id: "select", label: "Select", key: "V", icon: "cursor", hint: "Click a screen to light up its path" },
@@ -14,6 +14,7 @@ export const TOOLS: { id: Tool; label: string; key: string; icon: IconName; hint
   { id: "sticky", label: "Note", key: "S", icon: "sticky", hint: "Click anywhere to drop a sticky note; on a screen it follows that screen" },
   { id: "add", label: "Add", key: "A", icon: "plus", hint: "Click a screen to add a planned screen under it (empty space: a new root)" },
   { id: "move", label: "Move under", key: "M", icon: "reparent", hint: "Click the screen to move, then its new parent (empty space: its own root)" },
+  { id: "tree", label: "Move tree", key: "T", icon: "layers", hint: "Click a screen to select it and everything under it (a root: the whole tree), then drag it, or drop it on another screen to attach it" },
   { id: "rename", label: "Rename", key: "R", icon: "pencil", hint: "Click a screen to rename it, or a link to relabel it" },
   { id: "delete", label: "Remove", key: "⌫", icon: "trash", hint: "Click a screen to take it out of the tree (children move up)" },
 ];
@@ -130,6 +131,7 @@ export function EditToolbar({
   openCount,
   titleOf,
   onChange,
+  treeStatus,
 }: {
   tool: Tool;
   setTool: (t: Tool) => void;
@@ -141,10 +143,11 @@ export function EditToolbar({
   openCount: number;
   titleOf: (id: string) => string;
   onChange: (change: (e: TreeEdits) => TreeEdits) => void;
+  treeStatus?: string | null; // a selected tree: shown instead of the tool's hint
 }) {
   const [listOpen, setListOpen] = useState(false);
   const n = editCount(edits);
-  const hint = TOOLS.find((t) => t.id === tool)?.hint;
+  const hint = (tool === "tree" && treeStatus) || TOOLS.find((t) => t.id === tool)?.hint;
   const onRevert = (kind: EditKind, id: string) => onChange((e) => revertIn(e, kind, id));
   return (
     <div className="edit-bar" role="toolbar" aria-label="Edit the map" onClick={(e) => e.stopPropagation()}>
