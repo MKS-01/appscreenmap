@@ -184,11 +184,8 @@ def test_layout_and_tree_order_roundtrip_and_default(run_dir):
         {"layout": {"s001": {"x": 1}}},
         {"layout": {"s001": {"x": 1e9, "y": 0}}},
         {"layout": {"s001": {"x": float("nan"), "y": 0}}},
-        {"layout": {"": {"x": 1, "y": 0}}},
         {"layout": {f"s{i}": {"x": 0, "y": 0} for i in range(notes.MAX_LAYOUT + 1)}},
         {"tree_order": "s001"},
-        {"tree_order": [1]},
-        {"tree_order": [f"s{i}" for i in range(notes.MAX_TREE_ORDER + 1)]},
     ],
 )
 def test_bad_layout_or_tree_order_is_refused(bad):

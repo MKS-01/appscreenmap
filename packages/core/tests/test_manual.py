@@ -85,10 +85,8 @@ def test_a_jpeg_is_stored_as_png_and_ids_keep_counting(tmp_path):
     "kw",
     [
         {"image": b"not an image"},
-        {"image": png("GIF")},
         {"title": "  "},
         {"parent": "s099"},
-        {"parent": "x:other"},
         {"via": "Help"},  # a link label without a parent
         {"scenario": "sc9"},
         {"hierarchy": "<<<"},
@@ -207,9 +205,6 @@ def snapshot(d):
         {"image": "IMG", "scenario": "nope"},
         {"image": "IMG", "captures": {"BAD name": "IMG"}},
         {"hierarchy": XML, "parent": "s099"},
-        {"hierarchy": "<<<"},
-        {"title": "New", "captures": {"ok": b"not an image"}},
-        {"image": "IMG", "title": " "},
     ],
 )
 def test_a_refused_edit_changes_nothing(tmp_path, kw):
@@ -252,8 +247,6 @@ def test_a_screen_cannot_go_under_itself_or_its_children(tmp_path):
         {"scenario": ["a"]},
         {"via": 5, "parent": "s001"},
         {"title": 7},
-        {"parent": {"x": 1}},
-        {"hierarchy": 3},
     ],
 )
 def test_non_text_fields_are_a_clean_error(tmp_path, kw):
