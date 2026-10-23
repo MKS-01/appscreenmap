@@ -71,6 +71,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 
 ```bash
 uv sync && uv run pytest -q && uv run ruff check && uv run ruff format
+make test-fast   # about 10 s: skips the `slow` tests (the fake app through the crawler); the full suite above is for before a push
 uv run appscreenmap-engine doctor
 APP_PASSWORD=playground-demo uv run appscreenmap-engine crawl --apk samples/playground-app/apk/playground-v1.apk \
   --config samples/playground-app/appscreenmap.toml --clear-data --max-steps 200

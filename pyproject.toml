@@ -28,4 +28,5 @@ extend-exclude = [".claude/skills/play-policy-insights"]  # vendored from github
 
 [tool.pytest.ini_options]
 testpaths = ["apps/*/tests", "packages/*/tests"]
+markers = ["slow: runs the fake app through the crawler (seconds each); skipped by `make test-fast`"]
 addopts = "--import-mode=importlib"  # test files in different packages share names

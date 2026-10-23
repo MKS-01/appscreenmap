@@ -1,6 +1,6 @@
 # Day-to-day commands for the whole monorepo (Python via uv, TypeScript via Bun).
 BIN_DIR ?= $(HOME)/.local/bin
-.PHONY: install setup test lint fmt check viewer viewer-dev cli cli-check release-local demo skills-check skills-sync skills-xcode
+.PHONY: test-fast install setup test lint fmt check viewer viewer-dev cli cli-check release-local demo skills-check skills-sync skills-xcode
 
 install: setup viewer cli   ## from a checkout: everything, plus the `appscreenmap` command in ~/.local/bin (BIN_DIR=…)
 	mkdir -p $(BIN_DIR)
@@ -11,8 +11,11 @@ setup:        ## install everything: Python workspace (uv) + TypeScript workspac
 	uv sync
 	bun install
 
-test:         ## Python tests (no device needed)
+test:         ## All Python tests (no device needed), about 90 s: run before a push
 	uv run pytest -q
+
+test-fast:    ## The same, minus the tests that run the fake app through the crawler, about 10 s
+	uv run pytest -q -m "not slow"
 
 lint:         ## ruff lint + format check, as CI runs them
 	uv run ruff check
