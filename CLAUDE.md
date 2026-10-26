@@ -11,7 +11,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
 - Python is a uv workspace (the root `pyproject.toml` is virtual). Everything imports as `appscreenmap.*` (a namespace
   package: never add `src/appscreenmap/__init__.py`). A package imports only what its `pyproject.toml` depends on
   (`packages/testkit/tests/test_layers.py` checks).
-  - `packages/core/`: `appscreenmap.core`: map.json model, analyzer, config, runs, notes, media, manual (screens filed by hand); imports nothing else
+  - `packages/core/`: `appscreenmap.core`: map.json model, analyzer, config, runs, notes, media, manual (screens filed by hand), merge, accounts, activity log (`appscreenmap logs`), timeline; imports nothing else
   - `packages/drivers/`: Android (adb, dumpsys, device facts, apkinfo, logcat) and iOS Simulator; stdlib only
   - `packages/crawler/`: explorer, replay, load timing
   - `packages/a11y/`: WCAG checks (`checks.py`), criteria (`wcag.py`), HTML/MD report
@@ -23,7 +23,7 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
     `packages/exporters/`: Maestro, Mermaid
   - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`;
     `appscreenmap.testkit.fakedevice`: a scriptable fake app/driver)
-  - `apps/engine/`: `appscreenmap.engine`: the CLI (`engine/cli/`, one module per command group; `screens.py`: `add-screen` / `edit-screen`) and the MCP
+  - `apps/engine/`: `appscreenmap.engine`: the CLI (`engine/cli/`, one module per command group; `screens.py`: `add-screen` / `edit-screen`; `watch.py` and `record.py`: use the app by hand, log/traffic or a Maestro flow) and the MCP
     server (`engine/mcp_server.py`), on top of every package
   - tests live next to their code (`<package>/tests/`), on synthetic hierarchies; no device needed
 - `apps/cli/`: the `appscreenmap` binary (Bun + Ink): terminal home that runs the dashboard (the engine's `serve`),
@@ -88,6 +88,7 @@ uv run appscreenmap-engine perf runs/playground/<run-id>     # load time per scr
 - `play-policy-insights`, `android-permissions-security`, `android-intent-security`, `edge-to-edge`, `adaptive`: unchanged copies from github.com/android/skills (Apache-2.0; `make skills-sync`) for audits and scans; `audit-xcode-security-settings`, `uikit-app-modernization`: Apple's, synced from Xcode 27 (`make skills-xcode`, git-ignored, no license). Audit/scan skills only, no development skills; excluded from ruff
 - `security-rules`: the security rule catalogue (`packages/security/.../rules.json`): ids, severities, fixes, official sources
 - `ios-a11y-rules`: iOS accessibility (VoiceOver, Dynamic Type, HIG 44 pt) mapped to WCAG, what is detected and the Swift fix
+- `web-ui`: viewer UI work in `apps/viewer/` (owned by the web session); follows `design-system`
 - `crawl-app`: run a crawl and review the result
 - `tune-crawler`: turn a bad crawl into a test and a fix (screen identity, wasted taps, routing)
 - `extend-crawler`: add features (drivers, exports, patterns, config, schema fields, CLI)

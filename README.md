@@ -49,7 +49,8 @@ query, diff and build on.
 | **Routes to every screen** | "How do I reach Settings?" is a lookup, for you and for your agent |
 | **A diff between builds** | Added, removed and changed screens before release, not after |
 | **Android and iOS** | One command explores the build on an emulator or Simulator, no scripting |
-| **Exports you can use** | Test flows, one per screen (Maestro format), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
+| **What the app talks to** | Hosts it calls and its own log lines, per run or while you use it by hand (`crawl --network`, `watch`), tied to the screen you were on |
+| **Exports you can use** | Test flows, one per screen (Maestro format), a flow recorded from your own taps (`record`), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
 | **Audits, not just a map** | WCAG 2.2, performance, store deadlines and security, with the fix and an official source. They read the app and its APK or app bundle, no source code needed |
 | **A CI gate** | `verify` replays every path on a new build and fails the job if one breaks |
 | **An MCP server for your agent** | Your agent knows the app without re-exploring it: find a screen, get the route, go there |
@@ -141,6 +142,7 @@ device. More in [docs/SETUP.md](docs/SETUP.md#agents-mcp).
 | Map an app and review the result | [`crawl-app`](.claude/skills/crawl-app/SKILL.md), [`tune-crawler`](.claude/skills/tune-crawler/SKILL.md) |
 | Accessibility (WCAG 2.2) | [`a11y-audit`](.claude/skills/a11y-audit/SKILL.md) |
 | iOS Simulator setup | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
+| Security audit | [`security-audit`](.claude/skills/security-audit/SKILL.md) |
 | Store deadlines (Play target API, App Store SDK) | [`store-requirements`](.claude/skills/store-requirements/SKILL.md) |
 | Test export | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
 
@@ -163,9 +165,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the details.
 `appscreenmap serve` opens it on `runs/`. No backend; it updates live while it maps.
 
 - **Insights**: scored audits with findings, fixes and official sources
-- **Map**: every screen as a tree, graph or storyboard. Comment, add planned screens, rename, move or remove; edits go in `notes.json` and the mapped data is never touched
+- **Map**: every screen as a tree, graph or storyboard. Comment, add planned screens, file screens the crawl missed, rename, move or remove; edits go in `notes.json` and the mapped data is never touched
 - **Screens**: search, tappable overlays, transitions, the test flow
 - **Accessibility**: findings per rule with screenshots; triage them, export a WCAG 2.2 report
+- **Network · Logs**: the hosts the app called and its own log lines, with sessions you recorded by hand
 - **Compare**: what changed between two builds
 - **Crawl replay**: step through what was tapped and why
 
@@ -187,6 +190,8 @@ Mermaid graph (`map.mmd`), a one-file WCAG report (`a11y-report.html`, evidence 
 | Exports | ✅ Ready | Test flows (Maestro format), Mermaid graph and a one-file SVG of the map |
 | MCP server and agent skills | ✅ Ready | Ask your AI agent to map, audit and compare |
 | Store readiness | ✅ Ready | Play and App Store SDK deadlines for the next 365 days |
+| Network and app logs | 🧪 Beta | Hosts and log lines from `crawl --network` or `watch`, on an Android emulator; TLS is left untouched |
+| Record a flow | 🧪 Beta | `record` turns your taps and typing into a Maestro flow (Android) |
 | iOS Simulator | 🧪 Beta | Same map on iOS; see the [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) skill |
 | Security audit | 🧪 Beta | 18 of 19 rules on Android and iOS builds; see the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
 | Adaptive UI review | 🚧 Coming soon | Check every screen at phone, tablet and foldable sizes |
