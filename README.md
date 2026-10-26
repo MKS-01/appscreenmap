@@ -17,12 +17,12 @@
 </p>
 
 <p align="center">
-  <a href="#why">Why</a> ·
+  <a href="#know-your-app">Know your app</a> ·
   <a href="#get-started">Get started</a> ·
-  <a href="#how-it-works">How it works</a> ·
   <a href="#ai-agent-and-mcp">Agent and MCP</a> ·
   <a href="#dashboard">Dashboard</a> ·
-  <a href="docs/SETUP.md">Docs</a>
+  <a href="docs/SETUP.md">Docs</a> ·
+  <a href="docs/ARCHITECTURE.md">Architecture</a>
 </p>
 
 <p align="center">
@@ -36,32 +36,21 @@ appscreenmap crawl --apk app.apk   # explore the app, then run `appscreenmap` to
 > [!NOTE]
 > **Early alpha:** the project is under active development and commands may change.
 
-## Why
+## Know your app
 
 Ask a team "how many screens does your app have, and how do I reach checkout?" and you get a guess. The answer
 lives in someone's head, a stale design file, or a test suite that breaks every sprint. AppScreenMap walks through
-the build you already ship, taps every screen it can reach and writes it down, so the answer is a file you can
-query, diff and build on.
+the build you already ship and writes every screen down, so the answer is a file you can query, diff and build on.
 
-| You get | Which means |
-|---|---|
-| **A complete screen inventory** | Know what is in the build, including screens nobody remembers |
-| **Routes to every screen** | "How do I reach Settings?" is a lookup, for you and for your agent |
-| **A diff between builds** | Added, removed and changed screens before release, not after |
-| **Android and iOS** | One command explores the build on an emulator or Simulator, no scripting |
-| **What the app talks to** | Hosts it calls and its own log lines, per run or while you use it by hand (`crawl --network`, `watch`), tied to the screen you were on |
-| **Exports you can use** | Test flows, one per screen (Maestro format), a flow recorded from your own taps (`record`), a Mermaid graph, a one-file SVG map you can drop into Figma, a WCAG report |
-| **Audits, not just a map** | WCAG 2.2, performance, store deadlines and security, with the fix and an official source. They read the app and its APK or app bundle, no source code needed |
-| **A CI gate** | `verify` replays every path on a new build and fails the job if one breaks |
-| **An MCP server for your agent** | Your agent knows the app without re-exploring it: find a screen, get the route, go there |
+- *What is in this build?* A complete screen inventory, including screens nobody remembers.
+- *How do I reach Settings?* A route to every screen, for you and for your agent.
+- *What changed since the last release?* Added, removed and changed screens, before release.
+- *Is it accessible, fast, secure, store-ready?* WCAG 2.2, performance, store deadlines and security, each with the fix and an official source.
+- *What does the app talk to?* The hosts it calls and its own log lines, tied to the screen you were on (`crawl --network`, `watch`).
+- *Did this build break a path?* `verify` replays every path and fails the CI job if one is gone.
 
-And it asks nothing of your app:
-
-- **Zero app changes.** No SDK, no test IDs, no source. Works on any mobile app, native or cross-platform (Jetpack
-  Compose, React Native, SwiftUI), even with almost no resource ids.
-- **Deterministic.** No model calls while it explores: same build and config, same map, so a regression is a diff.
-- **Local and safe.** Nothing leaves your machine. It stays in the app and never taps log out, delete or pay, in 24 languages.
-- **Agent-native.** A local [MCP server](#ai-agent-and-mcp) and [skills](.claude/skills/) for Claude Code or any MCP client.
+It makes no model calls while it explores, so the same build gives the same map, and nothing leaves your machine.
+Android and iOS (iOS is beta).
 
 ## Get started
 
@@ -77,14 +66,15 @@ appscreenmap                         # terminal home + dashboard
 ```
 
 No app handy? Press `x` in the terminal home to map the [Playground](samples/README.md) sample app.
-Output is a run folder of plain files (`map.json`, `screens/`, `flows/`, `a11y.json`, `perf.json`, reports);
-`map.json` is a versioned contract, see [docs/MAP_SCHEMA.md](docs/MAP_SCHEMA.md).
-To map the app in another language, add `--locale fr-FR` (or `ja`, `ar`, …). Android 13+; on iOS the app is relaunched.
-`appscreenmap --help` lists every command; after pulling new code, run `make install` again.
+
+- **Output** is a run folder of plain files (`map.json`, `screens/`, `flows/`, `a11y.json`, `perf.json`, reports).
+  `map.json` is a versioned contract: [docs/MAP_SCHEMA.md](docs/MAP_SCHEMA.md).
+- **Another language:** add `--locale fr-FR` (or `ja`, `ar`, …). Android 13+; on iOS the app is relaunched.
+- **Commands:** `appscreenmap --help` lists them all. After pulling new code, run `make install` again.
 
 ## AI agent and MCP
 
-Everything runs through your AI agent. Press `t` in the terminal home for a new terminal in the same folder, run
+Everything can run through your AI agent. Press `t` in the terminal home for a new terminal in the same folder, run
 `claude`, and ask in plain language:
 
 > *Map my app on the emulator and review the map.*<br>
@@ -128,37 +118,11 @@ Options: `--runs <dir>` (default `./runs`), `--run <run-id>` (default: the lates
 | `a11y_findings`, `perf_summary` | Which screens fail which WCAG 2.2 criteria; which are slow | read-only |
 | `where_am_i` | Which mapped screen the device shows now | read-only |
 | `go_to_screen` | Drive the device to a screen along its route | drives the device |
-| `crawl`, `crawl_status` | Map an app (or a new build) in the background, and follow it | drives the device |
+| `crawl` | Map an app (or a new build) in the background | drives the device |
+| `crawl_status` | Follow a running map | read-only |
 
-Tools carry MCP annotations (`readOnlyHint`, `destructiveHint`), so clients can ask before the two that drive the
-device. More in [docs/SETUP.md](docs/SETUP.md#agents-mcp).
-
-### Skills
-
-[Skills](.claude/skills/) teach the agent the jobs around mapping an app:
-
-| Job | Skill |
-|---|---|
-| Map an app and review the result | [`crawl-app`](.claude/skills/crawl-app/SKILL.md), [`tune-crawler`](.claude/skills/tune-crawler/SKILL.md) |
-| Accessibility (WCAG 2.2) | [`a11y-audit`](.claude/skills/a11y-audit/SKILL.md) |
-| iOS Simulator setup | [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) |
-| Security audit | [`security-audit`](.claude/skills/security-audit/SKILL.md) |
-| Store deadlines (Play target API, App Store SDK) | [`store-requirements`](.claude/skills/store-requirements/SKILL.md) |
-| Test export | [`add-exporter`](.claude/skills/add-exporter/SKILL.md) |
-
-## How it works
-
-1. **Drive.** The engine talks to the device over `adb` (Android) or `simctl` + `idb` (iOS Simulator), pinned to
-   your app so it cannot wander into other apps.
-2. **Observe.** Each step captures a screenshot and the UI hierarchy (`uiautomator` on Android).
-3. **Identify.** The analyzer fingerprints the layout and ignores list contents and digits (clocks, counters), so a
-   list with new rows is the same screen and a different layout is a new one. That keeps the map stable across runs.
-4. **Act.** The explorer picks the next tap, scroll or text entry. It recognises tabs, lists, forms, dialogs and
-   login screens, and skips destructive actions (log out, delete, pay).
-5. **Record.** Screens and transitions go to `map.json`; the audits read the same files.
-
-Your agent sits above this loop: it starts runs, reads the health report, fixes config and maps again.
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the details.
+Tools carry MCP annotations (`readOnlyHint`, `destructiveHint`), so clients can ask before `go_to_screen` and `crawl`,
+the two that drive the device. More in [docs/SETUP.md](docs/SETUP.md#agents-mcp).
 
 ## Dashboard
 
@@ -172,30 +136,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the details.
 - **Compare**: what changed between two builds
 - **Crawl replay**: step through what was tapped and why
 
-The map exports as one self-contained SVG with every screenshot inside: send it to a teammate, open it in a browser or drop it into Figma.
-
-Export Markdown or CSV from the dashboard, or take the files straight from the run: test flows (`flows/`, Maestro format), a
-Mermaid graph (`map.mmd`), a one-file WCAG report (`a11y-report.html`, evidence not a conformance claim), and
-`map.json` / `a11y.json` / `perf.json` for your own tooling.
-
-## Feature status
-
-| Feature | Status | What you get |
-|---|---|---|
-| Android screen map | ✅ Ready | Every screen and route from an emulator or device, without leaving your app |
-| Dashboard | ✅ Ready | Map, screens, crawl replay and build compare, live while it maps |
-| Accessibility audit | ✅ Ready | WCAG 2.2 findings with screenshots, fixes and a shareable report |
-| Performance | ✅ Ready | Load time per screen, jank and cold start |
-| `verify` CI gate | ✅ Ready | Replays every path on a new build and fails the job if one breaks |
-| Exports | ✅ Ready | Test flows (Maestro format), Mermaid graph and a one-file SVG of the map |
-| MCP server and agent skills | ✅ Ready | Ask your AI agent to map, audit and compare |
-| Store readiness | ✅ Ready | Play and App Store SDK deadlines for the next 365 days |
-| Network and app logs | 🧪 Beta | Hosts and log lines from `crawl --network` or `watch`, on an Android emulator; TLS is left untouched |
-| iOS Simulator | 🧪 Beta | Same map on iOS; see the [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) skill |
-| Security audit | 🧪 Beta | 18 of 19 rules on Android and iOS builds; see the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
-| Adaptive UI review | 🚧 Coming soon | Check every screen at phone, tablet and foldable sizes |
-
-Audit rules (WCAG, security, Play and App Store) are updated as the official guidance changes.
+Export the map as one self-contained SVG (every screenshot inside) or Markdown/CSV from the dashboard, or take the files
+straight from the run: test flows (`flows/`, Maestro format), a Mermaid graph (`map.mmd`), a one-file WCAG report
+(`a11y-report.html`, evidence not a conformance claim), and `map.json` / `a11y.json` / `perf.json`.
 
 ## License
 
