@@ -674,8 +674,7 @@ Stages, each buildable and verifiable on its own:
    reports frida-tools and frida-server versions. (verify: the Playground on a Google APIs image)
 3. Dashboard: `POST /api/stack` and the installed-apps list, and a UI spec handed to the web session (pick emulator → pick
    app → scan → stack card → crawl).
-4. iOS: the simulator's app container (`simctl get_app_container`) through the same fingerprints; Frida attach to the
-   simulator process after a spike.
+4. iOS (phase 2, below).
 
 Acceptance criteria (phase 1, Android):
 1. `appscreenmap stack --package dev.appscreenmap.playground` on the emulator, without Frida, reports native, Kotlin,
@@ -686,6 +685,39 @@ Acceptance criteria (phase 1, Android):
 5. The parsers are tested without a device, on synthetic APKs and saved Frida output (`packages/stack/tests/`).
 6. `stack.json` is documented in `docs/MAP_SCHEMA.md`, additive within schema 1, in the same change.
 7. `uv run pytest -q` and `uv run ruff check` pass, including the layer test.
+
+**Phase 2: iOS** (planned; how-to in the `stack-ios` skill, rule upkeep in `stack-rules`). The same scan reads an app
+installed on a booted **simulator**: no upload, no device. `simctl get_app_container` gives the `.app` and the data
+folder; the facts come from `Info.plist`, the `Frameworks/` folder and the main executable's Mach-O load commands (linked
+frameworks, `LC_BUILD_VERSION` min OS and SDK, `LC_ENCRYPTION_INFO_64`), read with the stdlib. Unlike Android, KMP is
+`certain` on iOS: Kotlin/Native symbols (`kfun:`) only come from KMP. A debug build keeps its code in
+`<App>.debug.dylib`, so both binaries are read. Checked by hand on a real KMP + Compose Multiplatform debug build, outside
+the repo: `kfun:` symbols, `skiko` and a `compose-resources/` folder are all there.
+
+Stages:
+1. Mach-O reader: load commands, fat slices, build version, encryption. (verify: synthetic headers in tests)
+2. Bundle fingerprint: `.app` → the same `signals` / `storage` / `libraries` shape, with `platform: "ios"` and iOS rule
+   kinds (`framework`, `bundle-path`, `symbol`, `dylib`). (verify: synthetic `.app` folders per framework)
+3. Engine: `appscreenmap stack --platform ios --package <bundle-id>`, canvases in the `<project>-ios` folder like iOS
+   crawls, the `.app` kept in `build/app/`. (verify: a simulator build, locally)
+4. Dashboard: booted simulators beside emulators in New project; iOS facts (deployment target, Xcode, encryption) on the
+   App stack page.
+5. Frida spike: simulator apps are macOS processes, so attaching may need no jailbreak. Result recorded here before any
+   runtime layer is built on it.
+
+Acceptance criteria (phase 2, iOS):
+1. A synthetic Flutter, React Native (Hermes), Unity, MAUI, Capacitor, KMP + Compose Multiplatform and SwiftUI `.app`
+   each give the expected summary, tested without a simulator.
+2. A debug build whose code is only in `<App>.debug.dylib` is still detected as KMP.
+3. On a booted simulator, `stack --platform ios` reports the deployment target, build SDK and Xcode from `Info.plist`, and
+   min OS and SDK from `LC_BUILD_VERSION`.
+4. An encrypted binary (`cryptid` 1) is reported in `notes`, and no code-string signal is claimed from it.
+5. Storage rows name paths under the data container (`Library/Preferences/<bundle-id>.plist`, `Library/Application
+   Support/`, `Documents/`) and say the Keychain is not a file there.
+6. A scan of an iOS app with no canvas creates one in the `-ios` project folder; it never matches the Android canvas
+   of the same app.
+7. New fields are additive within schema 1 and documented in `docs/MAP_SCHEMA.md`; `uv run pytest -q` and
+   `uv run ruff check` pass.
 
 ## 9. Todo
 
