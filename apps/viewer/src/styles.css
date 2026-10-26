@@ -5226,3 +5226,209 @@ a.bars-label,
   flex-direction: column;
   gap: var(--space-3);
 }
+
+/* ── app stack (Insights › App stack, New project, chips) ─────────────── */
+.appstack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.stack-h {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+.stack-rescan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+.stack-error {
+  flex-basis: 100%;
+  color: var(--bad);
+}
+.stack-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.stack-facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.stack-facts dt {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--faint);
+}
+.stack-facts dd {
+  margin: 0;
+  font-size: var(--text-base);
+  overflow-wrap: anywhere;
+}
+.stack-tbl td {
+  font-size: var(--text-base);
+}
+.stack-tbl th {
+  background: var(--bg);
+}
+.stack-ev {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* confidence is a word; weight and grey step down with it, no colour */
+.stack-conf,
+.stack-src,
+.stack-rest {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+.stack-conf.certain {
+  color: var(--text);
+}
+.stack-conf.strong {
+  color: var(--dim);
+}
+.stack-conf.likely,
+.stack-conf.not-run,
+.stack-src {
+  color: var(--faint);
+}
+.stack-list,
+.stack-notes,
+.stack-versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.stack-notes li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dim);
+}
+.stack-versions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0;
+}
+.stack-more summary {
+  cursor: pointer;
+  color: var(--dim);
+  font-size: var(--text-base);
+  padding: var(--space-2) 0;
+}
+.stack-more[open] summary {
+  margin-bottom: var(--space-2);
+}
+.stack-chip {
+  gap: 5px;
+  max-width: 360px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--dim);
+  text-decoration: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .stack-chip:hover {
+    color: var(--text);
+    border-color: var(--line-hi);
+  }
+}
+.crumb-stack {
+  max-width: 280px;
+}
+.film-empty {
+  align-self: center;
+  padding: var(--space-4) 0;
+}
+
+.newproj {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+.newproj-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.newproj-head h2 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+.newproj-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.newproj-step .seg {
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+.newproj-filter {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-hi);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-base);
+  min-width: 0;
+  width: min(100%, 260px);
+}
+.newproj-filter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.newproj-apps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  max-height: 320px;
+  overflow: auto;
+}
+.newproj-apps li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-base);
+  min-width: 0;
+}
+
+.empty-canvas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 880px;
+}
+.empty-canvas h1 {
+  font-size: var(--text-2xl);
+  letter-spacing: var(--tracking-tight);
+}

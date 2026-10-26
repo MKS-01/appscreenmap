@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { deleteRun, runFile, runKey, useIndex, useMap } from "../api";
 import { CopyButton, ErrorBox, Loading, StatusBadge } from "../components/common";
 import { Icon } from "../components/Icon";
+import NewProject from "../components/NewProject";
 import { href, screenHref } from "../router";
 import { clearAll, usage } from "../storage";
 import type { RunIndexRow } from "../types";
@@ -22,6 +23,7 @@ const osLabel = (d: RunIndexRow["device"]) => (d.platform === "ios" ? `iOS ${d.o
 export default function Runs() {
   const { data, error } = useIndex();
   const [gone, setGone] = useState<Set<string>>(new Set()); // deleted here; index.json catches up on its next read
+  const [newOpen, setNewOpen] = useState(false);
 
   // One card per app (project folder, else package), newest run first.
   const apps = useMemo<AppGroup[]>(() => {
@@ -68,6 +70,9 @@ export default function Runs() {
                 <span>{AGENT_PROMPT}</span>
               </span>
               <CopyButton text={AGENT_PROMPT} />
+              <button className="btn primary" onClick={() => setNewOpen(true)} aria-expanded={newOpen}>
+                <Icon name="plus" size={14} /> New project
+              </button>
               <a className="btn" href="#/how">
                 How it works →
               </a>
@@ -89,6 +94,7 @@ export default function Runs() {
       </section>
 
       <div className="page" style={{ paddingTop: 28 }}>
+        {newOpen && <NewProject onClose={() => setNewOpen(false)} />}
         {runs.length === 0 ? (
           <GettingStarted big />
         ) : (
@@ -151,6 +157,11 @@ function AppCard({ group, onDeleted }: { group: AppGroup; onDeleted: (key: strin
             </h2>
             {r.app.version && <span className="chip">v{r.app.version}</span>}
             <StatusBadge status={r.status} />
+            {r.stack?.summary && (
+              <a className="chip stack-chip" href={href("r", key, "insights", "stack")} title="App stack">
+                <Icon name="cpu" size={12} /> <span className="ellipsis">{r.stack.summary}</span>
+              </a>
+            )}
           </div>
           <div className="small muted ellipsis">
             <span className="mono">{r.app.package}</span> · {r.device.model ?? r.device.serial} · {osLabel(r.device)} ·{" "}
@@ -175,6 +186,11 @@ function AppCard({ group, onDeleted }: { group: AppGroup; onDeleted: (key: strin
                 <img src={`/runs/${r.thumb}`} alt="" />
               </span>
             )}
+        {map && map.stats.screens === 0 && r.status !== "running" && (
+          <span className="film-empty small muted">
+            No screens yet. Ask your agent to map {r.app.label ?? "the app"} on the emulator: the crawl lands on this canvas.
+          </span>
+        )}
         {map && map.stats.screens > shots.length && (
           <a className="film more" href={href("r", key, "screens")}>
             +{map.stats.screens - shots.length}
@@ -185,12 +201,18 @@ function AppCard({ group, onDeleted }: { group: AppGroup; onDeleted: (key: strin
 
       <div className="app-foot">
         <div className="app-metrics">
-          <Metric v={r.screens} l="screens" />
-          <Metric v={r.transitions} l="transitions" />
-          <Metric v={r.crashes} l="crashes" warn={r.crashes > 0} />
-          <Metric v={r.steps ?? 0} l="steps" />
-          <Metric v={fmtDuration(r.elapsed_s)} l="crawl time" />
-          {coverage != null && <Metric v={`${Math.round(coverage * 100)}%`} l="activity coverage" />}
+          {r.screens === 0 && !r.steps ? (
+            <span className="small muted">Scanned, not crawled yet</span>
+          ) : (
+            <>
+              <Metric v={r.screens} l="screens" />
+              <Metric v={r.transitions} l="transitions" />
+              <Metric v={r.crashes} l="crashes" warn={r.crashes > 0} />
+              <Metric v={r.steps ?? 0} l="steps" />
+              <Metric v={fmtDuration(r.elapsed_s)} l="crawl time" />
+              {coverage != null && <Metric v={`${Math.round(coverage * 100)}%`} l="activity coverage" />}
+            </>
+          )}
         </div>
         <nav className="app-links" aria-label={`${r.app.label ?? r.app.package} views`}>
           {LINKS.map(([tab, label]) => (

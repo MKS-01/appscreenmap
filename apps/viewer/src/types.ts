@@ -182,6 +182,8 @@ export interface RunIndexRow {
   crashes: number;
   thumb: string | null;
   diffs: string[];
+  /** From audits/stack.json, when `appscreenmap stack` scanned the app. */
+  stack?: { kind: "native" | "cross-platform" | "kmp" | null; summary: string | null; version?: string | null; generated_at?: string | null };
 }
 
 // One line of trace.jsonl: either an action that ran, or one whose element couldn't be found.

@@ -5,6 +5,7 @@ import { ScreenLink } from "../components/common";
 import { Icon, type IconName } from "../components/Icon";
 import { Bars, Chart, SampleTag, toneColor } from "../insights/charts";
 import { useAudits } from "../insights/registry";
+import StackDetails from "../insights/StackDetails";
 import type { AuditDef, AuditFinding, AuditRef, AuditReport, AuditStatus, Platform, PlannedCheck, Requirement, Severity, Tone } from "../insights/types";
 import { href } from "../router";
 import { keys, useStored } from "../storage";
@@ -675,6 +676,7 @@ function AuditPage({ run, map, def, report }: { run: string; map: AppMapData; de
         </section>
       )}
 
+      {def.id === "stack" && <StackDetails run={run} report={report} />}
       {requirements.length > 0 && <Requirements store={def.id === "store"} items={requirements} />}
       {def.id === "store" && <ListingScreens run={run} map={map} />}
       {def.id === "coverage" && <CoverageExtras run={run} map={map} />}

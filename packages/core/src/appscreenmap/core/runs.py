@@ -94,6 +94,21 @@ def delete_run(runs_root: Path, key: str) -> Path:
     return run_dir
 
 
+def _stack_summary(run_dir: Path) -> dict | None:
+    """The one line a project card shows from `audits/stack.json` (written by `appscreenmap stack`)."""
+    try:
+        audit = json.loads((run_dir / "audits" / "stack.json").read_text())
+    except (OSError, ValueError):
+        return None
+    facts = audit.get("facts") or {}
+    return {
+        "kind": (facts.get("stack") or {}).get("kind"),
+        "summary": audit.get("summary"),
+        "version": facts.get("version"),
+        "generated_at": audit.get("generated_at"),
+    }
+
+
 def update_index(runs_root: Path) -> list[dict]:
     rows = []
     for d in iter_run_dirs(runs_root):
@@ -114,6 +129,7 @@ def update_index(runs_root: Path) -> list[dict]:
             diffs = sorted(p.name for p in (d / "diff").iterdir() if (p / "diff.json").is_file())
         if (d / "verify").is_dir():
             verifies = sorted(p.name for p in (d / "verify").iterdir() if (p / "verify.json").is_file())
+        stack = _stack_summary(d)
         rows.append(
             {
                 "id": d.name,
@@ -132,6 +148,7 @@ def update_index(runs_root: Path) -> list[dict]:
                 "thumb": f"{rel}/{first['thumb']}" if first and first.get("thumb") else None,
                 "diffs": diffs,
                 "verifies": verifies,
+                **({"stack": stack} if stack else {}),
             }
         )
     rows.sort(key=lambda r: (r["started_at"] or "", r["id"]), reverse=True)
