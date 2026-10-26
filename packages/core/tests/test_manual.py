@@ -91,6 +91,7 @@ def test_bad_input_raises_and_writes_nothing(tmp_path):
         {"via": "Help"},  # a link label without a parent
         {"scenario": "sc9"},
         {"hierarchy": "<<<"},
+        {"image": png()[:-40]},  # cut off: the header is fine, the pixels are not
     ):
         args = {"image": png(), "title": "Support", **kw}
         with pytest.raises(manual.ManualError):

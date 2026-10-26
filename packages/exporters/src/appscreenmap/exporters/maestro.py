@@ -68,8 +68,6 @@ def maestro_flow(data: dict, screen: dict) -> str:
         for f in screens.get(sid, {}).get("autofill", []):
             lines.append("- tapOn: " + _target(f["selector"], w, h))
             lines.append("- inputText: " + _q(f["value"]))
-        if screens.get(sid, {}).get("autofill"):
-            lines.append("- hideKeyboard")
 
     path_screens = [step["screen"] for step in screen.get("reach_path", [])]
     secrets = sorted(

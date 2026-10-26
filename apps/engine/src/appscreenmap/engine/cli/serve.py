@@ -15,7 +15,7 @@ import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import parse_qs, unquote
+from urllib.parse import parse_qs, unquote, urlsplit
 
 from appscreenmap.core import activity, manual, notes
 from appscreenmap.core.model import load_map
@@ -47,11 +47,28 @@ SESSION_START_WAIT_S = 8  # for `watch` to write session.json, or to fail
 SESSION_STOP_WAIT_S = 20  # for `watch` to put the proxy back and tie its rows to screens
 
 
+def _mark_killed(sdir: Path) -> None:
+    """A `watch` that had to be killed never wrote its end: say so, or the dashboard shows it recording for ever."""
+    f = sdir / "session.json"
+    try:
+        session = json.loads(f.read_text())
+    except (OSError, ValueError):
+        return
+    if session.get("status") == "recording":
+        session.update(
+            status="failed",
+            error="stopped without finishing",
+            finished_at=datetime.now().isoformat(timespec="seconds"),
+        )
+        f.write_text(json.dumps(session, indent=1) + "\n")
+
+
 class _Recorder:
     """`watch` processes started from the dashboard, one at a time: a device has one proxy setting to put back."""
 
     def __init__(self) -> None:
         self.lock = threading.Lock()
+        self.start_lock = threading.Lock()
         self.procs: dict[str, tuple[subprocess.Popen, Path]] = {}
 
     def running(self) -> dict[str, tuple[subprocess.Popen, Path]]:
@@ -61,7 +78,7 @@ class _Recorder:
 
     def stop(self, sid: str) -> bool:
         with self.lock:
-            proc, _ = self.procs.pop(sid, (None, None))
+            proc, sdir = self.procs.pop(sid, (None, None))
         if proc is None:
             return False
         proc.terminate()  # SIGTERM: `watch` handles it like Ctrl-C
@@ -70,6 +87,7 @@ class _Recorder:
         except subprocess.TimeoutExpired:
             proc.kill()  # `doctor` reports a proxy left on the device
             proc.wait()
+            _mark_killed(sdir)
         return True
 
     def stop_all(self) -> None:
@@ -255,9 +273,13 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def _local_page(self) -> bool:
-        """Only same-machine pages may write (guards against DNS rebinding); cross-site writes already fail CORS preflight."""
+        """Only same-machine pages may write: the Host header guards against DNS rebinding, the Origin header against
+        another site's form post (a multipart POST needs no CORS preflight)."""
+        local = ("localhost", "127.0.0.1", "::1", self.server.server_address[0])
         host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]")
-        return host in ("localhost", "127.0.0.1", "::1", self.server.server_address[0])
+        if (origin := self.headers.get("Origin")) and (urlsplit(origin).hostname or "") not in local:
+            return False
+        return host in local
 
     def _read_json(self, limit: int = 4096) -> dict | None:
         if not (self.headers.get("Content-Type") or "").startswith("application/json"):
@@ -365,8 +387,6 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         run_dir = self._run_dir(str(body.get("run") or ""))
         if run_dir is None:
             return self.send_error(404, "no such run")
-        if busy := self.recorder.running():
-            return self._json({"error": f"a session is already recording: {next(iter(busy))}"}, 409)
         net = body.get("network", True) is not False
         if net and not network.find_mitmdump():
             return self._json({"error": f"network capture needs mitmproxy: {network.INSTALL}"}, 422)
@@ -375,14 +395,19 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             return self.send_error(400, "serial")
         sid = f"session-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         sdir = run_dir / "sessions" / sid
-        sdir.mkdir(parents=True, exist_ok=True)
-        with (sdir / "watch.log").open("w") as log:
-            proc = subprocess.Popen(
-                self.watch_cmd(run_dir, self.runs_root, sid, net, serial),
-                stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-            )  # fmt: skip
-        with self.recorder.lock:
-            self.recorder.procs[sid] = (proc, sdir)
+        with (
+            self.recorder.start_lock
+        ):  # the check and the registration are one step: a double click starts one
+            if busy := self.recorder.running():
+                return self._json({"error": f"a session is already recording: {next(iter(busy))}"}, 409)
+            sdir.mkdir(parents=True, exist_ok=True)
+            with (sdir / "watch.log").open("w") as log:
+                proc = subprocess.Popen(
+                    self.watch_cmd(run_dir, self.runs_root, sid, net, serial),
+                    stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                )  # fmt: skip
+            with self.recorder.lock:
+                self.recorder.procs[sid] = (proc, sdir)
         deadline = time.monotonic() + SESSION_START_WAIT_S
         while time.monotonic() < deadline and proc.poll() is None and not (sdir / "session.json").is_file():
             time.sleep(0.1)

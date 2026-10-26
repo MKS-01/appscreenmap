@@ -34,5 +34,7 @@ def pytest_collection_modifyitems(items):
     """Tests that run the fake app through the crawler take seconds each (76 of the suite's 88 s): mark them `slow`,
     so `make test-fast` (`-m "not slow"`) skips them and `make test` runs everything."""
     for item in items:
-        if "fakedevice" in str(item.fspath) or re.search(r"\b(crawl|Explorer|Replayer|_explorer)\(|\bex\.run\(\)", _sources(item)):
+        if "fakedevice" in str(item.fspath) or re.search(
+            r"\b(crawl|Explorer|Replayer|_explorer)\(|\bex\.run\(\)", _sources(item)
+        ):
             item.add_marker(pytest.mark.slow)

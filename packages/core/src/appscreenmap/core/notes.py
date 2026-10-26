@@ -21,6 +21,7 @@ COMMENT_TAGS = ("bug", "flow", "copy", "question")
 COMMENT_STATUSES = ("open", "resolved")
 MAX_REPLIES = 100
 MAX_STICKY_TEXT = 4000
+MAX_STICKIES = 1000
 MAX_LAYOUT = 5000  # card positions
 MAX_TREE_ORDER = 1000
 MAX_COORD = 1e6
@@ -84,7 +85,10 @@ def validate(data: object) -> dict:
 def _num(v: object, what: str) -> float:
     if isinstance(v, bool) or not isinstance(v, (int, float)):
         raise NotesError(f"{what} must be a number")
-    return float(v)
+    v = float(v)
+    if not math.isfinite(v) or abs(v) > MAX_COORD:
+        raise NotesError(f"{what} is out of range")
+    return v
 
 
 def _layout(raw: object) -> dict[str, dict]:
@@ -151,6 +155,8 @@ def _stickies(raw: object) -> dict[str, dict]:
     """Sticky notes on the canvas: free text placed around a feature, on a point or (with "screen") on a screen."""
     if not isinstance(raw, dict):
         raise NotesError("stickies must be an object")
+    if len(raw) > MAX_STICKIES:
+        raise NotesError("too many stickies")
     out: dict[str, dict] = {}
     for sid, n in raw.items():
         if not isinstance(sid, str) or not isinstance(n, dict):

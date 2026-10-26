@@ -189,3 +189,12 @@ def test_bad_layout_or_tree_order_is_refused():
     for bad in bad_docs:
         with pytest.raises(notes.NotesError):
             notes.validate({"appscreenmap_notes": 1, "notes": {}, **bad})
+
+
+def test_stickies_reject_non_finite_positions_and_floods(run_dir):
+    doc = lambda stickies: json.dumps({"appscreenmap_notes": 1, "notes": {}, "stickies": stickies}).encode()
+    for bad in ({"a": {"text": "x", "x": float("nan")}}, {"a": {"text": "x", "y": 1e12}}):
+        with pytest.raises(notes.NotesError):
+            notes.save(run_dir, doc(bad))
+    with pytest.raises(notes.NotesError):
+        notes.save(run_dir, doc({str(i): {"text": "x"} for i in range(notes.MAX_STICKIES + 1)}))

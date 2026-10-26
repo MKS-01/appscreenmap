@@ -362,20 +362,24 @@ def cmd_crawl(args) -> int:
         }
         print(f"   network: {args.network} through mitmproxy on port {net.port} ({network.LOG})")
     app_logs = None
-    if args.logs or args.network:
-        app_logs = LogcatCapture(
-            d, package, run_dir / LOGS_LOG, mask=masker(os.environ.get(n) for n in cfg.secret_names())
-        )
-        app_logs.start()
-        net_stack.callback(app_logs.stop)
-        run["logs"] = {"log": LOGS_LOG, "source": "logcat", "lines": 0}
+    try:
+        if args.logs or args.network:
+            app_logs = LogcatCapture(
+                d, package, run_dir / LOGS_LOG, mask=masker(os.environ.get(n) for n in cfg.secret_names())
+            )
+            app_logs.start()
+            net_stack.callback(app_logs.stop)
+            run["logs"] = {"log": LOGS_LOG, "source": "logcat", "lines": 0}
+    except BaseException:
+        net_stack.close()  # the device must not keep a proxy that dies with this process
+        raise
 
     def _terminate(signum, frame):
         raise KeyboardInterrupt
 
-    signal.signal(signal.SIGTERM, _terminate)
-    signal.signal(signal.SIGHUP, _terminate)
     try:
+        signal.signal(signal.SIGTERM, _terminate)
+        signal.signal(signal.SIGHUP, _terminate)
         explorer.run()
         run["status"] = "done"
     except KeyboardInterrupt:

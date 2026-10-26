@@ -63,6 +63,7 @@ def test_maestro_flow_replays_autofill_and_path():
     flow = maestro_flow(d, d["screens"][1])
     assert f"appId: {PKG}" in flow
     assert '- inputText: "qa@x.dev"' in flow
+    assert "hideKeyboard" not in flow  # on Android it presses Back
     assert f'- tapOn: {{ id: "{PKG}:id/submit" }}' in flow
     assert '- assertVisible: "Home"' in flow
     flow3 = maestro_flow(d, d["screens"][2])

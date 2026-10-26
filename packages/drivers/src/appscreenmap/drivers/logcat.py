@@ -16,7 +16,7 @@ from pathlib import Path
 # `logcat -v epoch`: "1792608295.581  1234  1250 I PlaygroundNet: GET … -> failed"
 _LINE = re.compile(r"^\s*(\d+\.\d+)\s+(\d+)\s+(\d+)\s+([VDIWEFA])\s+(.*?)\s*:\s?(.*)$")
 LEVELS = {"V": "verbose", "D": "debug", "I": "info", "W": "warn", "E": "error", "F": "fatal", "A": "fatal"}
-MAX_MESSAGE = 2000
+MAX_MESSAGE = 2000  # cut after masking: a secret straddling the cut would keep its unmasked start
 LOG = "logs.jsonl"
 
 
@@ -25,7 +25,7 @@ def parse_line(line: str) -> dict | None:
     if not m:
         return None
     t, pid, _tid, level, tag, msg = m.groups()
-    return {"t": float(t), "pid": int(pid), "level": LEVELS[level], "tag": tag, "message": msg[:MAX_MESSAGE]}
+    return {"t": float(t), "pid": int(pid), "level": LEVELS[level], "tag": tag, "message": msg}
 
 
 class LogcatCapture:
@@ -41,13 +41,24 @@ class LogcatCapture:
         self._proc: subprocess.Popen | None = None
         self._thread: threading.Thread | None = None
         self._since = 0.0
+        self._skew = 0.0
 
     def start(self) -> None:
         self.out.parent.mkdir(parents=True, exist_ok=True)
         self.out.touch()
+        self._skew = self._clock_skew()
         self._since = time.time() - 1  # logcat -T 1 replays one older line; drop anything before we started
         self._thread = threading.Thread(target=self._supervise, name="logcat", daemon=True)
         self._thread.start()
+
+    def _clock_skew(self) -> float:
+        """Seconds to add to a device timestamp to get this machine's time (a restored snapshot can lag by minutes)."""
+        try:
+            t0 = time.time()
+            device = float(self.d.shell("date +%s.%N").strip())
+            return (t0 + time.time()) / 2 - device
+        except Exception:  # noqa: BLE001 (no clock to ask: trust the device)
+            return 0.0
 
     def stop(self) -> None:
         self._stop.set()
@@ -82,9 +93,12 @@ class LogcatCapture:
     def _read(self, proc: subprocess.Popen) -> None:
         for raw in proc.stdout:
             row = parse_line(raw.decode(errors="replace") if isinstance(raw, bytes) else raw)
-            if not row or row["t"] < self._since:
+            if not row:
                 continue
-            row["message"] = self.mask(row["message"])
+            row["t"] += self._skew  # device clock → this machine's, which the timeline and the proxy rows use
+            if row["t"] < self._since:
+                continue
+            row["message"] = self.mask(row["message"])[:MAX_MESSAGE]
             row["tag"] = self.mask(row["tag"])
             with self._lock, self.out.open("a", encoding="utf-8") as f:
                 f.write(

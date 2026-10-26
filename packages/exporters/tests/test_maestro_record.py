@@ -127,7 +127,7 @@ def test_a_tappable_textview_with_a_hint_is_a_field_and_keyboard_taps_are_droppe
     ]
 
 
-def test_fields_that_change_in_one_look_are_each_focused_before_typing_and_the_keyboard_is_hidden():
+def test_fields_that_change_in_one_look_are_each_focused_before_typing_and_the_keyboard_is_left_alone():
     r, t = FlowRecorder("p", 1000, 2000, (1000, 2000)), TouchTracker()
     r.on_snapshot(RN_XML.format(name="Your name", pw="Password"))
     r.on_snapshot(RN_XML.format(name="alpha", pw="12345678"))
@@ -138,4 +138,4 @@ def test_fields_that_change_in_one_look_are_each_focused_before_typing_and_the_k
         '- tapOn: { id: "PasswordInput" }',
         '- inputText: "${ACCOUNT_PASSWORD}"',
     ]
-    assert r.lines[4] == "- hideKeyboard"
+    assert not any("hideKeyboard" in x for x in r.lines)  # on Android it presses Back

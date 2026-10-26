@@ -64,9 +64,13 @@ def dashboard(tmp_path, monkeypatch):
     )
     threading.Thread(target=srv.serve_forever, daemon=True).start()
 
-    def call(method, path, body=None, host=None):
+    def call(method, path, body=None, host=None, origin=None):
         c = http.client.HTTPConnection("127.0.0.1", srv.server_address[1])
-        headers = {"Content-Type": "application/json"} | ({"Host": host} if host else {})
+        headers = (
+            {"Content-Type": "application/json"}
+            | ({"Host": host} if host else {})
+            | ({"Origin": origin} if origin else {})
+        )
         c.request(method, path, json.dumps(body) if body is not None else None, headers)
         r = c.getresponse()
         data = r.read()
@@ -107,6 +111,9 @@ def test_logs_only_session_and_bad_requests(dashboard):
     assert call("POST", "/api/sessions", {"run": run.name, "serial": "x; rm -rf /"})[0] == 400
     assert call("POST", "/api/sessions", {"run": run.name}, host="evil.example")[0] == 403
     assert call("POST", "/api/sessions/../../stop")[0] == 404
+    assert (
+        call("POST", "/api/sessions", {"run": run.name}, origin="https://evil.example")[0] == 403
+    )  # a form post
 
 
 def test_a_watch_that_fails_at_once_is_reported(dashboard, tmp_path):
@@ -127,3 +134,13 @@ def test_no_mitmproxy_means_no_network_session(dashboard, monkeypatch):
     monkeypatch.setattr(serve.network, "find_mitmdump", lambda: None)
     status, body = call("POST", "/api/sessions", {"run": run.name})
     assert status == 422 and "uv tool install mitmproxy" in body["error"]
+
+
+def test_a_watch_that_had_to_be_killed_is_not_left_recording(dashboard, monkeypatch):
+    call, run, _ = dashboard
+    monkeypatch.setattr(serve, "SESSION_STOP_WAIT_S", 0)
+    status, s = call("POST", "/api/sessions", {"run": run.name})
+    assert status == 201
+    call("POST", f"/api/sessions/{s['id']}/stop")
+    doc = json.loads((run / s["path"] / "session.json").read_text())
+    assert doc["status"] in ("done", "failed") and doc["status"] != "recording"

@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 
-from appscreenmap.drivers.logcat import LogcatCapture, parse_line
+from appscreenmap.drivers.logcat import MAX_MESSAGE, LogcatCapture, parse_line
 
 
 def test_parse_epoch_line():
@@ -58,3 +58,40 @@ def test_follows_the_app_across_a_restart_and_masks_lines(tmp_path):
     assert [(r["pid"], r["tag"], r["level"]) for r in rows] == [(100, "Auth", "info"), (200, "Cart", "error")]
     assert rows[0]["message"] == "token for •••• ok" and rows[0]["source"] == "logcat"
     assert "Old" not in out.read_text()  # lines from before the capture are dropped
+
+
+def test_a_secret_across_the_length_cut_is_masked_first(tmp_path):
+    secret = "hunter22"
+    msg = "x" * (MAX_MESSAGE - 4) + secret
+    dev = LogDevice([100], {100: [f"I Auth: {msg}"]})
+    out = tmp_path / "logs.jsonl"
+    cap = LogcatCapture(dev, "dev.example", out, mask=lambda s: s.replace(secret, "••••"), poll=0.05)
+    cap.start()
+    deadline = time.monotonic() + 5
+    while cap.lines < 1 and time.monotonic() < deadline:
+        time.sleep(0.05)
+    cap.stop()
+    assert "hunter" not in out.read_text()
+
+
+def test_a_device_clock_that_lags_is_corrected(tmp_path):
+    class Lagging(LogDevice):
+        def shell(self, cmd):
+            return f"{time.time() - 300:.3f}"  # the device thinks it is five minutes ago
+
+        def logcat_popen(self, pid):
+            line = f"{time.time() - 300:.3f}  {pid}  {pid} I Net: now"
+            return subprocess.Popen(
+                [sys.executable, "-u", "-c", f"import time\nprint({line!r})\ntime.sleep(30)"],
+                stdout=subprocess.PIPE,
+            )
+
+    out = tmp_path / "logs.jsonl"
+    cap = LogcatCapture(Lagging([100], {}), "dev.example", out, poll=0.05)
+    cap.start()
+    deadline = time.monotonic() + 5
+    while cap.lines < 1 and time.monotonic() < deadline:
+        time.sleep(0.05)
+    cap.stop()
+    (row,) = [json.loads(x) for x in out.read_text().splitlines()]
+    assert abs(row["t"] - time.time()) < 5

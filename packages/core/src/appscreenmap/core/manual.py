@@ -92,6 +92,7 @@ def _png(image: bytes) -> tuple[bytes, int, int]:
                 raise ManualError("image must be PNG or JPEG")
             if im.width * im.height > MAX_PIXELS:
                 raise ManualError("image is too large")
+            im.load()  # the header alone passes a truncated file; decode it here, before anything is written
             if im.format == "PNG":
                 return bytes(image), im.width, im.height
             out = io.BytesIO()

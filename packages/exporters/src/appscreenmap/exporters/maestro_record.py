@@ -147,7 +147,6 @@ class FlowRecorder:
         self.root: Node | None = None
         self.title = ""
         self._fields: dict[str, str] = {}
-        self._typing = False
 
     def _px(self, p: tuple[int, int]) -> tuple[int, int]:
         return (
@@ -186,7 +185,6 @@ class FlowRecorder:
             if focus not in [x for x in self.lines[-1:]]:
                 self.lines.append(focus)
             self.lines.append("- inputText: " + _q(value))
-            self._typing = True
         self._fields = {k: ("" if (n.hint and n.text == n.hint) else n.text) for k, n in fields.items()}
         titles = [n.text for n in root.walk() if n.text and n.depth <= 8 and not _is_field(n)]
         if titles and titles[0] != self.title and self.root is not None:
@@ -210,10 +208,7 @@ class FlowRecorder:
                 b = f"{round(100 * ex / self.w)}%,{round(100 * ey / self.h)}%"
                 self.lines.append(f"- swipe: {{ start: {_q(a)}, end: {_q(b)} }}")
             return
-        sel, node = selector_at(self.root, sx, sy)
-        if self._typing and not (node is not None and _is_field(node)):
-            self.lines.append("- hideKeyboard")
-        self._typing = False
+        sel, _ = selector_at(self.root, sx, sy)
         cmd = "longPressOn" if g.t_up - g.t_down >= LONG_PRESS_S else "tapOn"
         self.lines.append(f"- {cmd}: " + _target(sel, self.w, self.h))
 
