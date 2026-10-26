@@ -191,7 +191,6 @@ Mermaid graph (`map.mmd`), a one-file WCAG report (`a11y-report.html`, evidence 
 | MCP server and agent skills | ✅ Ready | Ask your AI agent to map, audit and compare |
 | Store readiness | ✅ Ready | Play and App Store SDK deadlines for the next 365 days |
 | Network and app logs | 🧪 Beta | Hosts and log lines from `crawl --network` or `watch`, on an Android emulator; TLS is left untouched |
-| Record a flow | 🧪 Beta | `record` turns your taps and typing into a Maestro flow (Android) |
 | iOS Simulator | 🧪 Beta | Same map on iOS; see the [`ios-simulator`](.claude/skills/ios-simulator/SKILL.md) skill |
 | Security audit | 🧪 Beta | 18 of 19 rules on Android and iOS builds; see the [`security-audit`](.claude/skills/security-audit/SKILL.md) skill |
 | Adaptive UI review | 🚧 Coming soon | Check every screen at phone, tablet and foldable sizes |
