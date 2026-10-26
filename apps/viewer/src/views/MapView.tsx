@@ -970,7 +970,7 @@ function FlowCanvas({
         onChange={editor.edit}
       />
       {(Object.keys(dragged).length > 0 || (variant === "tree" && Object.keys(editor.layout).length > 0)) && (
-        <button className="btn map-reset" onClick={() => (setDragged({}), editor.setLayout(Object.fromEntries(Object.keys(editor.layout).map((id) => [id, null]))))} title="Forget the positions you dragged screens to">
+        <button className="btn map-reset" onClick={() => (setDragged({}), variant === "tree" && editor.setLayout(Object.fromEntries(Object.keys(editor.layout).map((id) => [id, null]))))} title="Forget the positions you dragged screens to">
           Reset layout
         </button>
       )}
