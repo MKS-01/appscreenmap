@@ -627,6 +627,66 @@ graded when stages 6–8 ship.
 - Whether decrypt mode should also prepare a rooted Android 14+ image, where the system CA store moved into an APEX module
   and needs a different install than older images.
 
+### 8.6 2026-10-27: App stack scan from the emulator (in progress)
+
+**Status:** in progress (2026-10-27: stage 1 built and verified on the Playground; stage 3's endpoints and viewer UI
+built in this session at the developer's request: Insights › App stack, New project on the home page, stack chips, the
+empty-canvas state; the stack scan also maps storage and keeps the build in `build/` for the data-at-rest scan to come).
+Branch `feat/stack-scan`. Phase 1 is Android; iOS follows once Android is verified. Next: stage 2 (Frida), which needs a
+Google APIs emulator image (the Play images here are `user` builds).
+
+**Why.** Before mapping screens, a developer (or a reviewer new to the app) wants to know what the app is built with:
+native or cross-platform (Flutter, React Native, Compose Multiplatform / KMP, .NET MAUI, Unity, Cordova / Capacitor), its
+SDK levels, ABIs, and which SDKs it bundles and actually runs. The same facts explain crawl behaviour (a Flutter app bypasses
+the proxy; a WebView screen has no hierarchy). Starting a project from this scan gives the dashboard a first step that needs
+no crawl.
+
+**Decision:** the scan reads **the app installed on the running emulator**. There is no upload. Two layers:
+
+| Layer | Needs | What it gives |
+|---|---|---|
+| Device read | adb only | `dumpsys package` (version, min / target SDK, flags, installer, splits) and the APK pulled from the device (`pm path`), fingerprinted statically: native libraries, ABIs, 16 KB alignment, dex marker classes, known SDKs |
+| Frida probe | `frida-tools` on the host, a matching `frida-server` on a rooted (Google APIs) emulator | what actually loaded: native modules, marker classes (React Native bridgeless vs bridge, Hermes vs JSC, Compose, Flutter engine), dynamically loaded dex. Observation only, like `frida-observe.js` |
+
+The result is `audits/stack.json` on the app's canvas. A scan of an app with no canvas creates its canvas with zero screens
+(the one-canvas rule: the first scan or crawl becomes it), and later crawls merge into it as usual. Every signal records its
+source (`device` or `runtime`) and a confidence (`certain`, `strong`, `likely`). KMP on Android compiles to plain Kotlin, so
+it is never more than `likely` there. Library names come from open rule sets where they fit: LibChecker-Rules (Apache-2.0)
+for native libraries and components, Exodus ETIP signatures (ODbL) for trackers, each as a dated snapshot with its licence.
+
+**Rejected alternatives:**
+- *Upload an APK / IPA on the dashboard and scan it (no emulator)*: rejected for now by the developer; the emulator is
+  already part of every project. It stays possible later, since the device read's static half works on any APK file.
+- *Frida only*: SDK levels, ABIs and bundled-but-unused SDKs are cheaper and more reliable from the device read, which also
+  works on a Google Play image where Frida can't run.
+- *Androguard as a dependency*: pulls ipython, networkx and pydot for parsing we already do with aapt2 and the dex reader.
+- *APKiD imported*: GPL-3.0. It can be added later as an optional external command for packers and obfuscators.
+- *MobSF, jadx, apktool*: a server or a decompiler, far more than detection needs.
+
+**Cost we accept:** the runtime layer needs a rooted emulator image and a version-matched frida-server, and apps with
+anti-tamper protection exit under Frida (reported as "probe blocked", never as an empty result). Spawning restarts the app.
+KMP detection on Android stays a hint.
+
+Stages, each buildable and verifiable on its own:
+1. Device read + static fingerprints: `appscreenmap stack --package <pkg>` writes `audits/stack.json`, creating the canvas
+   when the app has none. (verify: the Playground on the emulator)
+2. Frida probe: `hooks/frida-stack.js` and its parser, merged into the same file with `source: "runtime"`; `doctor`
+   reports frida-tools and frida-server versions. (verify: the Playground on a Google APIs image)
+3. Dashboard: `POST /api/stack` and the installed-apps list, and a UI spec handed to the web session (pick emulator → pick
+   app → scan → stack card → crawl).
+4. iOS: the simulator's app container (`simctl get_app_container`) through the same fingerprints; Frida attach to the
+   simulator process after a spike.
+
+Acceptance criteria (phase 1, Android):
+1. `appscreenmap stack --package dev.appscreenmap.playground` on the emulator, without Frida, reports native, Kotlin,
+   Compose and the Playground's min / target / compile SDK.
+2. With Frida, `stack.json` adds loaded modules and marker classes, each marked `source: "runtime"`.
+3. With Frida missing, mismatched or blocked, the scan still succeeds and its notes say why the runtime layer is absent.
+4. A scan of an app with no canvas creates one with zero screens; a crawl merged into it afterwards keeps `stack.json`.
+5. The parsers are tested without a device, on synthetic APKs and saved Frida output (`packages/stack/tests/`).
+6. `stack.json` is documented in `docs/MAP_SCHEMA.md`, additive within schema 1, in the same change.
+7. `uv run pytest -q` and `uv run ruff check` pass, including the layer test.
+
 ## 9. Todo
 
 Next features, first batch. Unchecked means not started; the open questions need a decision before design.

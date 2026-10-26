@@ -1,0 +1,15 @@
+[project]
+name = "appscreenmap-stack"
+version = "0.1.0"
+description = "AppScreenMap stack scan: what an installed app is built with (framework, SDK levels, ABIs, libraries) → audits/stack.json."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = ["appscreenmap-drivers", "appscreenmap-store"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/appscreenmap"]

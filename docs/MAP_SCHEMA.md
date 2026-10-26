@@ -28,6 +28,9 @@ runs/                              # crawl output, git-ignored (generated locall
     audits/index.json              # optional: audits this run has beyond the built-in ones (see "audits" below)
     audits/<audit-id>.json         # optional: one audit report (security, store, adaptive, …)
     audits/security-evidence.json  # written by `appscreenmap security`: the evidence behind audits/security.json
+    audits/stack.json              # written by `appscreenmap stack`: what the app is built with (see "audits/stack.json")
+    build/apks/*.apk               # `stack`: the scanned build as pulled from the device (base + splits), latest only
+    build/dumpsys-package.txt      # `stack`: `dumpsys package <pkg>` at scan time, for the security scan and Frida probe
     network.jsonl                  # `crawl --network`: one line per connection or request the app made (see "network" below)
     network-proxy.log              # `crawl --network`: mitmdump's own output, for when capture fails
     logs.jsonl                     # `crawl --logs` (on with --network): the app's own log lines, masked (see "logs" below)
@@ -65,7 +68,9 @@ rather than building them. Paths are relative to the run directory.
   "screens": 30, "transitions": 74, "crashes": 0,
   "thumb": "playground/playground-20261013-014108/screens/s001.jpg", // relative to runs/
   "diffs": ["<base-run-id>", …],                           // diff reports stored in this run
-  "verifies": ["verify-20261013-101500", …]                // verify reports stored in this run (base)
+  "verifies": ["verify-20261013-101500", …],               // verify reports stored in this run (base)
+  "stack": { "kind": "native | cross-platform | kmp",      // optional: from audits/stack.json (`appscreenmap stack`)
+             "summary": "Native Android: Kotlin, Jetpack Compose", "version": "2.0", "generated_at": "…" }
 } ] }
 ```
 
@@ -259,7 +264,7 @@ the sources') follow the screens to their new ids. `--move` then deletes the mer
 one canvas. Captures follow too: each source's `network.jsonl`, `logs.jsonl`, `timeline.jsonl` and `trace.jsonl` (so Crawl
 replay works on a canvas) rows are concatenated with a `scenario` id (any `screen` renumbered, any `step` shifted like the transitions'), manual `sessions/<id>/` are copied with their screen ids renumbered, and a run's
 `run.network` / `run.logs` summary moves to its scenario entry (`run.scenarios[].network`, `.logs`); a canvas has no
-run-level `network` or `logs`.
+run-level `network` or `logs`. Tool output (`audits/`, `build/`) is kept; on the same file, the later source wins.
 
 **Screens added by hand.** `appscreenmap add-screen <canvas> --image <png> --title "…" [--from <screen> --via "<label>"]
 [--scenario <id>] [--hierarchy <xml>]` (or `POST /api/runs/<canvas>/screens`, multipart) files a screen a crawl missed:
@@ -498,6 +503,44 @@ the rest.
 
 Cite official sources only (Android Developers, Google Play, Apple Developer, W3C). The viewer's catalogue of
 sources is `apps/viewer/src/insights/sources.ts`. Update it when a platform or store publishes its yearly changes.
+
+### `audits/stack.json`
+
+`appscreenmap stack --package <pkg>` reads the app installed on the emulator: `dumpsys package` and the APKs pulled
+from the device (base and splits). Status is `info`, or `warn` / `fail` when a finding is (16 KB page alignment, no 64-bit
+native code); `score` is null. Beyond the shape above it adds a `facts` block. Every signal says where it came from
+(`source`: `device` today, `runtime` from the Frida probe) and how sure it is (`confidence`: `certain` only that stack
+ships it, `strong` a marker its build leaves, `likely` a hint). KMP on Android is never more than `likely`.
+
+```jsonc
+"facts": {
+  "platform": "android", "package": "dev.appscreenmap.playground",
+  "version": "2.0", "version_code": 2,
+  "min_sdk": 26, "target_sdk": 35, "compile_sdk": 35,      // the device's min/target; compileSdk from the manifest; null = unknown
+  "debuggable": true, "installer": null, "signing_version": 2, "primary_abi": "arm64-v8a",
+  "apks": ["base.apk", "split_config.arm64_v8a.apk"],
+  "abis": ["arm64-v8a"],
+  "stack": { "kind": "native | cross-platform | kmp", "summary": "Native Android: Kotlin, Jetpack Compose" },
+  "signals": [ { "id": "compose", "label": "Jetpack Compose",
+                 "category": "framework | runtime | language | ui | kmp",
+                 "confidence": "certain | strong | likely", "evidence": ["META-INF/…version"], "source": "device" } ],
+  "native_libs": [ { "name": "libflutter.so", "abis": ["arm64-v8a"],
+                     "library": { "label": "Flutter", "team": "Google", "url": "…" } } ],   // library: LibChecker-Rules, when known
+  "components": [ { "name": "com.google.firebase…FirebaseMessagingService", "library": { … } } ],  // known ones only
+  "libraries": [ { "name": "androidx.compose.ui:ui", "version": "1.7.5" } ],   // from META-INF/*.version
+  "storage": [ {                                // where the app keeps data, for the data-at-rest scan
+    "id": "flutter-secure-storage", "label": "flutter_secure_storage",
+    "encrypted": true,                          // true | false | null (optional, depends on the app's setup)
+    "locations": ["shared_prefs/FlutterSecureStorage.xml"],   // under /data/data/<pkg>/
+    "confidence": "strong", "evidence": ["com.it_nomads.fluttersecurestorage"], "source": "device" } ],
+  "page_16k": [ { "path": "lib/arm64-v8a/libx.so", "abi": "arm64-v8a", "align": 4096,
+                  "elf_ok": false, "zip_ok": null } ],    // zip_ok null: stored compressed
+  "notes": ["…"]                                // what could not be read, and why
+}
+```
+
+A scan of an app with no canvas creates one with zero screens, `run.steps` 0 and `run.source: "scan"`; merging a
+crawl into it adds no empty scenario, and the MCP server's default run skips it. `audits/` and `build/` follow a canvas through `merge --into` (`audits/index.json` lists are joined).
 
 ## `diff/<base>/diff.json`
 

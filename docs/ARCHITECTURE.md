@@ -153,6 +153,8 @@ packages/
   crawler/          appscreenmap.crawler: explorer, replay, load timing
   a11y/             appscreenmap.a11y: WCAG 2.2 checks, criteria catalogue, HTML/MD report
   security/         appscreenmap.security: scanner, rules.json (@appscreenmap/security-rules), Frida hook, mitmproxy addon
+  stack/            appscreenmap.stack: what an installed app is built with (framework, SDKs, ABIs, libraries, storage)
+  store/            appscreenmap.store: store readiness (SDK levels vs Play and App Store rules)
   reports/          appscreenmap.reports: health report, perf summary
   regression/       appscreenmap.regression: verify against baselines, visual diff
   exporters/        appscreenmap.exporters: Maestro flows, Mermaid

@@ -212,3 +212,23 @@ def test_crawl_log_run_dir_line_old_and_new():
         == _RUN_DIR_RE.search(old).group(1)
         == "runs/playground/playground-v1-1"
     )
+
+
+def test_the_default_run_skips_a_canvas_with_no_screens_yet(tools):
+    """`stack` makes a canvas before any crawl; it is newer, but has nothing to answer from."""
+    scan = tools.runs_root / "other" / "other-29991231-000000"
+    scan.mkdir(parents=True)
+    run = {
+        "id": scan.name,
+        "status": "done",
+        "source": "scan",
+        "started_at": "2999-12-31T00:00:00+00:00",
+        "app": {"package": "dev.example.other"},
+        "device": {},
+        "steps": 0,
+    }
+    (scan / "map.json").write_text(
+        json.dumps({"schema": 1, "run": run, "screens": [], "transitions": [], "stats": {}})
+    )
+    assert tools._run_dir(None) != scan
+    assert tools.list_screens()["screens"]
