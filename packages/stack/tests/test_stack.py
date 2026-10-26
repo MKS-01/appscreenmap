@@ -239,3 +239,9 @@ def test_framework_sqlite_lists_the_database_names_the_code_opens(tmp_path):
     (sqlite,) = fingerprint([base])["storage"]
     assert sqlite["id"] == "sqlite" and sqlite["encrypted"] is False
     assert sqlite["locations"] == ["databases/cache.db", "databases/notes.db"]
+
+
+def test_kotlinx_datetime_alone_is_not_a_kmp_hint():
+    """Calibration (2026-10-27): React Native apps bundle it through Android SDKs; it said "KMP possible" wrongly."""
+    signals = detect({"libreactnative.so"}, [], dex("Lkotlinx/datetime/Instant;"))
+    assert "kmp-libraries" not in {s["id"] for s in signals}

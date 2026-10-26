@@ -93,7 +93,6 @@ RULES: list[tuple[str, str, str, list[tuple[str, str, str]]]] = [
         [
             ("dex", "Lio/ktor/client/", "likely"),
             ("dex", "Lapp/cash/sqldelight/", "likely"),
-            ("dex", "Lkotlinx/datetime/", "likely"),
             ("dex", "Lco/touchlab/", "likely"),
             ("dex", "Ldev/icerock/moko/", "likely"),
         ],
