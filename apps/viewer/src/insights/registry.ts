@@ -75,9 +75,19 @@ export const AUDITS: Entry[] = [
     group: "release",
     qualifier: "device read",
     blurb: "What the installed build is made with: framework, SDK levels, ABIs, libraries and where it keeps data.",
-    produces: "appscreenmap stack --package <app> (or New project on the home page) reads the app installed on the emulator.",
-    enable: ["With the app installed on the emulator: appscreenmap stack --package <app>", "Or, in the dashboard (appscreenmap serve): New project, then pick the app"],
-    build: () => notRun("stack", "App stack", "Not scanned yet: appscreenmap stack --package <app> reads the build installed on the emulator."),
+    produces:
+      "appscreenmap stack --package <app> (or New project on the home page) reads the app installed on the emulator, or on a booted iOS simulator with --platform ios.",
+    enable: [
+      "Android, with the app installed on the emulator: appscreenmap stack --package <app>",
+      "iOS, with the app installed on a booted simulator: appscreenmap stack --platform ios --package <bundle-id>",
+      "Or, in the dashboard (appscreenmap serve): New project, then pick the device and the app",
+    ],
+    build: () =>
+      notRun(
+        "stack",
+        "App stack",
+        "Not scanned yet: appscreenmap stack --package <app> reads the build on the emulator (add --platform ios for a simulator).",
+      ),
   },
   {
     id: "adaptive",

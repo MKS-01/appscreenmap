@@ -5276,6 +5276,9 @@ a.bars-label,
   font-size: var(--text-base);
   overflow-wrap: anywhere;
 }
+.stack-facts dd .ellipsis {
+  display: block; /* a long path (the iOS data folder) cuts off inside its cell; the full path is the title */
+}
 .stack-tbl td {
   font-size: var(--text-base);
 }
@@ -5387,6 +5390,41 @@ a.bars-label,
 .newproj-step .seg {
   align-self: flex-start;
   flex-wrap: wrap;
+}
+@media (max-width: 520px) {
+  /* one device per row on phones: full-width, 44 px targets instead of a ragged wrap */
+  .newproj-step .seg {
+    flex-direction: column;
+    align-self: stretch;
+  }
+  .newproj-step .seg button {
+    min-height: var(--hit-min);
+    justify-content: flex-start;
+  }
+  .newproj-step .seg button + button {
+    border-left: 0;
+    border-top: 1px solid var(--line-hi);
+  }
+}
+.stack-linked {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+.stack-linked ul {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--faint);
+}
+.stack-linked li {
+  white-space: nowrap;
+}
+.stack-linked li:not(:last-child)::after {
+  content: "·"; /* trails its item, so a wrapped line never starts with a separator */
+  padding: 0 var(--space-2);
 }
 .newproj-filter {
   height: 32px;

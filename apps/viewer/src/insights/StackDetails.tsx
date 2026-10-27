@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
+import { CopyButton } from "../components/common";
 import { Icon } from "../components/Icon";
 import { href } from "../router";
 import { fmtDate, plural } from "../util";
 
 const libraries = (n: number, what = "") => `${n} ${what}${n === 1 ? "library" : "libraries"}`;
-import { isStackFacts, listDevices, scanStack, type Confidence, type StackFacts, type StackStorage } from "./stack";
+import {
+  isStackFacts,
+  listDevices,
+  scanStack,
+  type AndroidStackFacts,
+  type Confidence,
+  type IosStackFacts,
+  type StackFacts,
+  type StackStorage,
+} from "./stack";
 import type { AuditReport } from "./types";
 
 // The App stack audit's own sections (audits/stack.json `facts`): what the build is, how sure each signal is,
@@ -31,11 +41,17 @@ export default function StackDetails({ run, report }: { run: string; report: Aud
   return (
     <div className="appstack">
       <Rescan run={run} facts={f} at={report.generated_at} />
-      <BuildFacts f={f} />
+      {f.platform === "ios" ? <IosBuildFacts f={f} /> : <BuildFacts f={f} />}
       <Signals f={f} />
       <Storage run={run} f={f} />
-      <PageSizes f={f} />
-      <Libraries f={f} />
+      {f.platform === "ios" ? (
+        <Frameworks f={f} />
+      ) : (
+        <>
+          <PageSizes f={f} />
+          <Libraries f={f} />
+        </>
+      )}
       {f.notes.length > 0 && (
         <ul className="stack-notes small">
           {f.notes.map((n) => (
@@ -57,12 +73,13 @@ function Rescan({ run, facts, at }: { run: string; facts: StackFacts; at?: strin
   useEffect(() => {
     listDevices().then((d) => setServed(d !== null));
   }, []);
-  const cmd = `appscreenmap stack --package ${facts.package}`;
+  const ios = facts.platform === "ios";
+  const cmd = `appscreenmap stack ${ios ? "--platform ios " : ""}--package ${facts.package}`;
   const go = async () => {
     setBusy(true);
     setError(null);
     try {
-      await scanStack({ package: facts.package, run });
+      await scanStack({ package: facts.package, platform: facts.platform, run });
       location.reload(); // the audit files are read once per run view
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -72,7 +89,8 @@ function Rescan({ run, facts, at }: { run: string; facts: StackFacts; at?: strin
   return (
     <div className="stack-rescan">
       <span className="small muted grow">
-        Read from the build installed on the emulator{at ? `, ${fmtDate(at)}` : ""}. Scan again after installing a new build.
+        Read from the build installed on the {ios ? "iOS simulator" : "emulator"}
+        {at ? `, ${fmtDate(at)}` : ""}. Scan again after installing a new build.
       </span>
       {served ? (
         <button className="btn" onClick={go} disabled={busy} aria-busy={busy}>
@@ -90,18 +108,7 @@ function Rescan({ run, facts, at }: { run: string; facts: StackFacts; at?: strin
   );
 }
 
-function BuildFacts({ f }: { f: StackFacts }) {
-  const sdk = (n?: number | null) => (n == null ? "unknown" : String(n));
-  const rows: [string, React.ReactNode][] = [
-    ["Package", <span className="mono">{f.package}</span>],
-    ["Version", f.version ? `${f.version}${f.version_code != null ? ` (${f.version_code})` : ""}` : "unknown"],
-    ["SDK", <span className="mono">min {sdk(f.min_sdk)} · target {sdk(f.target_sdk)} · compile {sdk(f.compile_sdk)}</span>],
-    ["ABIs", f.abis.length ? <span className="mono">{f.abis.join(" · ")}</span> : "No native code"],
-    ["Installed by", f.installer ?? "adb (sideloaded)"],
-    ["Build", f.debuggable ? "Debuggable (not the build users get)" : "Release (not debuggable)"],
-    ["Signature", f.signing_version ? `APK Signature Scheme v${f.signing_version}` : "unknown"],
-    ["APKs", <span className="mono">{f.apks.join(" · ")}</span>],
-  ];
+function FactList({ rows }: { rows: [string, React.ReactNode][] }) {
   return (
     <section className="ins-section">
       <h2 className="stack-h">Build</h2>
@@ -115,6 +122,66 @@ function BuildFacts({ f }: { f: StackFacts }) {
       </dl>
     </section>
   );
+}
+
+/** The part of a simulator data folder that tells apps apart: …/Data/Application/<uuid>. */
+const shortContainer = (p: string) => {
+  const i = p.indexOf("/Containers/");
+  return i < 0 ? p : `…${p.slice(i + "/Containers".length)}`;
+};
+
+const ENCRYPTION = (e: boolean | null) =>
+  e === true ? "Encrypted (an App Store build: code markers not read)" : e === false ? "Not encrypted" : "None (a simulator or development build)";
+
+function IosBuildFacts({ f }: { f: IosStackFacts }) {
+  const v = (s?: string | null) => s ?? "unknown";
+  return (
+    <FactList
+      rows={[
+        ["Bundle id", <span className="mono">{f.package}</span>],
+        ["Version", f.version ? `${f.version}${f.build ? ` (${f.build})` : ""}` : "unknown"],
+        ["Deployment target", <span className="mono">iOS {v(f.deployment_target)}</span>],
+        ["Built with", <span className="mono">iOS SDK {v(f.build_sdk ?? f.sdk)} · Xcode {v(f.xcode)}</span>],
+        [
+          "Binary",
+          <span className="mono">
+            min OS {v(f.min_os)} · {f.arches.join(" · ") || "unknown"}
+            {f.binary_platform === "ios-simulator" ? " · simulator" : ""}
+          </span>,
+        ],
+        ["Build", f.debug_build ? "Debug (not the build users get)" : "Release"],
+        ["Encryption", ENCRYPTION(f.encrypted)],
+        [
+          "Data folder",
+          f.data_container ? (
+            <span className="row" style={{ gap: 6 }}>
+              <span className="mono small ellipsis grow" title={f.data_container}>
+                {shortContainer(f.data_container)}
+              </span>
+              <CopyButton text={f.data_container} />
+            </span>
+          ) : (
+            "unknown"
+          ),
+        ],
+      ]}
+    />
+  );
+}
+
+function BuildFacts({ f }: { f: AndroidStackFacts }) {
+  const sdk = (n?: number | null) => (n == null ? "unknown" : String(n));
+  const rows: [string, React.ReactNode][] = [
+    ["Package", <span className="mono">{f.package}</span>],
+    ["Version", f.version ? `${f.version}${f.version_code != null ? ` (${f.version_code})` : ""}` : "unknown"],
+    ["SDK", <span className="mono">min {sdk(f.min_sdk)} · target {sdk(f.target_sdk)} · compile {sdk(f.compile_sdk)}</span>],
+    ["ABIs", f.abis.length ? <span className="mono">{f.abis.join(" · ")}</span> : "No native code"],
+    ["Installed by", f.installer ?? "adb (sideloaded)"],
+    ["Build", f.debuggable ? "Debuggable (not the build users get)" : "Release (not debuggable)"],
+    ["Signature", f.signing_version ? `APK Signature Scheme v${f.signing_version}` : "unknown"],
+    ["APKs", <span className="mono">{f.apks.join(" · ")}</span>],
+  ];
+  return <FactList rows={rows} />;
 }
 
 function Signals({ f }: { f: StackFacts }) {
@@ -163,7 +230,9 @@ function Signals({ f }: { f: StackFacts }) {
                   <span className="stack-src">runtime</span>
                 </td>
                 <td className="small muted">
-                  Confirms what actually loads. Needs frida-tools and a Google APIs emulator image (planned).
+                  {f.platform === "ios"
+                    ? "Confirms what actually loads. Needs Frida attached to the simulator process (planned)."
+                    : "Confirms what actually loads. Needs frida-tools and a Google APIs emulator image (planned)."}
                 </td>
               </tr>
             )}
@@ -175,6 +244,7 @@ function Signals({ f }: { f: StackFacts }) {
 }
 
 function Storage({ run, f }: { run: string; f: StackFacts }) {
+  const ios = f.platform === "ios";
   return (
     <section className="ins-section">
       <div className="ins-head">
@@ -184,7 +254,9 @@ function Storage({ run, f }: { run: string; f: StackFacts }) {
         </a>
       </div>
       {f.storage.length === 0 ? (
-        <p className="small muted">No storage library recognised. SharedPreferences and plain files are always possible.</p>
+        <p className="small muted">
+          No storage library recognised. {ios ? "UserDefaults" : "SharedPreferences"} and plain files are always possible.
+        </p>
       ) : (
         <div className="tbl-scroll">
           <table className="tbl stack-tbl">
@@ -206,7 +278,7 @@ function Storage({ run, f }: { run: string; f: StackFacts }) {
                         {r.word}
                       </span>
                     </td>
-                    <td className="mono small">{s.locations.length ? s.locations.join(" · ") : <span className="faint">keys in the Keystore, no file</span>}</td>
+                    <td className="mono small">{s.locations.length ? s.locations.join(" · ") : <span className="faint">{ios ? "items in the Keychain, no file" : "keys in the Keystore, no file"}</span>}</td>
                   </tr>
                 );
               })}
@@ -214,12 +286,17 @@ function Storage({ run, f }: { run: string; f: StackFacts }) {
           </table>
         </div>
       )}
-      <p className="small faint">Bundled is not the same as used: each row is a library the build ships. Paths are under /data/data/{f.package}/.</p>
+      <p className="small faint">
+        Bundled is not the same as used: each row is a library the build ships.{" "}
+        {ios
+          ? `Paths are under the app's data container${f.storage.some((s) => s.locations.some((l) => l.includes("**"))) ? " (** = any folder)" : ""}.`
+          : `Paths are under /data/data/${f.package}/.`}
+      </p>
     </section>
   );
 }
 
-function PageSizes({ f }: { f: StackFacts }) {
+function PageSizes({ f }: { f: AndroidStackFacts }) {
   const bad = f.page_16k.filter((r) => !r.elf_ok || r.zip_ok === false);
   return (
     <section className="ins-section">
@@ -250,7 +327,43 @@ function PageSizes({ f }: { f: StackFacts }) {
   );
 }
 
-function Libraries({ f }: { f: StackFacts }) {
+function Frameworks({ f }: { f: IosStackFacts }) {
+  const system = f.linked.map((d) => d.match(/([^/]+)\.framework\//)?.[1]).filter((n): n is string => !!n);
+  return (
+    <section className="ins-section">
+      <h2 className="stack-h">Frameworks</h2>
+      <details className="stack-more">
+        <summary>
+          {plural(f.frameworks.length, "embedded framework")} · {plural(system.length, "system framework")} linked
+        </summary>
+        {f.frameworks.length > 0 ? (
+          <ul className="stack-versions mono small">
+            {f.frameworks.map((fw) => (
+              <li key={fw.name}>
+                <span className="faint">{fw.name}</span> {fw.version ?? ""}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="small muted">Nothing in Frameworks/: the code is linked into the app's own binary.</p>
+        )}
+        {system.length > 0 && (
+          <div className="stack-linked small">
+            <span className="faint">Linked</span>
+            <ul className="mono">
+              {system.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <p className="small faint">From the app's Frameworks/ folder and its binary's linked libraries (Mach-O load commands).</p>
+      </details>
+    </section>
+  );
+}
+
+function Libraries({ f }: { f: AndroidStackFacts }) {
   const known = [
     ...f.native_libs.filter((n) => n.library).map((n) => ({ name: n.name, lib: n.library! })),
     ...f.components.map((c) => ({ name: c.name, lib: c.library })),
