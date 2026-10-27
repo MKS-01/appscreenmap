@@ -502,7 +502,7 @@ the rest.
     "sample": false,                            // placeholder finding inside a real report
     "requirement": "met | due | blocked | upcoming | not_checked",  // optional: a store/platform requirement's state
     "screens": ["s004", "s007"],                // optional: every screen it was seen on (`screen` is the first)
-    "elements": [ { "screen": "s004", "rid": "pkg:id/logo", "label": "logo" } ],  // optional: where in the screen
+    "elements": [ { "screen": "s004", "rid": "pkg:id/logo", "label": "logo", "bounds": [x1, y1, x2, y2] } ],  // optional: where in the screen; bounds (screenshot px) draw the report's evidence crop
     "triage": "open | confirmed | wontfix | false_positive",  // optional: from notes.json; wontfix / false_positive
                                                 // stay in the report and are left out of the fix list
     "verify": "Re-crawl, then …"                // optional: how to check it's fixed (fix list); else the audit's default
@@ -514,14 +514,16 @@ the rest.
 
 ### The app report (`<run>/reports/`)
 
-`appscreenmap report <run> --format md,html,fixes [--profile full|release|a11y] [--audits a,b] [--out <dir>]` reads
+`appscreenmap report <run> --format md,html,pdf,docx,fixes [--profile full|release|a11y] [--audits a,b] [--out <dir>] [--paper a4|letter]` reads
 every `audits/*.json` (not `index.json` or `*-evidence.json`; audits with `source: "sample"` and findings with
 `sample: true` are left out) and writes:
 
 | File | What |
 |---|---|
-| `report.md` + `report-assets/` | Cover, Summary (one row per audit, top findings, deadlines), Conditions (device, scenarios), one section per audit, Appendix (method, sources, glossary) |
-| `report.html` | The same, one self-contained file: design tokens and thumbnails inlined |
+| `report.md` + `report-assets/` | Cover, Summary (one row per audit, top findings, deadlines), Conditions (device, scenarios), Screens (every crawled screen), one section per audit, Appendix (method, sources, glossary). Each finding shows up to 8 affected screens, and an evidence crop (the element outlined) for up to 4 screens whose `elements` carry `bounds` |
+| `report.html` | The same, one self-contained file: design tokens, fonts, thumbnails and evidence crops inlined |
+| `report.pdf` | `report.html` printed by headless Chrome / Chromium (`--paper a4` or `letter`; `APPSCREENMAP_CHROME` for an unusual install) |
+| `report.docx` | The same sections as a Word document (charts as tables, sources as links); Drive turns it into a Google Doc on upload. Never uploaded by the engine |
 | `fixes.md` | One task per distinct problem (errors and warnings; not `coverage`, not dismissed in triage), ordered by severity, deadline, screens touched; where, seen, fix, source, how to check |
 | `fixes.json` | The fix list's memory: `{ "schema": 1, "tasks": { "<audit>::<id>": { "title", "audit", "severity", "first_seen", "fixed_on", "verified_in", "dismissed" } } }`. A task whose audit ran again without it is ticked with the run it was gone in; one triaged won't fix / false positive is `dismissed`, never fixed; one whose audit wasn't in this report is listed as not re-checked |
 

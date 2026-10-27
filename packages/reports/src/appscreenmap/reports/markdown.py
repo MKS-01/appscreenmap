@@ -1,10 +1,14 @@
-"""The report as Markdown: `report.md` plus `report-assets/` (screen thumbnails), for PRs and repos."""
+"""The report as Markdown: `report.md` plus `report-assets/` (screen thumbnails, evidence crops), for PRs and repos."""
 
 from __future__ import annotations
 
 import shutil
 from pathlib import Path
 
+from .document import MAX_SHOTS
+from .evidence import crop
+
+GALLERY_COLS = 4
 SEV = {"error": "Error", "warning": "Warning", "info": "Info"}
 
 
@@ -55,6 +59,16 @@ def render(doc: dict, out_dir: Path) -> Path:
             shutil.copyfile(run / w["image"], assets / name)
             used[w["id"]] = f"report-assets/{name}"
         return used[w["id"]]
+
+    def evidence(f: dict) -> list[tuple[dict, str]]:
+        out = []
+        for n, ev in enumerate(f.get("evidence") or []):
+            if data := crop(run, ev.get("shot"), ev.get("bounds")):
+                assets.mkdir(parents=True, exist_ok=True)
+                name = f"evidence-{f['id'].replace(':', '-').replace('/', '-')}-{n}.jpg"
+                (assets / name).write_bytes(data)
+                out.append((ev, f"report-assets/{name}"))
+        return out
 
     c = doc["cover"]
     L = [
@@ -114,6 +128,19 @@ def render(doc: dict, out_dir: Path) -> Path:
         ]
         L.append("")
 
+    gallery = [(g, p) for g in doc.get("gallery") or [] if (p := thumb(g))]
+    if gallery:
+        L += ["## Screens", "", f"Every screen the crawl reached ({len(gallery)}), in map order.", ""]
+        L += ["| " + " | ".join([" "] * GALLERY_COLS) + " |", "|" + "---|" * GALLERY_COLS]
+        for i in range(0, len(gallery), GALLERY_COLS):
+            row = [
+                f"![{esc(g['title'])}]({p})<br>**{esc(g['title'])}**<br>`{g['id']}`"
+                + (f" · {esc(g['scenario'])}" if g.get("scenario") else "")
+                for g, p in gallery[i : i + GALLERY_COLS]
+            ]
+            L.append("| " + " | ".join(row + [" "] * (GALLERY_COLS - len(row))) + " |")
+        L.append("")
+
     for s in doc["sections"]:
         L += [f'<a id="{s["id"]}"></a>', "", f"## {s['title']}", ""]
         L.append(f"**{s['status_word']}** · score {_score(s)}" + (f" · {s['tool']}" if s.get("tool") else ""))
@@ -152,10 +179,22 @@ def render(doc: dict, out_dir: Path) -> Path:
                     L += [f"- {esc(t)}" for t in f["items"]] + [""]
                 if f.get("where"):
                     L.append(f"**Where:** {where_text(f)}")
-                    imgs = [(w, thumb(w)) for w in f["where"][:4]]
-                    if any(p for _, p in imgs):
-                        L += ["", " ".join(f"![{esc(w['title'])}]({p})" for w, p in imgs if p)]
+                    imgs = [(w, p) for w in f["where"][:MAX_SHOTS] if (p := thumb(w))]
+                    if imgs:
+                        more = len(f["where"]) - MAX_SHOTS
+                        L += [
+                            "",
+                            " ".join(f"![{esc(w['title'])}]({p})" for w, p in imgs)
+                            + (f" +{more} more" if more > 0 else ""),
+                        ]
                     L.append("")
+                if crops := evidence(f):
+                    L += ["**Evidence** (failing element outlined):", ""]
+                    L += [
+                        " ".join(f"![{esc(ev['label'])} on {esc(ev['title'])}]({p})" for ev, p in crops),
+                        "",
+                    ]
+                    L += [" · ".join(f"{ev['id']}: {esc(ev['label'])}" for ev, _ in crops), ""]
                 if f.get("fix"):
                     L += [f"**Fix:** {f['fix']}", ""]
                 if f.get("refs"):

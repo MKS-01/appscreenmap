@@ -10,6 +10,9 @@ import html
 from importlib import resources
 from pathlib import Path
 
+from .document import MAX_SHOTS
+from .evidence import crop
+
 SEV = {"error": "Error", "warning": "Warning", "info": "Info"}
 # A colour never stands alone (design-system rule 4): every toned value carries one of these words.
 TONE_WORD = {"good": "good", "warn": "needs work", "bad": "poor", "info": "info"}
@@ -23,13 +26,15 @@ MIME = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp
 
 
 def tokens_css() -> str:
-    """The wheel ships tokens.css as `appscreenmap/design/tokens.css`; a checkout reads it from the repo."""
+    """A checkout reads the repo's tokens.css (an editable install's packaged copy can be stale); a wheel ships it as
+    `appscreenmap/design/tokens.css`."""
+    p = Path(__file__).resolve().parents[4] / "design-tokens" / "tokens.css"
+    if p.is_file():
+        return p.read_text()
     try:
         return resources.files("appscreenmap.design").joinpath("tokens.css").read_text()
     except (ModuleNotFoundError, FileNotFoundError, OSError, TypeError):
-        pass
-    p = Path(__file__).resolve().parents[4] / "design-tokens" / "tokens.css"
-    return p.read_text() if p.is_file() else ""
+        return ""
 
 
 def fonts_css() -> str:
@@ -82,18 +87,28 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .bar .fill{height:100%;border-radius:var(--radius-sm);background:var(--dim)}
 .bar .fill.good{background:var(--good)}.bar .fill.warn{background:var(--warn)}.bar .fill.bad{background:var(--bad)}.bar .fill.info{background:var(--info)}
 .bar .budget{position:absolute;top:calc(-1 * var(--space-1));bottom:calc(-1 * var(--space-1));width:1px;background:var(--text)}
-.finding{border-top:1px solid var(--line);padding:var(--space-4) 0;display:grid;grid-template-columns:1fr auto;gap:var(--space-4);align-items:start}
+.finding{border-top:1px solid var(--line);padding:var(--space-4) 0}
 .finding h4{margin:0 0 var(--space-1);font-size:var(--text-md)}
 .finding p{margin:var(--space-1) 0}.finding ul{margin:var(--space-1) 0;padding-left:var(--space-5);color:var(--dim)}
 .meta{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center;color:var(--faint);font:var(--text-xs)/var(--leading-snug) var(--font-mono)}
-.shots{display:flex;gap:var(--space-2)}
-.shots figure{margin:0;width:64px}
+.shots{display:flex;flex-wrap:wrap;gap:var(--space-3);margin-top:var(--space-3)}
+.shots figure{margin:0;width:72px}
+.shots .more{align-self:center;font:var(--text-xs)/var(--leading-snug) var(--font-mono);color:var(--faint)}
+.finding .kicker{margin:var(--space-4) 0 0}
+.evidence{display:flex;flex-wrap:wrap;gap:var(--space-3);margin-top:var(--space-3)}
+.evidence figure{margin:0;width:180px}
+/* A crop is part of a screen, so no phone frame (rule 5 keeps that for whole screens). */
+.evidence img.crop{width:100%;display:block;border:1px solid var(--line-hi);border-radius:var(--radius-md)}
+.evidence figcaption,.gallery figcaption{font:var(--text-xs)/var(--leading-snug) var(--font-mono);color:var(--faint);margin-top:var(--space-1);overflow-wrap:anywhere}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:var(--space-4) var(--space-3)}
+.gallery figure{margin:0}.gallery img{width:100%;display:block;border-radius:var(--radius-md)}
+.gallery figcaption b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font:var(--weight-regular) var(--text-sm)/var(--leading-snug) var(--font-sans);color:var(--text)}
 .shots img{width:100%;display:block;border-radius:var(--radius-md)}
 .frame{padding:var(--space-1);border:1px solid var(--line-hi);border-radius:var(--radius-lg);background:var(--panel-2)}
 .shots figcaption{font:var(--text-xs)/var(--leading-snug) var(--font-mono);color:var(--faint);margin-top:var(--space-1);overflow-wrap:anywhere}
 ol.top li{margin:var(--space-1) 0}
 .tw{overflow-x:auto;max-width:100%}.narrow{display:none;font-size:var(--text-sm);margin-top:var(--space-1)}
-@media (max-width:640px){main{padding:var(--space-5) var(--space-4)}.wide{display:none}.narrow{display:block}th,td{padding:var(--space-2)}.finding{grid-template-columns:1fr}.bar{grid-template-columns:1fr auto}.bar .track{grid-column:1/-1;grid-row:2}}
+@media (max-width:640px){main{padding:var(--space-5) var(--space-4)}.wide{display:none}.narrow{display:block}th,td{padding:var(--space-2)}.evidence figure{width:calc(50% - var(--space-2))}.gallery{grid-template-columns:repeat(3,1fr)}.bar{grid-template-columns:1fr auto}.bar .track{grid-column:1/-1;grid-row:2}}
 """
 
 
@@ -171,21 +186,47 @@ def _finding(f: dict, run: Path, cache: dict, category: str | None = None) -> st
         body.append(f"<p><b>Fix:</b> {e(f['fix'])}</p>")
     if f.get("refs"):
         body.append(f"<p><b>Sources:</b> {_refs(f['refs'])}</p>")
-    shots = []
-    for w in (f.get("where") or [])[:3]:
-        if w.get("image"):
-            if w["id"] not in cache:
-                cache[w["id"]] = _img(run, w["image"])
-            if cache[w["id"]]:
-                shots.append(
-                    f'<figure><div class="frame"><img src="{cache[w["id"]]}" alt="{e(w["title"])}"></div><figcaption>{e(w["id"])}</figcaption></figure>'
-                )
-    side = f'<div class="shots">{"".join(shots)}</div>' if shots else "<div></div>"
-    return f'<div class="finding"><div>{"".join(body)}</div>{side}</div>'
+    where = f.get("where") or []
+    shots = [
+        f'<figure><div class="frame"><img src="{src}" alt="{e(w["title"])}"></div><figcaption>{e(w["id"])}</figcaption></figure>'
+        for w in where[:MAX_SHOTS]
+        if (src := _thumb(run, w, cache))
+    ]
+    if shots and len(where) > MAX_SHOTS:
+        shots.append(f'<span class="more">+{len(where) - MAX_SHOTS} more</span>')
+    if shots:
+        body.append(f'<div class="shots">{"".join(shots)}</div>')
+    crops = []
+    for ev in f.get("evidence") or []:
+        if data := crop(run, ev.get("shot"), ev.get("bounds")):
+            src = f"data:image/jpeg;base64,{base64.b64encode(data).decode()}"
+            crops.append(
+                f'<figure><img class="crop" src="{src}" alt="{e(ev["label"])} on {e(ev["title"])}, outlined">'
+                f"<figcaption>{e(ev['id'])} · {e(ev['label'])} (outlined)</figcaption></figure>"
+            )
+    if crops:
+        body.append(f'<p class="kicker">Evidence</p><div class="evidence">{"".join(crops)}</div>')
+    return f'<div class="finding">{"".join(body)}</div>'
+
+
+def _thumb(run: Path, w: dict, cache: dict) -> str | None:
+    if not w.get("image"):
+        return None
+    if w["id"] not in cache:
+        cache[w["id"]] = _img(run, w["image"])
+    return cache[w["id"]]
 
 
 def render(doc: dict, out_dir: Path) -> Path:
     out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    p = out_dir / "report.html"
+    p.write_text(page(doc))
+    return p
+
+
+def page(doc: dict, extra_css: str = "") -> str:
+    """The whole report as one HTML string; `extra_css` is how the PDF adds its print rules."""
     run = Path(doc["run_dir"])
     cache: dict[str, str | None] = {}
     c = doc["cover"]
@@ -196,6 +237,7 @@ def render(doc: dict, out_dir: Path) -> Path:
         + "".join(
             f'<a href="#{e(i)}">{e(t)}</a>'
             for i, t in [("summary", "Summary"), ("conditions", "Conditions")]
+            + ([("screens", "Screens")] if doc.get("gallery") else [])
             + [(s["id"], s["title"]) for s in doc["sections"]]
             + [("appendix", "Appendix")]
         )
@@ -216,7 +258,7 @@ def render(doc: dict, out_dir: Path) -> Path:
 
     H += [
         '<h2 id="summary">Summary</h2>',
-        '<table><tr><th>Audit</th><th>Status</th><th class="n">Score</th><th class="n wide">Errors</th><th class="n wide">Warnings</th><th class="n wide">Info</th><th class="wide">Summary</th></tr>',
+        '<table><thead><tr><th>Audit</th><th>Status</th><th class="n">Score</th><th class="n wide">Errors</th><th class="n wide">Warnings</th><th class="n wide">Info</th><th class="wide">Summary</th></tr></thead>',
     ]
     for s in doc["summary"]:
         n = s["counts"]
@@ -237,7 +279,9 @@ def render(doc: dict, out_dir: Path) -> Path:
         ]
         H.append("</ol>")
     if doc["deadlines"]:
-        H.append("<h3>Deadlines</h3><table><tr><th>Due</th><th>Finding</th><th>Audit</th><th>State</th></tr>")
+        H.append(
+            "<h3>Deadlines</h3><table><thead><tr><th>Due</th><th>Finding</th><th>Audit</th><th>State</th></tr></thead>"
+        )
         H += [
             f'<tr><td class="mono">{e(f["due"])}</td><td>{e(f["title"])}</td><td>{e(f["audit_title"])}</td><td>{e(f.get("requirement") or "")}</td></tr>'
             for f in doc["deadlines"]
@@ -253,20 +297,36 @@ def render(doc: dict, out_dir: Path) -> Path:
         H += [f'<tr><td class="faint">{e(k)}</td><td>{e(v)}</td></tr>' for k, v in cond["rows"]]
         H.append("</table>")
     if cond["scenarios"]:
-        H.append('<h3>Scenarios</h3><table><tr><th>Scenario</th><th>Run</th><th class="n">Screens</th></tr>')
+        H.append(
+            '<h3>Scenarios</h3><table><thead><tr><th>Scenario</th><th>Run</th><th class="n">Screens</th></tr></thead>'
+        )
         H += [
             f'<tr><td>{e(sc["label"] or sc["id"])}</td><td class="mono">{e(sc["run"])}</td><td class="n">{sc["screens"]}</td></tr>'
             for sc in cond["scenarios"]
         ]
         H.append("</table>")
 
-    for s in doc["sections"]:
-        H.append(f'<h2 id="{e(s["id"])}">{e(s["title"])}</h2>')
-        score = f'<span class="score">{s["score"]}</span>' if s["score"] is not None else ""
+    if doc.get("gallery"):
         H.append(
-            f'<div class="head">{score}{_chip(TONE.get(s["status"], "info"), s["status_word"])}<span class="faint mono">{e(s.get("tool") or "")}</span></div>'
+            f'<div class="sec"><h2 id="screens">Screens</h2><p class="dim">Every screen the crawl reached ({len(doc["gallery"])}), in map order.</p></div><div class="gallery">'
         )
-        H.append(f"<p>{e(s['summary'])}</p>")
+        H += [
+            f'<figure><div class="frame"><img src="{src}" alt="{e(g["title"])}"></div><figcaption><b>{e(g["title"])}</b>{e(g["id"])}'
+            + (f" · {e(g['scenario'])}" if g.get("scenario") else "")
+            + "</figcaption></figure>"
+            for g in doc["gallery"]
+            if (src := _thumb(run, g, cache))
+        ]
+        H.append("</div>")
+
+    for s in doc["sections"]:
+        score = f'<span class="score">{s["score"]}</span>' if s["score"] is not None else ""
+        # One block, so print never leaves a section's title alone at a page foot.
+        H.append(
+            f'<div class="sec"><h2 id="{e(s["id"])}">{e(s["title"])}</h2>'
+            f'<div class="head">{score}{_chip(TONE.get(s["status"], "info"), s["status_word"])}<span class="faint mono">{e(s.get("tool") or "")}</span></div>'
+            f"<p>{e(s['summary'])}</p>"
+        )
         if s.get("score_note"):
             H.append(f'<p class="faint">Score: {e(s["score_note"])}</p>')
         if s["metrics"]:
@@ -282,6 +342,7 @@ def render(doc: dict, out_dir: Path) -> Path:
                 for m in s["metrics"]
             ]
             H.append("</div>")
+        H.append("</div>")  # .sec: the intro moves with its first content
         H += [_chart(ch) for ch in s["charts"]]
         if not s["findings"]:
             H.append(f'<p class="dim">{"Not run." if s["status"] == "not_run" else "No findings."}</p>')
@@ -320,13 +381,9 @@ def render(doc: dict, out_dir: Path) -> Path:
         )
 
     body = "".join(H).replace("<table>", '<div class="tw"><table>').replace("</table>", "</table></div>")
-    page = (
+    return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f"<title>{e(doc['title'])}</title><style>{fonts_css()}{tokens_css()}{CSS}</style></head>"
+        f"<title>{e(doc['title'])}</title><style>{fonts_css()}{tokens_css()}{CSS}{extra_css}</style></head>"
         f"<body><main>{body}</main></body></html>\n"
     )
-    out_dir.mkdir(parents=True, exist_ok=True)
-    p = out_dir / "report.html"
-    p.write_text(page)
-    return p

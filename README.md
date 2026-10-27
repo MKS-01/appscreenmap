@@ -140,8 +140,9 @@ Export the map as one self-contained SVG (every screenshot inside) or Markdown/C
 straight from the run: test flows (`flows/`, Maestro format), a Mermaid graph (`map.mmd`), a one-file WCAG report
 (`a11y-report.html`, evidence not a conformance claim), and `map.json` / `a11y.json` / `perf.json`.
 
-One report covers every audit: `appscreenmap report <run> --format md,html,fixes` writes `report.md`, a self-contained
-`report.html` and `fixes.md` (a task list to work through, ticked as fixes land) into `<run>/reports/`.
+One report covers every audit: `appscreenmap report <run> --format md,html,pdf,docx,fixes` writes `report.md`, a
+self-contained `report.html`, `report.pdf` (needs Chrome or Chromium), `report.docx` (open it in Google Docs or Word) and
+`fixes.md` (a task list to work through, ticked as fixes land) into `<run>/reports/`.
 
 ## License
 

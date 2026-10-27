@@ -332,13 +332,17 @@ def a11y(data: dict, a11y_file: dict | None, triage: dict | None = None) -> dict
             ]
         if screens:
             f["screen"], f["screens"] = screens[0], screens
-        els = {
-            (i["screen"], i.get("rid") or "", i.get("label") or ""): None
-            for i in live
-            if i.get("screen") != "app"
-        }
+        els: dict[tuple, list | None] = {}
+        for i in live:
+            if i.get("screen") != "app":
+                k = (i["screen"], i.get("rid") or "", i.get("label") or "")
+                if not els.get(k) or not any(els[k]):  # a real box wins over a page-level [0,0,0,0]
+                    els[k] = i.get("bounds")
         if els:
-            f["elements"] = [{"screen": s, "rid": r, "label": lb} for s, r, lb in list(els)[:MAX_ELEMENTS]]
+            f["elements"] = [
+                {"screen": s, "rid": r, "label": lb, **({"bounds": b} if b else {})}
+                for (s, r, lb), b in list(els.items())[:MAX_ELEMENTS]
+            ]
         if len(triage) == 1 and (t := triage.pop()) != "open":
             f["triage"] = t
         findings.append(f)

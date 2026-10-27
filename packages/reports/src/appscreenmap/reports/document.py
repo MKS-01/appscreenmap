@@ -34,6 +34,8 @@ STATUS_WORDS = {
 }
 NOT_AUDITS = ("index.json",)  # files in audits/ that aren't one audit
 TOP = 10
+MAX_SHOTS = 8  # screen thumbnails per finding; the rest are named under Where
+MAX_EVIDENCE = 4  # outlined crops per finding, one per screen
 DISMISSED = ("wontfix", "false_positive")
 CRAWL_ONLY = ("coverage",)  # about how the crawl went, not the app: kept out of top findings and the fix list
 
@@ -80,22 +82,43 @@ def _titles(run: Path, data: dict) -> dict[str, str]:
 
 def _screen_ref(run: Path, s: dict, titles: dict) -> dict:
     img = s.get("thumb") or s.get("screenshot")
+    shot = s.get("screenshot")
     return {
         "id": s["id"],
         "title": titles.get(s["id"], s["id"]),
         "activity": s.get("activity"),
         "image": img if img and (run / img).is_file() else None,
+        "shot": shot if shot and (run / shot).is_file() else None,  # full size, for evidence crops
     }
+
+
+def has_area(b) -> bool:
+    """Page-level issues carry [0,0,0,0]: no element to outline."""
+    try:
+        x1, y1, x2, y2 = (int(v) for v in b)
+        return x2 > x1 and y2 > y1 and x2 > 0 and y2 > 0  # off-image boxes would waste an evidence slot
+    except (TypeError, ValueError, OverflowError):
+        return False
 
 
 def _finding(f: dict, screens: dict, audit: dict) -> dict:
     ids = f.get("screens") or ([f["screen"]] if f.get("screen") else [])
+    # One outlined crop per affected screen: the first element with bounds on each.
+    evidence, seen = [], set()
+    for el in f.get("elements") or []:
+        sid = el.get("screen")
+        if sid in screens and has_area(el.get("bounds")) and sid not in seen and len(evidence) < MAX_EVIDENCE:
+            seen.add(sid)
+            evidence.append(
+                {**screens[sid], "label": el.get("label") or el.get("rid"), "bounds": el["bounds"]}
+            )
     return {
         **f,
         "audit": audit["audit"],
         "audit_title": audit.get("title") or audit["audit"],
         "platform": f.get("platform"),
         "where": [screens[i] for i in ids if i in screens],
+        "evidence": evidence,
     }
 
 
@@ -157,9 +180,23 @@ def fold(fs: list[dict], category: str) -> list[dict]:
                 "refs": shared("refs"),
                 "platform": shared("platform"),
                 "where": where,
+                "evidence": [ev for i in items for ev in i.get("evidence") or []][:MAX_EVIDENCE],
             }
         )
     return rows
+
+
+def _gallery(data: dict, screens: dict, scenarios: list[dict]) -> list[dict]:
+    """Every crawled app screen in map order, with the scenario it first appears in."""
+    first: dict[str, str] = {}
+    for sc in scenarios:
+        for sid in sc.get("screens") or []:
+            first.setdefault(sid, sc.get("label") or sc.get("id") or "")
+    return [
+        {**screens[s["id"]], "scenario": first.get(s["id"])}
+        for s in data["screens"]
+        if s["kind"] == "app" and screens[s["id"]]["image"]
+    ]
 
 
 def _due_key(f: dict) -> tuple:
@@ -263,6 +300,7 @@ def build_document(
                 for sc in r.get("scenarios") or []
             ],
         },
+        "gallery": _gallery(data, screens, r.get("scenarios") or []),
         "sections": sections,
         "appendix": {
             "method": [
@@ -288,7 +326,7 @@ def build_document(
     }
 
 
-FORMATS = ("md", "html", "fixes")  # pdf and docx come next (docs/PLAN.md §8.7, stage 2)
+FORMATS = ("md", "html", "pdf", "docx", "fixes")
 
 
 def write_report(
@@ -297,11 +335,18 @@ def write_report(
     only: list[str] | None = None,
     profile: str = "full",
     out: str | Path | None = None,
+    paper: str = "a4",
 ) -> dict[str, Path]:
     """Build the model once and write each format into `<run>/reports/` (or `out`)."""
-    from . import fixes, htmldoc, markdown
+    from . import docxdoc, fixes, htmldoc, markdown, pdf
 
-    renderers = {"md": markdown.render, "html": htmldoc.render, "fixes": fixes.render}
+    renderers = {
+        "md": markdown.render,
+        "html": htmldoc.render,
+        "pdf": lambda doc, d: pdf.render(doc, d, paper),
+        "docx": docxdoc.render,
+        "fixes": fixes.render,
+    }
     doc = build_document(run, only, profile)
     out_dir = Path(out) if out else Path(run) / "reports"
     return {f: renderers[f](doc, out_dir) for f in formats}

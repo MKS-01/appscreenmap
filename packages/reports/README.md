@@ -1,6 +1,6 @@
 # appscreenmap-reports
 
-Reads a finished run and reports on it. Depends on `core`, `drivers`.
+Reads a finished run and reports on it. Depends on `core`, `drivers`, Pillow (evidence crops) and `python-docx` (MIT) for `report.docx`.
 
 | Module | What |
 |---|---|
@@ -8,5 +8,7 @@ Reads a finished run and reports on it. Depends on `core`, `drivers`.
 | `appscreenmap.reports.perf` | `summarize`, `format_perf`: load time per screen, slow transitions, jank, cold start |
 | `appscreenmap.reports.builtin` | `write_builtin`: coverage, stability, a11y, perf as `audits/<id>.json` (a port of the viewer's `insights/builtin.ts`) |
 | `appscreenmap.reports.document` | `build_document`, `write_report`: one model for the app report from every audit; profiles |
+| `appscreenmap.reports.pdf` / `docxdoc` | `report.pdf` (the HTML printed by headless Chrome; `find_chrome` for `doctor`), `report.docx` (python-docx) |
+| `appscreenmap.reports.evidence` | `crop`: the screenshot around a failing element, outlined, for every format |
 | `fonts/` | Geist and Geist Mono (latin woff2, `OFL.txt`), inlined into `report.html` so it looks the same offline |
 | `appscreenmap.reports.markdown` / `htmldoc` / `fixes` | Renderers: `report.md` + assets, self-contained `report.html` (tokens inlined), `fixes.md` + `fixes.json` |

@@ -5,7 +5,12 @@ description = "AppScreenMap run reports: crawl health, navigation performance, a
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["appscreenmap-core", "appscreenmap-drivers"]
+dependencies = [
+    "appscreenmap-core",
+    "appscreenmap-drivers",
+    "pillow>=10.0",
+    "python-docx>=1.2.0",
+]
 
 [build-system]
 requires = ["hatchling"]

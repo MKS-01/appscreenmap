@@ -9,6 +9,7 @@ from appscreenmap.a11y.checks import audit_run, format_audit
 from appscreenmap.a11y.report import write_reports
 from appscreenmap.reports.document import FORMATS, PROFILES, write_report
 from appscreenmap.reports.health import build_report, format_report
+from appscreenmap.reports.pdf import PAPER, PdfError
 from appscreenmap.reports.perf import format_perf
 from appscreenmap.reports.perf import summarize as summarize_perf
 
@@ -20,7 +21,12 @@ def cmd_report(args) -> int:
             print(f"error: unknown format {', '.join(bad)} (have: {', '.join(FORMATS)})", file=sys.stderr)
             return 2
         only = [a.strip() for a in args.audits.split(",") if a.strip()] if args.audits else None
-        for fmt, path in write_report(args.run, formats, only, args.profile, args.out).items():
+        try:
+            written = write_report(args.run, formats, only, args.profile, args.out, args.paper)
+        except PdfError as ex:
+            print(f"error: {ex}", file=sys.stderr)
+            return 1
+        for fmt, path in written.items():
             print(f"{fmt:6} {path}")
         return 0
     rep = build_report(args.run)
@@ -46,7 +52,7 @@ def cmd_a11y(args) -> int:
 def register(sub) -> None:
     s = sub.add_parser(
         "report",
-        help="health report for a run; with --format, the full app report from every audit (md, html, fixes)",
+        help="health report for a run; with --format, the app report from every audit (md, html, pdf, docx, fixes)",
     )
     s.add_argument("run")
     s.add_argument("--json", action="store_true")
@@ -54,6 +60,7 @@ def register(sub) -> None:
     s.add_argument("--audits", help="only these audit ids, comma-separated (overrides --profile)")
     s.add_argument("--profile", choices=list(PROFILES), default="full", help="named audit set (default full)")
     s.add_argument("--out", help="output folder (default <run>/reports/)")
+    s.add_argument("--paper", choices=list(PAPER), default="a4", help="PDF page size (default a4)")
     s.set_defaults(fn=cmd_report)
 
     s = sub.add_parser("perf", help="navigation performance: screen load times, jank, cold start")

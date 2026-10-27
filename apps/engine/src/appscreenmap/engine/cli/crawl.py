@@ -26,6 +26,8 @@ from appscreenmap.drivers.device import describe
 from appscreenmap.drivers.logcat import LOG as LOGS_LOG
 from appscreenmap.drivers.logcat import LogcatCapture
 from appscreenmap.exporters.export import export_run
+from appscreenmap.reports.pdf import INSTALL as PDF_INSTALL
+from appscreenmap.reports.pdf import find_chrome
 from appscreenmap.reports.perf import summarize as summarize_perf
 from appscreenmap.security import network
 from appscreenmap.security.applogs import masker
@@ -98,6 +100,8 @@ def cmd_doctor(args) -> int:
     row(True, "mitmproxy (optional: crawl --network)", mitm or network.INSTALL)
     aapt2 = find_aapt2()
     row(bool(aapt2), "aapt2 (optional: activity coverage)", aapt2 or "not found in Android SDK build-tools")
+    chrome = find_chrome()
+    row(True, "Chrome / Chromium (optional: report --format pdf)", chrome or PDF_INSTALL)
     dist = _web_dist()
     row(
         dist is not None,

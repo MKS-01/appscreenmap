@@ -28,7 +28,7 @@ Mockups the system was designed from: the canvas "AppScreenMap redesign"
 |---|---|
 | Web viewer (`apps/viewer/`) | **Adopted.** Every value comes from `packages/design-tokens/tokens.css`. Old token names still work through aliases. |
 | WCAG report (`a11y-report.html`, `packages/a11y/src/appscreenmap/a11y/report.py`) | **Not yet.** It has its own light/dark palette inline (`--bg #f7f7f5`, `--accent #3d5afe`, …). To adopt: read `packages/design-tokens/tokens.css` at report time and inline it, and ship the file in the wheel (hatch `force-include` `packages/design-tokens/tokens.css` → `appscreenmap/design/tokens.css`). That's crawler-side work, so coordinate with that workstream. |
-| App report (`report.html`, `packages/reports/src/appscreenmap/reports/htmldoc.py`) | **Adopted.** Reads `tokens.css` at report time and inlines it (a checkout reads the repo file; the wheel ships it as `appscreenmap/design/tokens.css`), with Geist and Geist Mono inlined from `reports/fonts/` (latin subset, OFL). Type, space and radius only through tokens; neutral chart bars use `--dim`, never the accent; every toned value carries a word; section scores at `--text-xl` (no display number); thumbnails in device frames. Dark only, like the viewer; print styling for PDF is stage 2 and must come back here first (the dark-only rule vs paper). |
+| App report (`report.html`, `packages/reports/src/appscreenmap/reports/htmldoc.py`) | **Adopted.** Reads `tokens.css` at report time and inlines it (a checkout reads the repo file; the wheel ships it as `appscreenmap/design/tokens.css`), with Geist and Geist Mono inlined from `reports/fonts/` (latin subset, OFL). Type, space and radius only through tokens; neutral chart bars use `--dim`, never the accent; every toned value carries a word; section scores at `--text-xl` (no display number); whole-screen thumbnails in device frames; evidence crops (part of a screen) in a plain `--line-hi` hairline box under an Evidence kicker, never a phone frame (outline: 3 px hex mirror of `--bad` with a 1 px `--bg` keyline, since an image can't read CSS; the caption says "outlined"). Dark on screen; its PDF (`report.pdf`, headless Chrome) prints on the `--print-*` paper palette, the one approved exception to dark only. |
 | Terminal CLI (`apps/cli/`) | **Adopted.** `src/theme.ts` reads `tokens.css` at build time (`text`, `dim`, `faint`, `accent`, `good`, `warn`, `bad`, `line-hi`); same rules: blue only for what you can act on; status is an uppercase word (OK, WARN, FAILING, NOT RUN), never a dot or glyph; plain bold wordmark (`APPSCREEN` + blue `MAP`), no block lettering; a dim label column like the dashboard's field labels. |
 | Exported Markdown, Maestro flows, Mermaid | No styling. Nothing to adopt. |
 
@@ -36,6 +36,8 @@ Mockups the system was designed from: the canvas "AppScreenMap redesign"
 
 1. **Dark only.** Ghost dark surfaces (`--bg #0a0a0a`, `--panel #121212`, `--panel-2 #181818`). There is no light
    theme, so don't add `prefers-color-scheme` rules. The app's own screenshots are the most colourful thing on screen, and the chrome stays out of their way.
+   **One exception: paper.** The app report's PDF prints on a light palette (`--print-*` in `tokens.css`), applied only
+   inside `@media print` by mapping the semantic tokens onto it (`packages/reports/…/pdf.py`). No screen ever uses it.
 2. **Hairlines separate, colour means something.** `--line` between rows and sections, `--line-hi` for control
    borders and device frames. No filled colour cards, no shadows on resting surfaces (`--shadow: none`);
    `--shadow-lg` only for things that float (popovers, sheets, a dragged map node).
@@ -78,6 +80,8 @@ surfaces  --bg #0a0a0a   --panel #121212   --panel-2 #181818   --line #232323   
 text      --text #f0f0f0 (17.4:1)   --dim #a3a3a3 (7.8:1)   --faint #8a8a8a (5.7:1)
 accent    --accent #4da3ff (7.5:1)  --accent-hi #6cb4ff   --accent-08/-14/-28 (washes)   --on-accent #0a0a0a
 status    --good #5dd17a   --warn #e6c35a   --bad #ff5d5d   --info #a78bfa   (+ -14 tints)   failed #ff9a52
+paper     --print-bg #fff  --print-panel #f7f7f7  --print-line #e0e0e0  --print-text #141414  --print-dim #474747  --print-page-margin 14mm 12mm (read by the PDF: @page can't use var())
+          --print-faint #5c5c5c  --print-accent #0b5cba  good #1d7434  warn #805a00  bad #b8262b  info #6639b8 (PDF only)
 radius    4 tags/meters · 8 buttons/inputs/cards · 12 device frames/sheets · pill only for dots
 space     4 · 8 · 12 · 16 · 24 · 32 · 48
 motion    --ease-out (0.23,1,0.32,1) · press 120ms scale(0.97) · fast 150ms · ui 220ms
@@ -112,6 +116,8 @@ rule, migrate it; when `grep -r "var(--muted" apps/viewer/src` finds nothing, de
 - **Accent:** *"for main theme we can use the xcode blue?? or nearby blue"*, so Ghost's own Xcode blue `#4da3ff`.
   (mksbrew's sites use terracotta; AppScreenMap does not.)
 - **Theme:** asked dark-first + light vs dark only, the owner picked **"Dark only"**.
+- **Paper (2026-10-28):** asked keep the PDF dark vs a light palette for print only, the owner picked **"Light, for
+  print only"**. `--print-*` tokens, checked by `contrast.ts` on the print surfaces; screens stay dark.
 - **Fonts:** *"try new fonts"* (not mksbrew's IBM Plex Mono / Martian Mono). Geist + Geist Mono: a pair drawn
   together, good tabular figures for dense data, OFL, self-hosted.
 - **Insights:** *"insight is blunder not upto the marks"*. The coloured score cards, thick bars and all-red
@@ -126,7 +132,7 @@ rule, migrate it; when `grep -r "var(--muted" apps/viewer/src` finds nothing, de
 
 ## Rejected: don't re-propose
 
-- A light theme, or following the OS theme (owner chose dark only).
+- A light theme, or following the OS theme (owner chose dark only). Paper for the PDF is the only light surface.
 - Blue-to-purple gradients (the old run-card app tile). They're decoration, and a cliché.
 - One filled, coloured card per audit with a big score (the first Insights). Too loud, and every card read "Failing".
 - The system font stack (`-apple-system, Inter, Roboto`) as the brand face.

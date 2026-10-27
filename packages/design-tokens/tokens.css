@@ -72,6 +72,28 @@
   --sev-warning: var(--warn);
   --sev-info: var(--info);
 
+  /* ── paper: the one exception to dark only (owner, 2026-10-28) ───────────
+     Only the app report's PDF uses these, by mapping the semantic tokens onto them inside @media print.
+     Screens never do: no light theme, no prefers-color-scheme. Status hues darkened to pass 4.5:1 on white. */
+  --print-bg: #ffffff;
+  --print-panel: #f7f7f7;
+  --print-panel-2: #f0f0f0;
+  --print-line: #e0e0e0;
+  --print-line-hi: #c4c4c4;
+  --print-text: #141414;
+  --print-dim: #474747;
+  --print-faint: #5c5c5c;
+  --print-accent: #0b5cba;
+  --print-good: #1d7434;
+  --print-warn: #805a00;
+  --print-bad: #b8262b;
+  --print-info: #6639b8;
+  --print-good-14: rgba(29, 116, 52, 0.1);
+  --print-warn-14: rgba(128, 90, 0, 0.1);
+  --print-bad-14: rgba(184, 38, 43, 0.1);
+  --print-info-14: rgba(102, 57, 184, 0.1);
+  --print-page-margin: 14mm 12mm; /* @page can't read var(): the PDF reads this value at render time */
+
   /* ── type: Geist for UI text, Geist Mono for ids, numbers, code, labels ─ */
   --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;

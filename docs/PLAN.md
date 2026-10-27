@@ -724,7 +724,9 @@ Acceptance criteria (phase 2, iOS):
 
 ### 8.7 2026-10-28: Adaptive UI audit and one exportable report (proposed)
 
-**Status:** in progress, branch `feat/report-export`. 2026-10-28: stage 1 built and verified on Playground and
+**Status:** in progress, branch `feat/report-export`. 2026-10-28: stage 2 built (`--format pdf,docx`, `--paper`,
+`doctor` finds Chrome; every screen in a Screens section, up to 8 per finding, outlined evidence crops); the PDF prints on the `--print-*` paper palette (owner's call, recorded in the design-system
+skill). Open: the `.docx` → Google Docs import is checked by hand (the Drive connector can't take the file inline). Stage 1 built and verified on Playground and
 Beetlebug canvases (copies): `report --format md,html,fixes`, the engine writing the four built-in audits, HTML checked at
 1400 and 390 px. Mockups for the dashboard parts are being added to the "AppScreenMap redesign" canvas before any viewer
 work. Size method, built-in audits and the fix list decided 2026-10-28; PDF / Google Docs route still open (end of this
@@ -934,8 +936,9 @@ Written once the feature they describe is verified, listed in `CLAUDE.md` in the
 "Needs attention"); crash findings are keyed by screen (`crash::<screen>::<n>`), so a re-crawl doesn't tick a crash as
 fixed because it happened at another step. Both are in `appscreenmap.reports.builtin`. **For the web session:** make
 `apps/viewer/src/insights/builtin.ts` match (the cap, the crash ids, a11y triage from `notes.json`), or drop its builders
-now that the engine writes the files. **Stage 2 needs a call first:** the design system is dark only, so a PDF prints
-dark pages; a light print palette has to go through the `design-system` skill before the PDF renderer.
+now that the engine writes the files. **Stage 2 (decided 2026-10-28):** the PDF prints on a light paper palette
+(`--print-*` in `tokens.css`, only inside `@media print`), the one exception to dark only; screens stay dark. Headless
+Chrome for PDF and `.docx` for Google Docs, never uploaded by the engine, as recommended above.
 
 **Decided 2026-10-28:** a full crawl per device on the right emulator or simulator (not a replay, not a resized
 phone); skills written after implementation; the engine writes the built-in audits as files; a
