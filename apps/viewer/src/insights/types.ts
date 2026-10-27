@@ -83,6 +83,7 @@ export interface AuditReport {
   charts: AuditChart[];
   findings: AuditFinding[];
   refs: AuditRef[]; // official docs the audit's checks follow
+  facts?: unknown; // audit-specific data beyond the shared shape, e.g. stack.json's (insights/stack.ts)
 }
 
 /** A check an audit will run once it is set up. Shown as a placeholder while it isn't. */

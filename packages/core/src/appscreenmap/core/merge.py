@@ -4,8 +4,8 @@ Screens are renumbered so ids stay unique; every screen and transition carries t
 scenario keeps its own entry screen(s) (origin "launch"), so the viewer draws one tree per scenario side by side.
 External screens (`x:<package>`) are shared. What people added in the viewer (notes.json: stars, notes, a11y decisions,
 map comments, tree edits) and titles.json follow their screens under the new ids, and so do captured rows
-(network.jsonl, logs.jsonl, manual sessions/). Derived files (a11y, perf, flows) are rebuilt from the merged map by
-the caller.
+(network.jsonl, logs.jsonl, manual sessions/) and tool output (audits/, build/). Derived files (a11y, perf, flows)
+are rebuilt from the merged map by the caller.
 """
 
 from __future__ import annotations
@@ -72,7 +72,8 @@ def merge_runs(run_dirs: list[Path], out_dir: Path, name: str, labels: list[str]
     offsets: list[int] = []
     offset = 0
     for i, (d, m, label) in enumerate(zip(run_dirs, maps, labels, strict=True)):
-        # A source that is already a canvas keeps its scenarios; a plain run is one scenario named by `label`.
+        # A source that is already a canvas keeps its scenarios; a plain run is one scenario named by `label`. A canvas
+        # made by a scan before any crawl (`run.source` "scan", no screens) adds no scenario.
         parts = m["run"].get("scenarios") or [
             {
                 "id": None,
@@ -86,6 +87,8 @@ def merge_runs(run_dirs: list[Path], out_dir: Path, name: str, labels: list[str]
                 "logs": m["run"].get("logs"),
             }
         ]
+        if m["run"].get("source") == "scan" and not m["screens"]:
+            parts = []
         sc_map = {p["id"]: f"sc{len(scenarios) + k + 1}" for k, p in enumerate(parts)}
         sc_maps.append(sc_map)
         offsets.append(offset)
@@ -179,7 +182,7 @@ def merge_runs(run_dirs: list[Path], out_dir: Path, name: str, labels: list[str]
         "screens": screens,
         "transitions": transitions,
         "events": events,
-        "perf": maps[0].get("perf", {}),
+        "perf": next((m["perf"] for m in maps if m.get("perf", {}).get("startup")), maps[0].get("perf", {})),
         "stats": {
             "screens": len(app_screens),
             "external": len(screens) - len(app_screens),
@@ -196,7 +199,24 @@ def merge_runs(run_dirs: list[Path], out_dir: Path, name: str, labels: list[str]
     _carry_notes(run_dirs, idmaps, out_dir)
     _carry_titles(run_dirs, idmaps, out_dir)
     _carry_captures(run_dirs, idmaps, sc_maps, offsets, out_dir)
+    _carry_audits(run_dirs, out_dir)
     return data
+
+
+def _carry_audits(run_dirs: list[Path], out_dir: Path) -> None:
+    """Tool output not derived from the map: audits (stack, security, store) and the scanned build (`build/`). On the
+    same file the later source wins, as a newer run than the canvas has the newer result."""
+    listed: dict[
+        str, dict
+    ] = {}  # audits/index.json names audits the viewer doesn't know: keep every source's
+    for d in run_dirs:
+        for sub in ("audits", "build"):
+            if (d / sub).is_dir():
+                shutil.copytree(d / sub, out_dir / sub, dirs_exist_ok=True)
+        index = _read(d / "audits" / "index.json") or {}
+        listed |= {a["id"]: a for a in index.get("audits", []) if isinstance(a, dict) and a.get("id")}
+    if listed:
+        write_json_atomic(out_dir / "audits" / "index.json", {"audits": list(listed.values())})
 
 
 # The timeline ties network and log rows to screens; the trace is Crawl replay's steps.

@@ -1,6 +1,6 @@
 # Day-to-day commands for the whole monorepo (Python via uv, TypeScript via Bun).
 BIN_DIR ?= $(HOME)/.local/bin
-.PHONY: test-fast install setup test lint fmt check viewer viewer-dev cli cli-check release-local demo skills-check skills-sync skills-xcode
+.PHONY: test-fast install setup test lint fmt check viewer viewer-dev cli cli-check release-local demo skills-check skills-sync skills-xcode stack-rules-sync
 
 install: setup viewer cli   ## from a checkout: everything, plus the `appscreenmap` command in ~/.local/bin (BIN_DIR=…)
 	mkdir -p $(BIN_DIR)
@@ -54,3 +54,6 @@ skills-sync:   ## update the vendored Android skills from github.com/android/ski
 
 skills-xcode:  ## copy Apple's agent skills (scripts/xcode-skills.list) from the installed Xcode 27+ into .claude/skills/ (git-ignored)
 	@scripts/sync-xcode-skills.sh sync
+
+stack-rules-sync:  ## refresh packages/stack's snapshot of LibChecker-Rules (library names for `appscreenmap stack`)
+	@python3 -I scripts/sync-libchecker-rules.py

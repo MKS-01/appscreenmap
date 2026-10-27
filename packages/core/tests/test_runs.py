@@ -40,3 +40,26 @@ def test_index_and_resolution_cover_nested_and_legacy_runs(tmp_path: Path):
     assert run_dir_for(tmp_path, nested.name) == nested
     for bad in ("missing", "../etc", "reader/x", ""):
         assert resolve_run(tmp_path, bad) is None
+
+
+def test_index_carries_the_stack_summary_when_a_scan_wrote_one(tmp_path: Path):
+    scanned = _fake_run(tmp_path / "reader" / "reader-20261027-010000")
+    (scanned / "audits").mkdir()
+    (scanned / "audits" / "stack.json").write_text(
+        json.dumps(
+            {
+                "summary": "Flutter",
+                "generated_at": "2026-10-27T01:00:00+00:00",
+                "facts": {"version": "1.0", "stack": {"kind": "cross-platform"}},
+            }
+        )
+    )
+    plain = _fake_run(tmp_path / "other" / "other-20261027-010000", package="dev.example.other")
+    rows = {r["id"]: r for r in update_index(tmp_path)}
+    assert rows[scanned.name]["stack"] == {
+        "kind": "cross-platform",
+        "summary": "Flutter",
+        "version": "1.0",
+        "generated_at": "2026-10-27T01:00:00+00:00",
+    }
+    assert "stack" not in rows[plain.name]

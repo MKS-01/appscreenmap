@@ -110,6 +110,38 @@ def test_a_canvas_can_be_a_source_and_keeps_its_scenarios(tmp_path):
     assert data["transitions"][1]["scenario"] == "sc2"
 
 
+def test_a_scan_only_canvas_takes_its_first_crawl_and_keeps_its_audits(tmp_path):
+    """A canvas made by `stack` before any crawl: no screens, no steps, audits/stack.json."""
+    canvas = make_run(tmp_path, "p-20261027-010000", [], "2026-10-27T01:00:00")
+    m = json.loads((canvas / "map.json").read_text())
+    m["run"].update(steps=0, source="scan")
+    m["events"] = []
+    (canvas / "map.json").write_text(json.dumps(m))
+    (canvas / "audits").mkdir()
+    (canvas / "audits" / "stack.json").write_text('{"audit": "stack"}')
+    (canvas / "audits" / "index.json").write_text('{"audits": [{"id": "privacy", "title": "Privacy"}]}')
+    run = make_run(tmp_path, "crawl-20261027-020000", ["Home", "Explore"], "2026-10-27T02:00:00")
+    (run / "audits").mkdir()
+    (run / "audits" / "security.json").write_text('{"audit": "security"}')
+    (run / "audits" / "index.json").write_text('{"audits": [{"id": "licences", "title": "Licences"}]}')
+    run_map = json.loads((run / "map.json").read_text())
+    run_map["perf"] = {"startup": [{"TotalTime": 412}]}
+    (run / "map.json").write_text(json.dumps(run_map))
+    out = tmp_path / "merged"
+    out.mkdir()
+    data = merge_runs([canvas, run], out, canvas.name, ["", "First crawl"])
+
+    assert [sc["label"] for sc in data["run"]["scenarios"]] == ["First crawl"]
+    assert [s["scenario"] for s in data["screens"]] == ["sc1", "sc1"]
+    assert json.loads((out / "audits" / "stack.json").read_text()) == {"audit": "stack"}
+    assert (out / "audits" / "security.json").is_file()
+    index = json.loads((out / "audits" / "index.json").read_text())["audits"]
+    assert {a["id"] for a in index} == {"privacy", "licences"}  # both sources' lists, not the last one alone
+    assert data["perf"]["startup"] == [
+        {"TotalTime": 412}
+    ]  # the crawl's launch timings, not the empty canvas's
+
+
 def test_notes_and_titles_follow_their_screens_into_the_canvas(tmp_path):
     a = make_run(tmp_path, "pre-20261016-010000", ["Welcome", "Sign up"], "2026-10-16T01:00:00")
     b = make_run(tmp_path, "post-20261016-020000", ["Home", "Explore"], "2026-10-16T02:00:00")
@@ -223,3 +255,13 @@ def test_crawl_rows_keep_their_step_and_screen_in_the_canvas(tmp_path):
     tr, play = (json.loads(x) for x in (out / "trace.jsonl").read_text().splitlines())
     assert play["step"] == "tap ^Profile$"  # a playbook row's `step` is its description: kept, not shifted
     assert (tr["to"], tr["step"], tr["scenario"]) == (network, 2 + offset, "sc2") and tr["screen"] != "s001"
+
+
+def test_a_crawl_with_no_screens_still_counts_as_a_scenario(tmp_path):
+    """Only a scan canvas is skipped: a crawl that crashed at launch stays in the history."""
+    good = make_run(tmp_path, "a-20261027-010000", ["Home"], "2026-10-27T01:00:00")
+    crashed = make_run(tmp_path, "b-20261027-020000", [], "2026-10-27T02:00:00")
+    out = tmp_path / "merged"
+    out.mkdir()
+    data = merge_runs([good, crashed], out, "m", ["Good", "Crashed"])
+    assert [sc["label"] for sc in data["run"]["scenarios"]] == ["Good", "Crashed"]

@@ -148,6 +148,18 @@ class AdbDriver:
                 return line[len("package:") :].strip()
         return None
 
+    def apk_paths(self, package: str) -> list[str]:
+        """Every installed APK of the app, base first: a Play install splits native code and resources out."""
+        paths = [
+            line[len("package:") :].strip()
+            for line in self.shell(f"pm path {package}").splitlines()
+            if line.startswith("package:")
+        ]
+        return sorted(paths, key=lambda p: not p.endswith("/base.apk"))
+
+    def dumpsys_package(self, package: str) -> str:
+        return self.shell(f"dumpsys package {package}", timeout=60)
+
     def pull(self, remote: str, local: str | Path) -> None:
         self._run(["pull", remote, str(local)], timeout=300)
 

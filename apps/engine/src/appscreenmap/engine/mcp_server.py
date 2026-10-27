@@ -139,7 +139,9 @@ class MapTools:
         rows = update_index(self.runs_root)
         if not rows:
             raise ValueError(f"no runs under {self.runs_root}; crawl an app first")
-        best = next((r for r in rows if r["status"] == "done"), rows[0])
+        # A canvas made by `stack` before any crawl has no screens to answer from.
+        mapped = [r for r in rows if r.get("screens")] or rows
+        best = next((r for r in mapped if r["status"] == "done"), mapped[0])
         return self.runs_root / best["path"]
 
     def _data(self, run: str | None) -> tuple[Path, dict]:

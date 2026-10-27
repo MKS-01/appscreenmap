@@ -4,6 +4,8 @@ import { runKey, useIndex, useMap } from "./api";
 import { useCaptures } from "./captures";
 import { ActivityDock, LiveChip } from "./components/Activity";
 import { ErrorBox, Loading, Logo, StatusBadge } from "./components/common";
+import EmptyCanvas from "./components/EmptyCanvas";
+import { Icon } from "./components/Icon";
 import { PlatformCtx, platformOf } from "./a11y";
 import { href, useRoute, type Route } from "./router";
 import { useStored } from "./storage";
@@ -93,6 +95,7 @@ function RunShell({ route, activity }: { route: Route; activity: Activity }) {
     if (row) location.replace(location.hash.replace(`#/r/${encodeURIComponent(run)}`, `#/r/${encodeURIComponent(runKey(row))}`));
   }, [index, run]);
   const tab = route.tab === "s" ? "screens" : route.tab!;
+  const stack = index?.runs.find((r) => runKey(r) === run)?.stack;
   const app = data?.run.app;
   const tabs: [string, string, number | undefined][] = [
     ["map", "Map", data?.stats.transitions],
@@ -115,6 +118,7 @@ function RunShell({ route, activity }: { route: Route; activity: Activity }) {
     else if (tab === "insights") body = <Insights run={run} map={data} audit={route.arg} />;
     else if (tab === "a11y") body = <A11y run={run} map={data} view={route.arg} />;
     else if (tab === "compare") body = <Compare run={run} map={data} base={route.arg} />;
+    else if (data.stats.screens === 0 && data.run.status !== "running") body = <EmptyCanvas run={run} map={data} />;
     else body = <MapView run={run} map={data} focus={route.query.get("focus") ?? undefined} layout={route.query.get("layout") ?? undefined} />;
   }
 
@@ -126,6 +130,11 @@ function RunShell({ route, activity }: { route: Route; activity: Activity }) {
           <b>{app?.label ?? run}</b>
           {app?.version && <span className="faint">v{app.version}</span>}
           {data && <StatusBadge status={data.run.status} />}
+          {stack?.summary && (
+            <a className="chip stack-chip crumb-stack" href={href("r", run, "insights", "stack")} title="App stack">
+              <Icon name="cpu" size={12} /> <span className="ellipsis">{stack.summary}</span>
+            </a>
+          )}
           {data && activity.live?.has_logs && (
             <a className="crumb-link small" href={`#/logs?run=${encodeURIComponent(data.run.id)}`}>
               Log
