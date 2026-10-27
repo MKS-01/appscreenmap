@@ -12,6 +12,28 @@ build/
 node_modules/
 apps/viewer/dist/
 
+# iOS / Xcode (the planned SwiftUI Playground, local simulator builds for `stack --platform ios` and iOS crawls)
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+DerivedData/
+*.xcresult/
+*.hmap
+*.moved-aside
+*.dSYM/
+*.dSYM.zip
+*.ipa
+*.app/
+.build/
+.swiftpm/
+Pods/
+Carthage/Build/
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
 # Crawl output: runs/ is generated on your machine (screenshots of whatever the app shows), never committed
 runs/
 

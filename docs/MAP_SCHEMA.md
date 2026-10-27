@@ -31,6 +31,7 @@ runs/                              # crawl output, git-ignored (generated locall
     audits/stack.json              # written by `appscreenmap stack`: what the app is built with (see "audits/stack.json")
     build/apks/*.apk               # `stack`: the scanned build as pulled from the device (base + splits), latest only
     build/dumpsys-package.txt      # `stack`: `dumpsys package <pkg>` at scan time, for the security scan and Frida probe
+    build/app/<Name>.app/          # `stack --platform ios`: the scanned .app as the simulator holds it, latest only
     network.jsonl                  # `crawl --network`: one line per connection or request the app made (see "network" below)
     network-proxy.log              # `crawl --network`: mitmdump's own output, for when capture fails
     logs.jsonl                     # `crawl --logs` (on with --network): the app's own log lines, masked (see "logs" below)
@@ -538,6 +539,31 @@ ships it, `strong` a marker its build leaves, `likely` a hint). KMP on Android i
   "notes": ["…"]                                // what could not be read, and why
 }
 ```
+
+**iOS** (`appscreenmap stack --platform ios --package <bundle-id>`) reads the `.app` on a booted simulator: Info.plist,
+`Frameworks/`, bundle paths, and the Mach-O load commands and strings of the main executable, its `<App>.debug.dylib`
+and embedded frameworks. Its findings are `info` only (`stack::encrypted`, `stack::debuggable`), so status is `info`.
+Kotlin/Native symbols (`kfun:`) only come from KMP, so KMP is `certain` on iOS. The `facts` block shares `platform`,
+`package` (the bundle id), `version`, `stack`, `signals`, `storage` and `notes` with Android, and adds:
+
+```jsonc
+"facts": {
+  "platform": "ios", "package": "dev.appscreenmap.playground", "version": "1.0", "build": "4", "label": "Playground",
+  "app": "Playground.app", "executable": "Playground",
+  "debug_build": true,                          // the code is in <executable>.debug.dylib (an Xcode debug build)
+  "deployment_target": "17.0", "build_sdk": "27.0", "xcode": "27.0", "simulator_build": true,   // Info.plist
+  "min_os": "17.0", "sdk": "27.0", "binary_platform": "ios-simulator", "arches": ["arm64"],     // LC_BUILD_VERSION
+  "encrypted": null,                            // FairPlay: true (App Store build, code not read), false, null (no command)
+  "frameworks": [ { "name": "Flutter", "version": "1.0" } ],   // Frameworks/*.framework and *.dylib
+  "linked": ["/System/Library/Frameworks/SwiftUI.framework/SwiftUI"],   // the binary's linked libraries, system first
+  "data_container": "/Users/…/data/Containers/Data/Application/<uuid>",  // on this Mac at scan time
+  "storage": [ { "id": "user-defaults", "locations": ["Library/Preferences/<bundle-id>.plist"], … } ]
+  // locations are under the data container; "**/" means any folder; the Keychain has no file ([])
+}
+```
+
+The signal `category` values are the same; iOS ids include `kotlin-native`, `swift`, `swiftui` and `uikit`. An iOS scan
+writes to the app's iOS canvas (`<project>-ios`), never to its Android one.
 
 A scan of an app with no canvas creates one with zero screens, `run.steps` 0 and `run.source: "scan"`; merging a
 crawl into it adds no empty scenario, and the MCP server's default run skips it. `audits/` and `build/` follow a canvas through `merge --into` (`audits/index.json` lists are joined).

@@ -109,6 +109,32 @@ The dashboard can also start and stop a session: `POST /api/sessions` runs `watc
 (one at a time, since a device has one proxy setting), and `POST /api/sessions/<id>/stop` sends it SIGTERM, which
 `watch` handles like Ctrl-C. Leaving `serve` stops it the same way.
 
+**App stack.** `appscreenmap stack --package <pkg>` says what an installed app is built with, read from the device
+rather than an uploaded file, with no crawl needed. On Android it reads `dumpsys package` and the APKs pulled with
+`pm path` (base and splits). On iOS (`--platform ios`) it reads the `.app` on a booted simulator, found with
+`simctl get_app_container`, so idb is not needed. Both are stdlib-only and decompile nothing:
+
+| | Android (`stack/apk.py`, `elf.py`, `dumpsys.py`) | iOS (`stack/ios.py`, `macho.py`) |
+|---|---|---|
+| Build facts | min / target SDK from the device, compileSdk from the manifest (`aapt2`), version, installer, debuggable | Info.plist (deployment target, build SDK, Xcode), `LC_BUILD_VERSION` (min OS, SDK), architectures, FairPlay encryption |
+| Markers | native library names, APK paths, class names in the dex string table | `Frameworks/`, bundle paths, linked dylibs, strings in the main binary, its `.debug.dylib` and embedded frameworks |
+| Libraries | LibChecker-Rules snapshot (`libchecker.json`) and `META-INF/*.version` | embedded frameworks and their versions, linked system frameworks |
+| Native checks | 16 KB page alignment, 64-bit ABIs | none |
+
+The rules live in `stack/detect.py` (`RULES`, `IOS_RULES`) and `stack/storage.py` (`STORAGE`, `IOS_STORAGE`). Every
+signal records how sure it is (`certain`, `strong` or `likely`) and its source (`device`; a Frida layer would add
+`runtime`). KMP is at most `likely` on Android, where it compiles to plain Kotlin, and `certain` on iOS when
+Kotlin/Native symbols are present. The storage map lists each storage library the build ships, where it writes under
+the data folder, and whether it encrypts. It is the input for a later data-at-rest scan.
+
+The result is `audits/stack.json` on the app's canvas (its iOS canvas for `--platform ios`). The scanned build is kept
+in the canvas's `build/` folder. An app with no canvas gets an empty one (`run.source: "scan"`, zero screens), and a
+later crawl merges into it as its first scenario. `serve` runs the same scan for the dashboard's New project flow and
+the Rescan button:
+- `GET /api/devices` lists emulators and booted simulators.
+- `GET /api/devices/<serial>/apps?platform=` lists the user-installed apps and each one's canvas.
+- `POST /api/stack` runs `stack` as a child process, one scan at a time.
+
 **Your own audits.** Any audit written to `runs/<project>/<run-id>/audits/<id>.json` shows up in Insights, scored
 and exportable like the built-in ones (format in [MAP_SCHEMA.md](MAP_SCHEMA.md)).
 
@@ -127,6 +153,8 @@ runs/
     perf.json                 load times, jank, cold start
     audits/<id>.json          extra audits (security is written by `appscreenmap security`)
     audits/security-evidence.json   the evidence the security audit was built from (apk, device, frida)
+    audits/stack.json         what the app is built with (written by `stack`)
+    build/                    the scanned build, latest only: apks/ + dumpsys-package.txt, or app/<Name>.app on iOS
     network.jsonl             hosts and requests seen through mitmproxy (`crawl --network`)
     logs.jsonl                the app's own log lines, masked (`crawl --logs`)
     timeline.jsonl            which screen showed from when, timed at each tap: ties network and log rows to screens
@@ -146,14 +174,16 @@ never mix with the Android runs of the same app). `runs/` is git-ignored: it is 
 ```
 apps/
   engine/           appscreenmap.engine: the CLI (cli/, one module per command group) and the MCP server
+  cli/              the `appscreenmap` binary (Bun + Ink): terminal home, runs the dashboard, hands commands to the engine
   viewer/           the dashboard (React + Vite, built with Bun), @appscreenmap/viewer
 packages/
-  core/             appscreenmap.core: map.json model, analyzer, config, runs, notes, media
-  drivers/          appscreenmap.drivers: Android (adb, dumpsys, device facts, apkinfo), iOS Simulator
+  core/             appscreenmap.core: map.json model, analyzer, config, runs, notes, media, merge, timeline
+  drivers/          appscreenmap.drivers: Android (adb, dumpsys, device facts, apkinfo, logcat), iOS Simulator (simctl, idb)
   crawler/          appscreenmap.crawler: explorer, replay, load timing
   a11y/             appscreenmap.a11y: WCAG 2.2 checks, criteria catalogue, HTML/MD report
   security/         appscreenmap.security: scanner, rules.json (@appscreenmap/security-rules), Frida hook, mitmproxy addon
-  stack/            appscreenmap.stack: what an installed app is built with (framework, SDKs, ABIs, libraries, storage)
+  stack/            appscreenmap.stack: what an installed app is built with (framework, SDKs, libraries, storage), from
+                    Android APKs (dex, ELF, LibChecker-Rules) and iOS .app bundles (Info.plist, Mach-O)
   store/            appscreenmap.store: store readiness (SDK levels vs Play and App Store rules)
   reports/          appscreenmap.reports: health report, perf summary
   regression/       appscreenmap.regression: verify against baselines, visual diff

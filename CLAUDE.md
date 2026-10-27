@@ -19,7 +19,8 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
     `hooks/frida-observe.js`, `hooks/mitm_observe.py` + `network.py` for `crawl --network`); stdlib only. The mitmproxy
     addon runs in mitmproxy's own Python: never import appscreenmap or mitmproxy at its top level
   - `packages/stack/`: what an installed app is built with (`dumpsys package` + the APKs pulled from the emulator: framework,
-    SDK levels, ABIs, 16 KB alignment, libraries, storage map) → `audits/stack.json`, build kept in `<canvas>/build/`;
+    SDK levels, ABIs, 16 KB alignment, libraries, storage map; on iOS the simulator's `.app`: Info.plist, Mach-O, frameworks)
+    → `audits/stack.json`, build kept in `<canvas>/build/`;
     `libchecker.json` is a LibChecker-Rules snapshot (`make stack-rules-sync`)
   - `packages/store/`: store readiness (target / compile / min SDK vs Play and App Store rules, 365 days ahead; `requirements.json`)
   - `packages/reports/`: health report, perf summary · `packages/regression/`: verify, visual diff ·

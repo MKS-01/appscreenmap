@@ -686,7 +686,10 @@ Acceptance criteria (phase 1, Android):
 6. `stack.json` is documented in `docs/MAP_SCHEMA.md`, additive within schema 1, in the same change.
 7. `uv run pytest -q` and `uv run ruff check` pass, including the layer test.
 
-**Phase 2: iOS** (planned; how-to in the `stack-ios` skill, rule upkeep in `stack-rules`). The same scan reads an app
+**Phase 2: iOS** (in progress, branch `feat/stack-ios`; 2026-10-27: stages 1–4 built and verified on an iPhone 18 Pro
+simulator (iOS 27.0) against a real KMP + Compose Multiplatform debug build and a SwiftUI app, both local; the predicted
+SQLDelight path matched the data container. Stage 5, the Frida spike, is next. How-to in the `stack-ios` skill, rule
+upkeep in `stack-rules`.) The same scan reads an app
 installed on a booted **simulator**: no upload, no device. `simctl get_app_container` gives the `.app` and the data
 folder; the facts come from `Info.plist`, the `Frameworks/` folder and the main executable's Mach-O load commands (linked
 frameworks, `LC_BUILD_VERSION` min OS and SDK, `LC_ENCRYPTION_INFO_64`), read with the stdlib. Unlike Android, KMP is
@@ -696,8 +699,8 @@ the repo: `kfun:` symbols, `skiko` and a `compose-resources/` folder are all the
 
 Stages:
 1. Mach-O reader: load commands, fat slices, build version, encryption. (verify: synthetic headers in tests)
-2. Bundle fingerprint: `.app` → the same `signals` / `storage` / `libraries` shape, with `platform: "ios"` and iOS rule
-   kinds (`framework`, `bundle-path`, `symbol`, `dylib`). (verify: synthetic `.app` folders per framework)
+2. Bundle fingerprint: `.app` → the same `signals` / `storage` shape, with `platform: "ios"`, `frameworks` / `linked`
+   in place of Android's libraries, and iOS rule kinds (`framework`, `bundle-path`, `bundle-file`, `symbol`, `dylib`). (verify: synthetic `.app` folders per framework)
 3. Engine: `appscreenmap stack --platform ios --package <bundle-id>`, canvases in the `<project>-ios` folder like iOS
    crawls, the `.app` kept in `build/app/`. (verify: a simulator build, locally)
 4. Dashboard: booted simulators beside emulators in New project; iOS facts (deployment target, Xcode, encryption) on the

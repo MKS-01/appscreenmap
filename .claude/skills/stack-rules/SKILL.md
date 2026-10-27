@@ -15,9 +15,11 @@ The data contract is `audits/stack.json` in `docs/MAP_SCHEMA.md`.
 | `packages/stack/src/appscreenmap/stack/storage.py` | `STORAGE`: where each storage library writes under `/data/data/<pkg>/` and whether it encrypts (`True`, `False`, `None` = optional) |
 | `packages/stack/src/appscreenmap/stack/libchecker.json` | Snapshot of [LibChecker-Rules](https://github.com/LibChecker/LibChecker-Rules) (Apache-2.0): native library and component names → library labels. Never edit by hand |
 | `packages/stack/tests/test_stack.py` | One parametrised case per framework, plus calibration tests |
+| `detect.py` `IOS_RULES`, `storage.py` `IOS_STORAGE`, `tests/test_ios.py` | The iOS rules and their cases (`CASES`); how they are read is in `stack-ios` |
 
 Check kinds: `lib` (a native library file name), `lib-prefix`, `path` (an APK entry path prefix), `dex` (a class
-descriptor prefix in the dex string table, e.g. `Lcom/getcapacitor/`). iOS adds its own kinds when it lands (`stack-ios`).
+descriptor prefix in the dex string table, e.g. `Lcom/getcapacitor/`). iOS: `framework`, `bundle-path`, `bundle-file`,
+`symbol`, `dylib` (see `stack-ios`); an iOS storage location may use `{bundle}` for the bundle id.
 
 ## Confidence: what each level promises
 
@@ -27,7 +29,8 @@ descriptor prefix in the dex string table, e.g. `Lcom/getcapacitor/`). iOS adds 
 | `strong` | The stack's build always leaves it, but another stack could carry it | `META-INF/androidx.compose.*.version`, `Lorg/jetbrains/compose/resources/`, every storage rule |
 | `likely` | A hint that is often, not always, true | KMP-oriented libraries on Android (Ktor client, SQLDelight) |
 
-Two rules never change: **KMP on Android is never more than `likely`** (it compiles to plain Kotlin), and a storage hit is
+Two rules never change: **KMP on Android is never more than `likely`** (it compiles to plain Kotlin; on iOS `kfun:`
+symbols make it `certain`), and a storage hit is
 `strong` at most (bundled is not used; the Frida probe confirms). A bundled library is not proof the app uses it.
 
 ## Add or fix a rule
