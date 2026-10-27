@@ -27,6 +27,42 @@ from .ios_hierarchy import collapsed_tab_bar, element_type, idb_to_xml, is_out_o
 _STATE = re.compile(r"\((Booted|Shutdown|Shutting Down|Creating)\)")
 
 
+def _container_path(out: str) -> Path | None:
+    out = out.strip()
+    if not out:
+        return None
+    return Path(unquote(urlparse(out).path) if out.startswith("file:") else out)
+
+
+def app_container(udid: str, bundle_id: str, kind: str = "app", run=None) -> Path | None:
+    """The installed app's `.app` folder (`kind` "app") or its data folder ("data") on this Mac; None if not installed.
+    simctl only: no idb needed, unlike the driver."""
+    out = (run or IosSimulatorDriver._exec)(
+        ["xcrun", "simctl", "get_app_container", udid, bundle_id, kind], timeout=30, check=False
+    )
+    return _container_path(out)
+
+
+def user_apps(udid: str, run=None) -> list[str]:
+    """Bundle ids of the apps installed by the user (not Apple's) on a simulator. `simctl listapps` prints an
+    old-style plist, which plutil converts to JSON."""
+    raw = (run or IosSimulatorDriver._exec)(["xcrun", "simctl", "listapps", udid], timeout=30, check=False)
+    if not raw.strip():
+        return []
+    try:
+        p = subprocess.run(
+            ["plutil", "-convert", "json", "-o", "-", "--", "-"],
+            input=raw.encode(),
+            capture_output=True,
+            timeout=30,
+            check=False,
+        )
+        apps = json.loads(p.stdout or b"{}")
+    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError):
+        return []
+    return sorted(b for b, a in apps.items() if isinstance(a, dict) and a.get("ApplicationType") == "User")
+
+
 class IosSimulatorDriver:
     platform = "ios"
 
@@ -377,10 +413,9 @@ class IosSimulatorDriver:
         """Empty the app's data container (documents, caches, preferences) without reinstalling it. The keychain is
         shared by the whole simulator and is left alone."""
         self.force_stop(bundle_id)
-        out = self._simctl("get_app_container", self.udid, bundle_id, "data", check=False).strip()
-        if not out:
+        root = _container_path(self._simctl("get_app_container", self.udid, bundle_id, "data", check=False))
+        if root is None:
             raise DriverError(f"{bundle_id} is not installed on {self.udid}")
-        root = Path(unquote(urlparse(out).path) if out.startswith("file:") else out)
         for child in root.iterdir():
             if child.is_dir():
                 shutil.rmtree(child, ignore_errors=True)

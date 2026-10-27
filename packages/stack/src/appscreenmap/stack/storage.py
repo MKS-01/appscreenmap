@@ -115,6 +115,91 @@ STORAGE: list[tuple[str, str, bool | None, list[str], list[tuple[str, str, str]]
 ]
 
 
+# iOS: paths under the app's data container (`simctl get_app_container <udid> <bundle> data`); `{bundle}` is the
+# bundle id. Keychain items live in the simulator's shared keychain, not in the container, so they have no path.
+IOS_STORAGE: list[tuple[str, str, bool | None, list[str], list[tuple[str, str, str]]]] = [
+    (
+        "user-defaults",
+        "UserDefaults",
+        False,
+        ["Library/Preferences/{bundle}.plist"],
+        [("symbol", "NSUserDefaults", "strong")],
+    ),
+    (
+        "core-data",
+        "Core Data",
+        False,
+        ["Library/Application Support/"],
+        [("dylib", "/CoreData.framework/", "strong")],
+    ),
+    (
+        "swiftdata",
+        "SwiftData",
+        False,
+        ["Library/Application Support/default.store"],
+        [("dylib", "/SwiftData.framework/", "strong")],
+    ),
+    (
+        "sqlite",
+        "SQLite (system library; also under Core Data and SQLDelight)",
+        False,
+        ["Library/Application Support/", "Documents/"],
+        [("dylib", "/libsqlite3.dylib", "strong")],
+    ),
+    (
+        "sqlcipher",
+        "SQLCipher",
+        True,
+        ["Library/Application Support/", "Documents/"],
+        [("framework", "SQLCipher", "strong"), ("symbol", "sqlcipher_export", "strong")],
+    ),
+    (
+        "realm",
+        "Realm",
+        None,
+        ["Documents/default.realm"],
+        [("framework", "Realm", "strong"), ("framework", "RealmSwift", "strong")],
+    ),
+    (
+        "mmkv",
+        "MMKV",
+        None,
+        ["Documents/mmkv/"],
+        [
+            ("framework", "MMKV", "strong"),
+            ("framework", "MMKVCore", "strong"),
+            ("symbol", "MMKVCore", "strong"),
+        ],
+    ),
+    (
+        "rn-async-storage",
+        "React Native AsyncStorage",
+        False,
+        ["Library/Application Support/{bundle}/RCTAsyncLocalStorage_V1/"],
+        [("symbol", "RNCAsyncStorage", "strong")],
+    ),
+    (
+        "flutter-shared-preferences",
+        "Flutter shared_preferences (UserDefaults, keys prefixed flutter.)",
+        False,
+        ["Library/Preferences/{bundle}.plist"],
+        [("framework", "shared_preferences_foundation", "strong")],
+    ),
+    (
+        "keychain",
+        "Keychain (not in the data container)",
+        True,
+        [],
+        [
+            ("symbol", "SecItemAdd", "strong"),
+            ("framework", "flutter_secure_storage", "strong"),
+            ("symbol", "RNKeychainManager", "strong"),
+            ("framework", "ExpoSecureStore", "strong"),
+        ],
+    ),
+]
+
+
 def detect_storage(libs: set[str], paths: list[str], dex: bytes) -> list[dict]:
     """[{"id", "label", "encrypted", "locations", "confidence", "evidence", "source": "device"}]."""
     out = []

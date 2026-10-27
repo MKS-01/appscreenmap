@@ -18,14 +18,16 @@ ABI_64 = {
 }
 
 
-def _finding(fid: str, severity: str, title: str, detail: str, fix: str, category: str, refs: list) -> dict:
+def _finding(
+    fid: str, severity: str, title: str, detail: str, fix: str, category: str, refs: list, platform="android"
+) -> dict:
     return {
         "id": fid,
         "severity": severity,
         "title": title,
         "detail": detail,
         "fix": fix,
-        "platform": "android",
+        "platform": platform,
         "category": category,
         "refs": refs,
     }
@@ -130,6 +132,84 @@ def build_audit(package: str, device: dict, fp: dict, tool: str) -> dict:
         "charts": [],
         "findings": found,
         "refs": [PAGE_SIZES, ABI_64],
+        "facts": facts,
+    }
+
+
+def ios_findings(facts: dict) -> list[dict]:
+    out = []
+    if facts.get("encrypted"):
+        out.append(
+            _finding(
+                "stack::encrypted",
+                "info",
+                "Encrypted App Store build",
+                "The main executable is FairPlay-encrypted, so its code was not read: framework, language and "
+                "storage results come from the bundle's files and linked libraries only.",
+                "Scan a simulator or development build of the same version for the full picture.",
+                "Build",
+                [],
+                "ios",
+            )
+        )
+    if facts.get("debug_build"):
+        out.append(
+            _finding(
+                "stack::debuggable",
+                "info",
+                "Debug build",
+                f"The installed build is a debug build (its code is in {facts.get('executable')}.debug.dylib), so it "
+                "is not the build users get: optimisation and release-only settings may differ.",
+                "Scan a Release build too before relying on these results.",
+                "Build",
+                [],
+                "ios",
+            )
+        )
+    return out
+
+
+def build_ios_audit(fp: dict, tool: str, data_container: str | None = None) -> dict:
+    """`fp` from `ios.fingerprint_app`. `data_container`: the app's data folder on this Mac at scan time."""
+    facts = {
+        "platform": "ios",
+        "package": fp.get("bundle_id"),
+        **{k: v for k, v in fp.items() if k != "bundle_id"},
+        "data_container": data_container,
+    }
+    found = sorted(ios_findings(facts), key=lambda f: f["id"])
+    return {
+        "schema": 1,
+        "audit": "stack",
+        "title": "App stack",
+        "tool": tool,
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "source": "run",
+        "status": "info",
+        "score": None,
+        "summary": fp["stack"]["summary"],
+        "metrics": [
+            {
+                "label": "deployment target",
+                "value": _known(fp.get("deployment_target")),
+                "hint": "MinimumOSVersion",
+            },
+            {"label": "build SDK", "value": _known(fp.get("build_sdk") or fp.get("sdk")), "hint": "iOS SDK"},
+            {"label": "Xcode", "value": _known(fp.get("xcode"))},
+            {
+                "label": "frameworks",
+                "value": len(fp["frameworks"]) + len(fp["linked"]),
+                "hint": f"{len(fp['frameworks'])} embedded, {len(fp['linked'])} system",
+            },
+            {
+                "label": "storage",
+                "value": len(fp["storage"]),
+                "hint": f"{sum(1 for s in fp['storage'] if s['encrypted'])} encrypted",
+            },
+        ],
+        "charts": [],
+        "findings": found,
+        "refs": [],
         "facts": facts,
     }
 

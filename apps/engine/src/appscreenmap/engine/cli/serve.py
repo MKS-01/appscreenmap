@@ -22,6 +22,7 @@ from appscreenmap.core.model import load_map
 from appscreenmap.core.runs import RunDeleteError, delete_run, resolve_run, update_index
 from appscreenmap.drivers.android import AdbDriver
 from appscreenmap.drivers.base import DriverError
+from appscreenmap.drivers.ios import IosSimulatorDriver, user_apps
 from appscreenmap.drivers.logcat import LOG as LOGS_LOG
 from appscreenmap.exporters.svg import LAYOUTS, THEMES, map_svg
 from appscreenmap.security import network
@@ -33,6 +34,8 @@ _UPLOADS = threading.BoundedSemaphore(2)  # screens being uploaded at once
 _SCAN = threading.Lock()  # one stack scan at a time: each pulls the app's APKs from the device
 STACK_SCAN_TIMEOUT_S = 600
 _PACKAGE = re.compile(r"[A-Za-z][\w]*(\.[A-Za-z_][\w]*)+")
+_UDID = re.compile(r"[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}")
+_BUNDLE_ID = re.compile(r"[A-Za-z0-9][\w-]*(\.[\w-]+)+")  # iOS bundle ids may hold hyphens
 _SERIAL = re.compile(r"[\w.:-]{1,64}")
 
 
@@ -117,7 +120,9 @@ def _watch_cmd(run_dir: Path, runs_root: Path, sid: str, net: bool, serial: str 
     return cmd + (["--network"] if net else []) + (["--serial", serial] if serial else [])
 
 
-def _stack_cmd(runs_root: Path, package: str, serial: str | None, run_dir: Path | None) -> list[str]:
+def _stack_cmd(
+    runs_root: Path, package: str, serial: str | None, run_dir: Path | None, platform: str = "android"
+) -> list[str]:
     cmd = [
         sys.executable,
         "-m",
@@ -127,13 +132,16 @@ def _stack_cmd(runs_root: Path, package: str, serial: str | None, run_dir: Path 
         package,
         "--out",
         str(runs_root),
+        "--platform",
+        platform,
         "--json",
     ]
     return cmd + (["--serial", serial] if serial else []) + ([str(run_dir)] if run_dir else [])
 
 
 def _devices() -> list[dict]:
-    """Attached Android devices; `build_type` userdebug means `adb root` works (what the Frida probe will need)."""
+    """Attached Android devices, then booted iOS simulators. On Android, `build_type` userdebug means `adb root`
+    works (what the Frida probe will need)."""
     out = []
     for serial, state in AdbDriver.list_devices():
         row: dict = {"serial": serial, "state": state, "platform": "android"}
@@ -158,7 +166,26 @@ def _devices() -> list[dict]:
                 "build_type": build_type or None,
             }
         out.append(row)
+    try:
+        sims = IosSimulatorDriver.list_devices()
+    except (OSError, subprocess.SubprocessError):  # no Xcode: not a Mac, or the tools aren't installed
+        sims = []
+    for udid, name in sims:
+        model, _, release = name.partition(" · ")
+        out.append(
+            {"serial": udid, "state": "device", "platform": "ios", "name": model, "ios": release or None}
+        )
     return out
+
+
+def _installed_apps(serial: str, platform: str) -> list[str]:
+    """Apps the user installed (not system apps): `pm list packages -3`, or the simulator's User apps."""
+    if platform == "ios":
+        return user_apps(serial)
+    listing = AdbDriver(serial).shell("pm list packages -3", timeout=30)
+    return sorted(
+        line.removeprefix("package:").strip() for line in listing.splitlines() if line.startswith("package:")
+    )
 
 
 class _Handler(http.server.SimpleHTTPRequestHandler):
@@ -169,6 +196,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
     watch_cmd = staticmethod(_watch_cmd)  # tests swap in a stand-in process
     stack_cmd = staticmethod(_stack_cmd)
     devices = staticmethod(_devices)
+    installed_apps = staticmethod(_installed_apps)
 
     def translate_path(self, path: str) -> str:
         clean = path.split("?", 1)[0].split("#", 1)[0]
@@ -354,7 +382,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         POST /api/runs/<canvas>/screens  multipart: image, title, parent?, via?, scenario?, hierarchy?   201 + the screen
         POST /api/sessions  {"run": "<canvas id>", "network": true, "serial"?: "…"}   start one; 201 + its session.json
         POST /api/sessions/<id>/stop                                                stop it; 200 + its final session.json
-        POST /api/stack  {"package": "…", "serial"?: "…", "run"?: "<canvas id>"}   scan an installed app (see `stack`);
+        POST /api/stack  {"package": "…", "platform"?: "ios", "serial"?: "…", "run"?: "<canvas id>"}   scan an installed app (see `stack`);
             201 + {"run", "path", "audit"}; the canvas is found by package, or created empty
         """
         path = self.path.split("?", 1)[0]
@@ -440,26 +468,26 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         self._json(row)
 
     def _devices_api(self) -> None:
-        """GET /api/devices: attached devices. GET /api/devices/<serial>/apps: its installed (non-system) apps, each
-        with the canvas it already has, if any."""
-        path = self.path.split("?", 1)[0]
+        """GET /api/devices: attached devices and booted simulators. GET /api/devices/<serial>/apps[?platform=ios]:
+        its installed (non-system) apps, each with the canvas it already has on that platform, if any."""
+        path, _, query = self.path.partition("?")
+        m = re.fullmatch(r"/api/devices/([\w.:-]{1,64})/apps", path)
+        # a simulator udid is a UUID; adb serials never are
+        guess = "ios" if m and _UDID.fullmatch(m.group(1)) else "android"
+        platform = parse_qs(query).get("platform", [guess])[0]
+        if platform not in ("android", "ios"):
+            return self.send_error(400, "platform")
         if path == "/api/devices":
             return self._json({"devices": self.devices()})
-        m = re.fullmatch(r"/api/devices/([\w.:-]{1,64})/apps", path)
         if not m:
             return self.send_error(404)
         try:
-            listing = AdbDriver(m.group(1)).shell("pm list packages -3", timeout=30)
-        except DriverError as e:
+            packages = self.installed_apps(m.group(1), platform)
+        except (DriverError, OSError, subprocess.SubprocessError) as e:
             return self._json({"error": str(e)}, 422)
-        packages = sorted(
-            line.removeprefix("package:").strip()
-            for line in listing.splitlines()
-            if line.startswith("package:")
-        )
         apps = []
         for pkg in packages:
-            canvas, _ = find_canvas(self.runs_root, pkg)
+            canvas, _ = find_canvas(self.runs_root, pkg, platform)
             apps.append({"package": pkg, "run": canvas.name if canvas else None})
         self._json({"serial": m.group(1), "apps": apps})
 
@@ -468,7 +496,11 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         if body is None:
             return
         package, serial, run = body.get("package"), body.get("serial"), body.get("run")
-        if not (isinstance(package, str) and _PACKAGE.fullmatch(package)):
+        platform = body.get("platform", "android")
+        if platform not in ("android", "ios"):
+            return self.send_error(400, "platform")
+        valid = _BUNDLE_ID if platform == "ios" else _PACKAGE
+        if not (isinstance(package, str) and valid.fullmatch(package)):
             return self.send_error(400, "package")
         if serial is not None and not (isinstance(serial, str) and _SERIAL.fullmatch(serial)):
             return self.send_error(400, "serial")
@@ -481,7 +513,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             return self._json({"error": "a scan is already running"}, 409)
         try:
             proc = subprocess.run(
-                self.stack_cmd(self.runs_root, package, serial, run_dir),
+                self.stack_cmd(self.runs_root, package, serial, run_dir, platform),
                 check=False,
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
@@ -495,7 +527,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         if proc.returncode != 0:
             tail = proc.stderr.strip().splitlines()[-3:]
             return self._json({"error": " ".join(tail) or f"stack exited with {proc.returncode}"}, 422)
-        canvas = run_dir or find_canvas(self.runs_root, package)[0]
+        canvas = run_dir or find_canvas(self.runs_root, package, platform)[0]
         if canvas is None:
             return self._json({"error": "the scan finished but its canvas could not be found"}, 500)
         audit = json.loads((canvas / "audits" / "stack.json").read_text())
