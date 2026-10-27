@@ -451,8 +451,12 @@ Rule ids: `target-size-min` (2.5.8), `label-in-name` (2.5.3), `not-focusable` (2
 
 ## `audits/<audit-id>.json`
 
-Every audit the viewer's Insights tab shows uses this one shape. Today the viewer builds `coverage`, `stability`,
-`a11y` and `perf` itself from `map.json`, `a11y.json` and `perf.json`. It shows `adaptive`, `platform`, `store`
+Every audit the viewer's Insights tab shows uses this one shape. The viewer builds `coverage`, `stability`,
+`a11y` and `perf` itself from `map.json`, `a11y.json` and `perf.json`; `appscreenmap report --format …` also writes
+those four as files (`appscreenmap.reports.builtin`, the same rules), so every audit exists as a file for the app
+report. A file is a snapshot: each `report --format …` rebuilds them (a11y applies `notes.json` triage over `a11y.json`),
+so viewer triage shows in the files after the next report. A file another tool wrote under one of these ids (its
+`tool` not `appscreenmap …`) is kept, not overwritten. It shows `adaptive`, `platform`, `store`
 and `security` from sample data (labelled as such) until a tool writes them. Any tool (the crawler, a jadx or
 frida scanner, a CI step) can add or replace an audit by writing this file into the run folder. A file always
 wins over the viewer's built-in or sample version. Ids the viewer doesn't know go in `audits/index.json` and
@@ -496,14 +500,49 @@ the rest.
     "refs": [ { "title": "…", "url": "https://developer.android.com/…", "publisher": "Android Developers",
                 "date": "2026-10-13" } ],
     "sample": false,                            // placeholder finding inside a real report
-    "requirement": "met | due | blocked | upcoming | not_checked"   // optional: a store/platform requirement's state
+    "requirement": "met | due | blocked | upcoming | not_checked",  // optional: a store/platform requirement's state
+                                                // (adaptive also uses "exempt (game)" and "ignored on large screens")
+    "items": ["ScannerActivity → portrait"],    // optional: the instances one finding covers (activities, …)
+    "tier": "ready | optimized | differentiated | hig",  // optional (adaptive): Android adaptive app quality tier 3 / 2 / 1, or Apple HIG
+    "official_id": "Config_Changes",            // optional (adaptive): Google's guideline id the rule follows
+    "screens": ["s004", "s007"],                // optional: every screen it was seen on (`screen` is the first)
+    "elements": [ { "screen": "s004", "rid": "pkg:id/logo", "label": "logo", "bounds": [x1, y1, x2, y2] } ],  // optional: where in the screen; bounds (screenshot px) draw the report's evidence crop
+    "triage": "open | confirmed | wontfix | false_positive",  // optional: from notes.json; wontfix / false_positive
+                                                // stay in the report and are left out of the fix list
+    "verify": "Re-crawl, then …"                // optional: how to check it's fixed (fix list); else the audit's default
   } ],
+  "manual": [ { "id": "…", "title": "…", "steps": "…" } ],   // optional: checks a person must run, shown as not tested
   "refs": [ { "title": "…", "url": "…", "publisher": "…", "date": "…" } ]   // official docs the checks follow
 }
 ```
 
+### The app report (`<run>/reports/`)
+
+`appscreenmap report <run> --format md,html,pdf,docx,fixes [--profile full|release|a11y] [--audits a,b] [--out <dir>] [--paper a4|letter]` reads
+every `audits/*.json` (not `index.json` or `*-evidence.json`; audits with `source: "sample"` and findings with
+`sample: true` are left out) and writes:
+
+| File | What |
+|---|---|
+| `report.md` + `report-assets/` | Cover, Summary (one row per audit, top findings, deadlines), Conditions (device, scenarios), Screens (every crawled screen), one section per audit, Appendix (method, sources, glossary). Each finding shows up to 8 affected screens, and an evidence crop (the element outlined) for up to 4 screens whose `elements` carry `bounds` |
+| `report.html` | The same, one self-contained file: design tokens, fonts, thumbnails and evidence crops inlined |
+| `report.pdf` | `report.html` printed by headless Chrome / Chromium (`--paper a4` or `letter`; `APPSCREENMAP_CHROME` for an unusual install) |
+| `report.docx` | The same sections as a Word document (charts as tables, sources as links); Drive turns it into a Google Doc on upload. Never uploaded by the engine |
+| `fixes.md` | One task per distinct problem (errors and warnings; not `coverage`, not dismissed in triage), ordered by severity, deadline, screens touched; where, seen, fix, source, how to check |
+| `fixes.json` | The fix list's memory: `{ "schema": 1, "tasks": { "<audit>::<id>": { "title", "audit", "severity", "first_seen", "fixed_on", "verified_in", "dismissed" } } }`. A task whose audit ran again without it is ticked with the run it was gone in; one triaged won't fix / false positive is `dismissed`, never fixed; one whose audit wasn't in this report is listed as not re-checked |
+
 Cite official sources only (Android Developers, Google Play, Apple Developer, W3C). The viewer's catalogue of
 sources is `apps/viewer/src/insights/sources.ts`. Update it when a platform or store publishes its yearly changes.
+
+### `audits/adaptive.json`
+
+Written by `appscreenmap adaptive <run> --apk <apk>` (or `--app` for iOS) and by every crawl, from the build's
+manifest (aapt2) or Info.plist. The rules are `packages/adaptive/…/rules.json`, each with `detect`: `static` (checked
+here: orientation locks, `nosensor`, `resizeableActivity="false"`, min/max aspect ratio, activities recreated on
+resize; iOS `UIRequiresFullScreen`, no scene manifest, iPhone only, portrait only, built with Xcode ≤ 26),
+`condition` (needs a crawl per device profile; reported as "size checks: not run" until then) or `manual` (in
+`manual`, not tested). The Android 17 rules carry `due` (Play's API 37 date) while `targetSdk` < 37, become errors after
+it, and are `info` for games. Findings add `tier` and `official_id`.
 
 ### `audits/stack.json`
 

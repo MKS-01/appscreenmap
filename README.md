@@ -45,7 +45,7 @@ the build you already ship and writes every screen down, so the answer is a file
 - *What is in this build?* A complete screen inventory, including screens nobody remembers.
 - *How do I reach Settings?* A route to every screen, for you and for your agent.
 - *What changed since the last release?* Added, removed and changed screens, before release.
-- *Is it accessible, fast, secure, store-ready?* WCAG 2.2, performance, store deadlines and security, each with the fix and an official source.
+- *Is it accessible, fast, secure, store-ready, adaptive?* WCAG 2.2, performance, store deadlines, security and large-screen rules (Android 17, foldables, tablets, iPhone Duo), each with the fix and an official source.
 - *What does the app talk to?* The hosts it calls and its own log lines, tied to the screen you were on (`crawl --network`, `watch`).
 - *Did this build break a path?* `verify` replays every path and fails the CI job if one is gone.
 
@@ -139,6 +139,10 @@ the two that drive the device. More in [docs/SETUP.md](docs/SETUP.md#agents-mcp)
 Export the map as one self-contained SVG (every screenshot inside) or Markdown/CSV from the dashboard, or take the files
 straight from the run: test flows (`flows/`, Maestro format), a Mermaid graph (`map.mmd`), a one-file WCAG report
 (`a11y-report.html`, evidence not a conformance claim), and `map.json` / `a11y.json` / `perf.json`.
+
+One report covers every audit: `appscreenmap report <run> --format md,html,pdf,docx,fixes` writes `report.md`, a
+self-contained `report.html`, `report.pdf` (needs Chrome or Chromium), `report.docx` (open it in Google Docs or Word) and
+`fixes.md` (a task list to work through, ticked as fixes land) into `<run>/reports/`.
 
 ## License
 

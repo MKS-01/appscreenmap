@@ -58,6 +58,22 @@ for (const [tok, min] of checks) {
   }
   rows.push(row);
 }
+// Paper (the PDF's print palette): the same text and status tokens, prefixed `print-`, on the print surfaces.
+for (const [tok, min] of checks.filter(([t]) => !t.startsWith("st-") && t !== "accent-hi")) {
+  const fg = resolve(`print-${tok}`);
+  if (!fg) {
+    console.error(`--print-${tok}: not a hex colour`);
+    fails++;
+    continue;
+  }
+  const row: Record<string, string | number> = { token: `--print-${tok}`, value: fg, min };
+  for (const s of surfaces) {
+    const r = ratio(fg, resolve(`print-${s}`)!);
+    row[s] = `${r.toFixed(1)}${r < min ? " ✗" : ""}`;
+    if (r < min) fails++;
+  }
+  rows.push(row);
+}
 const onAccent = ratio(resolve("on-accent")!, resolve("accent")!);
 rows.push({ token: "--on-accent on --accent", value: resolve("on-accent")!, min: 4.5, bg: `${onAccent.toFixed(1)}${onAccent < 4.5 ? " ✗" : ""}` });
 if (onAccent < 4.5) fails++;

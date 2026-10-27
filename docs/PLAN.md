@@ -722,6 +722,229 @@ Acceptance criteria (phase 2, iOS):
 7. New fields are additive within schema 1 and documented in `docs/MAP_SCHEMA.md`; `uv run pytest -q` and
    `uv run ruff check` pass.
 
+### 8.7 2026-10-28: Adaptive UI audit and one exportable report (proposed)
+
+**Status:** in progress, branch `feat/report-export`. 2026-10-28: stage 3 built (`packages/adaptive`: `rules.json` with 28 rules, the static manifest / Info.plist checks, `appscreenmap adaptive`, run by every crawl; it depends on `drivers` for aapt2, like `store`, not on core only as first planned); verified on the Playground and Beetlebug APKs (ScannerActivity locked to portrait, due 2027-08-31). Stage 2 built (`--format pdf,docx`, `--paper`,
+`doctor` finds Chrome; every screen in a Screens section, up to 8 per finding, outlined evidence crops); the PDF prints on the `--print-*` paper palette (owner's call, recorded in the design-system
+skill). Open: the `.docx` → Google Docs import is checked by hand (the Drive connector can't take the file inline). Stage 1 built and verified on Playground and
+Beetlebug canvases (copies): `report --format md,html,fixes`, the engine writing the four built-in audits, HTML checked at
+1400 and 390 px. Mockups for the dashboard parts are being added to the "AppScreenMap redesign" canvas before any viewer
+work. Size method, built-in audits and the fix list decided 2026-10-28; PDF / Google Docs route still open (end of this
+section).
+
+**Why.** Two gaps. (1) The Adaptive UI audit in Insights is sample data: only manifest orientation locks and the
+crawl's window class are real. Android 17 (API 37) ignores orientation, resizability and aspect-ratio limits on
+sw ≥ 600 dp with no opt-out, and Play requires API 37 for new apps and updates from August 2027; iPhone Duo (Oct 2026)
+puts every iPhone app on a compact outer and a regular inner display. (2) Each audit writes its own output
+(`a11y-report.html/.md`, terminal `report`, `audits/*.json`), so there is no one document to hand a team, a client or
+a store reviewer.
+
+#### Part A: adaptive rules
+
+**Official sources** (cite only these; add them to `apps/viewer/src/insights/sources.ts` via the web session):
+
+| Source | What it gives the checks |
+|---|---|
+| [Adaptive app quality guidelines](https://developer.android.com/docs/quality-guidelines/adaptive-app-quality) ([tier 3](https://developer.android.com/docs/quality-guidelines/adaptive-app-quality/tier-3), [tier 2](https://developer.android.com/docs/quality-guidelines/adaptive-app-quality/tier-2), [tier 1](https://developer.android.com/docs/quality-guidelines/adaptive-app-quality/tier-1) + [foldables](https://developer.android.com/docs/quality-guidelines/adaptive-app-quality/experiences/foldables)) | The rule ids we reuse (`Config_Changes`, `Responsive_adaptive_layouts`, …) and their T-tests; the test device sizes (foldable 841×701 dp, tablets 1024×640 and 1280×800 dp, desktop 1600×900 dp) |
+| [Adapt layout (design)](https://developer.android.com/design/ui/mobile/guides/layout-and-content/adapt-layout) | Panes per class (compact 1, medium 1–2, expanded+ several), max width, don't stretch inputs/buttons, don't lock portrait |
+| [Use window size classes](https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes) | Width 600 / 840 / 1200 / 1600 dp, height 480 / 900 dp; classes come from the window, never the device |
+| [Trifolds and landscape foldables](https://developer.android.com/develop/adaptive-apps/guides/foldables/trifolds-and-landscape-foldables) | Keep state across fold/unfold, `nosensor` is wrong, orientation from window not rotation, camera preview from window metrics |
+| [Android 17: restrictions ignored](https://developer.android.com/about/versions/17/changes/ff-restrictions-ignored), [orientation, aspect ratio, resizability](https://developer.android.com/develop/adaptive-apps/guides/app-orientation-aspect-ratio-resizability) | Which manifest attributes stop working, games exempt, the Aug 2027 Play date |
+| [HIG: Designing for iPhone Duo](https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo), [Preparing your app for iPhone Duo](https://developer.apple.com/documentation/TechnologyOverviews/preparing-your-app-for-iphone-duo) | Compact outer / regular inner, no per-pose layouts, even grid columns, side controls, same controls on both displays, built with Xcode ≤ 26 doesn't extend under the status bar |
+| [HIG: Layout](https://developer.apple.com/design/human-interface-guidelines/layout) | Size classes not idiom or orientation, safe areas, same functionality at every size |
+
+**Catalogue.** A new stdlib package `packages/adaptive/` (`appscreenmap.adaptive`, depends on core only) with
+`rules.json`, like the security catalogue: `id`, `title`, `platform`, `tier` (`ready | optimized | differentiated`
+on Android, `hig` on iOS), `official_id` (Google's guideline id where one exists), `detect`
+(`static | condition | manual`), `severity`, `fix`, `refs`. A matching `adaptive-rules` skill owns its yearly upkeep
+(after Android and iOS releases), alongside `store-requirements`.
+
+**Rules, by how they are detected:**
+
+| Detect | Rule (official id) | Evidence |
+|---|---|---|
+| static | Orientation locked, incl. `nosensor` (`Config_Changes`, Android 17) | manifest / `dumpsys package`; `due` = Play API 37 date |
+| static | `resizeableActivity="false"`, `min/maxAspectRatio` (Android 17) | manifest |
+| static | Frequent config changes not handled and no saved state hints (`Config_Changes`) | `configChanges` per activity; info only |
+| static | iOS: `UIRequiresFullScreen`, no scene manifest / multiple scenes, iPhone-only on iPad, built with Xcode ≤ 26 (iPhone Duo) | `Info.plist` from the stack scan |
+| condition | Letterboxed or compat mode: app window smaller than the display (`Config_Changes`, T-Config_Orientation) | window bounds vs display, per size |
+| condition | Bottom bar kept at medium / expanded (`Responsive_adaptive_layouts`) | `bottom_nav` pattern at ≥ 600 dp |
+| condition | One pane at expanded on a list screen (`Responsive_adaptive_layouts`) | `list` pattern, single scroll container at ≥ 840 dp; info, suggests list-detail |
+| condition | Buttons, text fields, bottom sheets stretched full width (`UI_Secondary_Elements`) | element width ≈ window width at ≥ 840 dp |
+| condition | Content clipped or off-window after a resize | element bounds outside the window |
+| condition | Touch target < 48 dp at any size (`Touch_Targets`) | reuses the a11y check per condition |
+| condition | State lost on rotate: typed text, scroll position (`Config_Changes`, T-Config_State) | type / scroll, rotate, compare hierarchy |
+| condition | Controls missing at one size that exist at another (HIG layout, iPhone Duo consistency) | action set per screen across sizes |
+| condition | Compact height (phone landscape < 480 dp) with bars taking most of it | bar bounds vs window height |
+| manual | Keyboard, mouse, trackpad, stylus (tier 3 and 2 input rules), postures, PiP, multi-instance, multi-resume, camera preview, iPhone Duo poses and reserved regions | listed as **not tested** with the T-test steps, like the a11y report's device tests |
+
+**Getting the evidence: a full crawl per device, on the right emulator or simulator (decided 2026-10-28).** Each
+size is crawled on a real device profile, the ones Google and Apple name for testing, never by resizing a phone
+emulator: a faked size has the wrong density, no hinge, no posture and no foldable or tablet configuration, so the
+app may take a different code path than on the device. `appscreenmap crawl … --device <profile>` explores the app on
+that profile, so screens that only exist on wide windows (a detail pane, a second column) are found, not just seen.
+Each device run merges into the app's one canvas as its own scenario (`merge --into <canvas> <run> --labels
+"Tablet · 1280×800 dp" --move`), and the phone crawl the canvas already has is reused, never repeated.
+
+Device profiles (`packages/adaptive/…/devices.json`, kept by the `adaptive-rules` skill):
+
+| Profile | Android (AVD hardware profile) | iOS (simulator device type) | Covers |
+|---|---|---|---|
+| `phone` | the phone AVD the canvas was crawled on | an iPhone | compact; the existing crawl |
+| `foldable` | Pixel Fold (inner 841×701 dp, outer cover display) | iPhone Duo (Xcode 27.1+) | medium / expanded inner, compact outer, fold / unfold, postures |
+| `tablet` | Medium Tablet (1280×800 dp; portrait 800 dp is medium) | an iPad | expanded landscape, medium portrait |
+| `desktop` | Desktop (1600×900 dp) or the Resizable emulator | iPad with resizable windows | large / extra-large, free resizing |
+| `trifold` | a trifold AVD when Android Studio ships one | none | large unfolded, no tabletop posture |
+
+How a device run works:
+- The engine resolves the profile to an installed AVD (`avdmanager list avd`, by hardware profile) or simulator
+  (`simctl list devicetypes` / `devices`), boots it if it isn't running, installs the same build, crawls, and shuts
+  down only what it booted. One device at a time, so two emulators never compete for memory.
+- `run.device` already records model, form factor and window class; the profile id is added, and the report's
+  Conditions section lists exactly which emulator or simulator each finding came from.
+- Missing profile: the crawl stops with the exact `avdmanager create avd` / `simctl create` line to run. It never
+  creates an AVD, downloads a system image (several GB) or falls back to a resized phone on its own; ask first.
+  `doctor` lists which profiles are ready on this machine.
+- On the device: rotation through `user_rotation` (iOS: `simctl` orientation), fold / unfold and postures through the
+  foldable emulator's console (a spike confirms the exact commands before stage 5); iPhone Duo poses through the
+  simulator, with Device Hub as the manual check.
+**Matching screens across sizes** (`appscreenmap.core`, a new `match.py`): a pair scores on the same activity, the
+same reach path labels from launch, and the overlap of resource ids / test tags and visible text (layout-independent;
+the screen signature is not, since it changes with the layout). Below a threshold a screen stays unmatched and is
+reported as *only at this size*: expected for a new pane at expanded, a finding when controls or a screen disappear
+at a size (the consistency rule). Matches are written to the canvas, so a wrong pair can be fixed by hand in
+`notes.json` like other edits.
+*Rejected:* replaying each screen's path at each size (cheaper, but it never explores what only the wide layout
+shows); resizing the phone emulator with `wm size` / `wm density` (fast, but not the device: wrong density, no hinge
+or posture, and it changes the developer's emulator).
+*Cost we accept:* one crawl per device (keep `--max-steps` short for the extra devices, about two runs per scenario,
+per the crawl budget), a boot per device, a few GB of system images the developer installs once, and matching is a
+heuristic with a fixable result.
+
+**Schema (additive, documented in `docs/MAP_SCHEMA.md` in the same change):** `run.condition` on each device run
+(`{ "id": "tablet-landscape", "profile": "tablet", "width_dp", "height_dp", "window_class", "orientation",
+"posture" }`), carried by `merge` onto the
+screens it adds (`screen.condition`), and `matches` on the canvas (`{ "<screen id>": { "<condition>": "<screen id>",
+"score": 0.0–1.0, "by": "auto | manual" } }`). The audit writes `audits/adaptive.json` in the standard shape, with an
+extra `tier` per finding; the viewer's sample builder is then deleted (web session).
+
+**Playground:** an Adaptive scenario with deliberate bugs marked `ADAPTIVE BUG (<official id>)`: a bottom bar that
+stays at expanded, a stretched form, a text field that loses its text on rotate, an activity locked to portrait.
+Listed in `samples/README.md`.
+
+#### Part B: one report, every audit, four formats
+
+**Decision (recommended): the report is built from `audits/*.json`, the shape every audit already writes.** One
+Python model in `packages/reports/` (`appscreenmap.reports.document`) reads the canvas (`map.json`, `audits/*.json`,
+`notes.json` triage) and hands it to one renderer per format. A new audit gets into the report by writing its JSON;
+no renderer changes. For that, the engine writes the audits the viewer builds itself today (`coverage`,
+`stability`, `a11y`, `perf`) as files too; the viewer already prefers a file.
+
+**Standard structure** (every format, same order; one template, sections can be chosen):
+1. Cover: app, version, platform, build, canvas, date, tool version.
+2. Summary: one row per audit (status, score, findings by severity), the top findings, deadlines on a timeline.
+3. Conditions: devices, sizes, orientations, locales the evidence comes from.
+4. One section per audit, all laid out the same: summary, metrics, charts, findings grouped by category (severity,
+   screen thumbnail or crop, detail, fix, requirement state, due, sources), then manual checks marked **not tested**.
+5. Appendix: method, triage notes, every source cited, glossary.
+
+**CLI:** `appscreenmap report <canvas> --format md,html,pdf,docx [--audits all|a11y,adaptive] [--out <dir>]`. With no
+`--format` it prints the terminal health report as today. Profiles for common uses, as named audit sets:
+`full` (default), `release` (store, platform, security, adaptive), `a11y`. Output goes to `<canvas>/reports/`.
+
+| Format | How | Notes |
+|---|---|---|
+| Markdown | `report.md` + `report-assets/` | For PRs and repos; charts become tables |
+| HTML | one self-contained file (images inlined, `tokens.css` inlined), print CSS | The source for PDF |
+| PDF | the HTML printed by headless Chrome / Chromium (`--headless --print-to-pdf`) | No new Python dependency; `doctor` reports the browser it found |
+| Google Docs | a `.docx` (python-docx, MIT), which Drive converts to a Google Doc on upload | Engine never uploads; see below |
+| Fix list | `fixes.md`, `--format fixes` | For the developer or a coding agent fixing the app; see below |
+
+**Fix list (`fixes.md`).** The same model, written as work rather than as a read: one task per distinct problem (a
+finding seen on many screens is one task listing every screen), ordered by severity, then deadline, then how many
+screens it touches. Each task has a checkbox, a stable id (`adaptive::bottom-nav-expanded`), the rule and its official
+id, where (screen ids and titles, activity, resource id / test tag, screenshot path), what was seen (evidence), the
+fix, the official source, and **how to check it's fixed** (the condition to re-crawl at, or the manual T-test).
+Findings triaged as *won't fix* or *false positive* are left out; manual checks go in a closing "verify by hand"
+list. The file is plain Markdown with no HTML, so it pastes into an issue or a PR and an agent can work through it.
+After a fix and a re-crawl, `report --format fixes` marks a task done when its finding is gone (`- [x]`, with the run it
+was verified on), so the file doubles as a progress record.
+
+**Google Docs:** the engine writes `.docx` and stops there; AppScreenMap sends nothing (§8.2). The developer imports
+it in Drive, or an agent session uploads it with its Drive connector (converted to a native Google Doc), only when
+asked. *Rejected:* Google OAuth inside the CLI (credentials setup for every user of an open-source tool, and it breaks
+the sends-nothing rule); Drive's HTML import (drops inlined images).
+*Rejected for PDF:* WeasyPrint (pango / cairo system libraries, partial CSS grid), Playwright (a browser download per
+install).
+
+**Viewer** (web session): an Export menu on Insights calling `GET /api/runs/<canvas>/report?format=…&audits=…`, local
+only. UI spec handed over, mockup first.
+
+**Existing a11y report:** stays as it is until the a11y section of the new report matches it, then
+`a11y-report.*` becomes `report --audits a11y` (one release with both).
+
+#### Stages, each buildable and verifiable on its own
+
+1. Report model + Markdown, `fixes.md` and HTML renderers over the audits that exist as files (security, store,
+   stack), plus the engine writing `coverage`, `stability`, `a11y`, `perf`. (verify: a Playground canvas)
+2. PDF and DOCX renderers; `doctor` checks for Chrome. (verify: open the PDF and the `.docx` in Google Docs by hand)
+3. Adaptive catalogue + static rules (manifest, `Info.plist`) → `audits/adaptive.json`. (verify: synthetic manifests)
+4. Device profiles and crawl per device on Android (`--device`, `--orientation`, `doctor`), screen matching, the size
+   rules, Playground Adaptive scenario. (verify: Playground on phone, Pixel Fold and Medium Tablet AVDs)
+5. Fold / unfold and postures on the Pixel Fold AVD (spike first), then iOS (iPad and iPhone Duo simulators).
+6. Viewer: Export menu and real adaptive data (web session).
+7. Skills, after each part is built and verified, so they describe what works, not the plan (below).
+
+#### Skills (post-implementation)
+
+Written once the feature they describe is verified, listed in `CLAUDE.md` in the same change:
+
+| Skill | New / updated | Holds |
+|---|---|---|
+| `adaptive-audit` | new | Run the adaptive audit end to end: which device profiles, set up the missing AVDs / simulators (asking first), crawl per device and merge, fix screen matches, judge the findings, the manual T-tests, and the report |
+| `adaptive-rules` | new | The rule catalogue and `devices.json`: ids, tiers, official ids, how each rule is detected, the yearly refresh after Android / iOS releases and Play / Apple changes |
+| `report-export` | new | Build the report and `fixes.md`: formats, profiles, `--audits`, PDF via Chrome, Google Docs via `.docx`, working through `fixes.md` and re-verifying, and how a new audit gets into the report |
+| `crawl-app` | updated | `--device`, one crawl per device, merging device runs into the canvas |
+| `ios-simulator` | updated | iPad and iPhone Duo simulators, orientation, poses |
+| `extend-crawler` | updated | Adding a device profile or a condition |
+| `a11y-audit` | updated | Its report step uses `report --audits a11y` once the new report replaces `a11y-report.*` |
+
+#### Acceptance criteria (stages 1–4)
+
+1. `report <canvas> --format md,html,pdf,docx,fixes` writes all five from one model; the four report formats have the
+   five sections in order.
+2. Writing a new `audits/<id>.json` adds a section to the next report with no renderer change (test with a made-up id).
+3. The HTML opens offline with every image; the PDF has no clipped tables at A4 and US Letter; the `.docx` keeps headings,
+   tables and images after a Google Docs import.
+4. `--audits` and the profiles pick sections; triaged findings show their triage state.
+5. Static adaptive rules flag the Playground's locked activity with its API 37 `due` date, from a test with no device.
+6. Crawls on the Pixel Fold and Medium Tablet AVDs, merged into the Playground canvas, flag each Playground
+   `ADAPTIVE BUG` and nothing on the screens without one; every finding names the emulator it came from. A missing
+   profile stops with the setup command and creates or downloads nothing; an emulator the engine booted is shut down
+   afterwards, one it found running is left running.
+7. Matching pairs every Playground screen that exists at both sizes, and lists the wide-only pane as *only at
+   expanded*; tested on synthetic hierarchies with no device.
+8. `fixes.md` has one task per distinct problem with where, evidence, fix, source and how to check; after the bug is
+   fixed in a Playground v2 build and re-crawled, its task is ticked with that run's id.
+9. Manual rules appear as not tested, with their T-test steps, never as passed.
+10. `run.condition`, `screen.condition`, `matches` and `audits/adaptive.json` are documented in `docs/MAP_SCHEMA.md`,
+    additive within schema 1; `uv run pytest -q`, `uv run ruff check` and the layer test pass.
+11. `adaptive-audit`, `adaptive-rules` and `report-export` exist, the four updated skills say what changed, and all
+    are listed in `CLAUDE.md`; each command a skill gives runs as written.
+
+**Decided 2026-10-28 (stage 1 review):** an audit holding an error never reads as passing (status capped at
+"Needs attention"); crash findings are keyed by screen (`crash::<screen>::<n>`), so a re-crawl doesn't tick a crash as
+fixed because it happened at another step. Both are in `appscreenmap.reports.builtin`. **For the web session:** make
+`apps/viewer/src/insights/builtin.ts` match (the cap, the crash ids, a11y triage from `notes.json`), or drop its builders
+now that the engine writes the files. **Stage 2 (decided 2026-10-28):** the PDF prints on a light paper palette
+(`--print-*` in `tokens.css`, only inside `@media print`), the one exception to dark only; screens stay dark. Headless
+Chrome for PDF and `.docx` for Google Docs, never uploaded by the engine, as recommended above.
+
+**Decided 2026-10-28:** a full crawl per device on the right emulator or simulator (not a replay, not a resized
+phone); skills written after implementation; the engine writes the built-in audits as files; a
+`fixes.md` output for fixing. **Still open:** headless Chrome for PDF and Google Docs as `.docx` with no upload in
+the engine (recommended above, not yet confirmed).
+
 ## 9. Todo
 
 Next features, first batch. Unchecked means not started; the open questions need a decision before design.
@@ -783,9 +1006,8 @@ Next features, first batch. Unchecked means not started; the open questions need
   (`apps/viewer/`).
 - [ ] **Adaptive UI review and guidelines.** Check how screens adapt across window sizes and
   orientations (phone, tablet, foldable; compact / medium / expanded width classes) against Android's
-  adaptive-layout guidance. Likely builds on the condition matrix in §8.2 (landscape, display size).
-  Open: which guidelines to encode as checks, and whether findings sit with the Accessibility tab or get
-  their own.
+  adaptive-layout guidance. Planned in §8.7 (own audit, `audits/adaptive.json`; rules from Google's adaptive
+  app quality guidelines and Apple's HIG), with the exportable report.
 - [x] **Better Insights.** ✅ viewer: Insights is now an audit framework (`apps/viewer/src/insights/`). Every audit uses
   one report shape: score, metrics, declarative charts, findings with severity, platform, deadline and official
   refs. Any tool can add or replace an audit by writing `audits/<id>.json` into the run folder (`docs/MAP_SCHEMA.md`).
