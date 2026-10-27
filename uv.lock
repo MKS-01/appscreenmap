@@ -10,6 +10,7 @@ resolution-markers = [
 [manifest]
 members = [
     "appscreenmap-a11y",
+    "appscreenmap-adaptive",
     "appscreenmap-core",
     "appscreenmap-crawler",
     "appscreenmap-drivers",
@@ -69,6 +70,17 @@ requires-dist = [
 ]
 
 [[package]]
+name = "appscreenmap-adaptive"
+version = "0.1.0"
+source = { editable = "packages/adaptive" }
+dependencies = [
+    { name = "appscreenmap-drivers" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "appscreenmap-drivers", editable = "packages/drivers" }]
+
+[[package]]
 name = "appscreenmap-core"
 version = "0.1.0"
 source = { editable = "packages/core" }
@@ -105,6 +117,7 @@ version = "0.1.0"
 source = { editable = "apps/engine" }
 dependencies = [
     { name = "appscreenmap-a11y" },
+    { name = "appscreenmap-adaptive" },
     { name = "appscreenmap-core" },
     { name = "appscreenmap-crawler" },
     { name = "appscreenmap-drivers" },
@@ -125,6 +138,7 @@ mcp = [
 [package.metadata]
 requires-dist = [
     { name = "appscreenmap-a11y", editable = "packages/a11y" },
+    { name = "appscreenmap-adaptive", editable = "packages/adaptive" },
     { name = "appscreenmap-core", editable = "packages/core" },
     { name = "appscreenmap-crawler", editable = "packages/crawler" },
     { name = "appscreenmap-drivers", editable = "packages/drivers" },

@@ -13,6 +13,10 @@ from pathlib import Path
 
 from appscreenmap.a11y.checks import audit_run
 from appscreenmap.a11y.report import write_reports
+from appscreenmap.adaptive import android_facts as adaptive_android
+from appscreenmap.adaptive import build_audit as adaptive_audit
+from appscreenmap.adaptive import ios_facts as adaptive_ios
+from appscreenmap.adaptive import write_audit as write_adaptive_audit
 from appscreenmap.core import __version__, accounts, activity, locales
 from appscreenmap.core.config import CrawlConfig
 from appscreenmap.core.model import AppMap
@@ -196,24 +200,32 @@ def _setup_ios(args, cfg: CrawlConfig):
 
 
 def _store_audit(run_dir: Path, args, d, package: str, ios: bool) -> dict | None:
-    """Write audits/store.json from the crawled build's SDK levels. Never fails a crawl; None if it couldn't run."""
-    try:
-        if ios:
-            facts = ios_facts(args.app) if args.app else None
-        elif args.apk:
-            facts = android_facts(args.apk)
-        else:  # crawled an installed app: read the SDK levels from a pulled copy of its APK
-            remote = d.apk_path(package)
-            facts = None
-            if remote:
-                with tempfile.TemporaryDirectory() as tmp:
-                    d.pull(remote, Path(tmp) / "base.apk")
-                    facts = android_facts(Path(tmp) / "base.apk")
-        if facts is None:
-            return None
+    """Write audits/store.json and audits/adaptive.json from the crawled build (SDK levels, manifest / Info.plist).
+    Never fails a crawl; returns the store audit, or None if it couldn't run."""
+
+    def both(build: Path | str) -> dict:
+        facts = ios_facts(build) if ios else android_facts(build)
         audit = build_audit(facts)
         write_store_audit(run_dir, audit)
+        try:
+            adaptive = adaptive_audit(adaptive_ios(build) if ios else adaptive_android(build))
+            write_adaptive_audit(run_dir, adaptive)
+        except Exception as e:  # noqa: BLE001 (only here to keep the crawl alive; the audit is optional)
+            print(f"  adaptive check skipped: {e}", file=sys.stderr)
         return audit
+
+    try:
+        if ios:
+            return both(args.app) if args.app else None
+        if args.apk:
+            return both(args.apk)
+        # crawled an installed app: read a pulled copy of its APK
+        remote = d.apk_path(package)
+        if not remote:
+            return None
+        with tempfile.TemporaryDirectory() as tmp:
+            d.pull(remote, Path(tmp) / "base.apk")
+            return both(Path(tmp) / "base.apk")
     except (DriverError, OSError, ValueError, KeyError) as e:
         print(f"  store readiness skipped: {e}", file=sys.stderr)
         return None

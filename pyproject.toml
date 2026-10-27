@@ -10,6 +10,7 @@ appscreenmap-core = { workspace = true }
 appscreenmap-drivers = { workspace = true }
 appscreenmap-security = { workspace = true }
 appscreenmap-store = { workspace = true }
+appscreenmap-adaptive = { workspace = true }
 appscreenmap-stack = { workspace = true }
 appscreenmap-crawler = { workspace = true }
 appscreenmap-a11y = { workspace = true }

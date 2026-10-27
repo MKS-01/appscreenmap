@@ -1,0 +1,460 @@
+{
+ "checked": "2026-10-28",
+ "android17": {
+  "target_api": 37,
+  "play_date": "2027-08-31",
+  "note": "Android 16 ignores screenOrientation, resizeableActivity and min/maxAspectRatio on displays with smallest width >= 600 dp for apps targeting API 36, unless they opt out with android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY; Android 17 (API 37) removes the opt-out. Games (android:appCategory) are exempt. play_date is when Play is expected to require API 37 (its yearly 31 August pattern; confirm on the Play Console help page).",
+  "refs": [
+   "android17",
+   "android16",
+   "orientation"
+  ]
+ },
+ "sources": {
+  "quality": {
+   "title": "Adaptive app quality guidelines",
+   "url": "https://developer.android.com/docs/quality-guidelines/adaptive-app-quality",
+   "publisher": "Android Developers"
+  },
+  "tier3": {
+   "title": "Adaptive app quality: tier 3 (adaptive ready)",
+   "url": "https://developer.android.com/docs/quality-guidelines/adaptive-app-quality/tier-3",
+   "publisher": "Android Developers"
+  },
+  "tier2": {
+   "title": "Adaptive app quality: tier 2 (adaptive optimized)",
+   "url": "https://developer.android.com/docs/quality-guidelines/adaptive-app-quality/tier-2",
+   "publisher": "Android Developers"
+  },
+  "tier1": {
+   "title": "Adaptive app quality: tier 1 (adaptive differentiated)",
+   "url": "https://developer.android.com/docs/quality-guidelines/adaptive-app-quality/tier-1",
+   "publisher": "Android Developers"
+  },
+  "foldables": {
+   "title": "Adaptive app quality: foldables",
+   "url": "https://developer.android.com/docs/quality-guidelines/adaptive-app-quality/experiences/foldables",
+   "publisher": "Android Developers"
+  },
+  "adapt": {
+   "title": "Adapt layout",
+   "url": "https://developer.android.com/design/ui/mobile/guides/layout-and-content/adapt-layout",
+   "publisher": "Android Developers"
+  },
+  "classes": {
+   "title": "Use window size classes",
+   "url": "https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes",
+   "publisher": "Android Developers"
+  },
+  "trifolds": {
+   "title": "Trifolds and landscape foldables",
+   "url": "https://developer.android.com/develop/adaptive-apps/guides/foldables/trifolds-and-landscape-foldables",
+   "publisher": "Android Developers"
+  },
+  "android17": {
+   "title": "Android 17: orientation and resizability restrictions ignored",
+   "url": "https://developer.android.com/about/versions/17/changes/ff-restrictions-ignored",
+   "publisher": "Android Developers"
+  },
+  "orientation": {
+   "title": "App orientation, aspect ratio and resizability",
+   "url": "https://developer.android.com/develop/adaptive-apps/guides/app-orientation-aspect-ratio-resizability",
+   "publisher": "Android Developers"
+  },
+  "duo": {
+   "title": "HIG: Designing for iPhone Duo",
+   "url": "https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo",
+   "publisher": "Apple"
+  },
+  "duo-prep": {
+   "title": "Preparing your app for iPhone Duo",
+   "url": "https://developer.apple.com/documentation/TechnologyOverviews/preparing-your-app-for-iphone-duo",
+   "publisher": "Apple"
+  },
+  "hig-layout": {
+   "title": "HIG: Layout",
+   "url": "https://developer.apple.com/design/human-interface-guidelines/layout",
+   "publisher": "Apple"
+  },
+  "android16": {
+   "title": "Android 16 behavior changes: orientation and resizability on large screens",
+   "url": "https://developer.android.com/about/versions/16/behavior-changes-16",
+   "publisher": "Android Developers"
+  }
+ },
+ "rules": [
+  {
+   "id": "orientation-locked",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Config_Changes",
+   "detect": "static",
+   "severity": "warning",
+   "title": "Activity locked to one orientation",
+   "why": "android:screenOrientation pins the activity to portrait or landscape, so it is letterboxed on tablets, foldables and desktop windows. Android 16 ignores the lock on large screens for apps targeting API 36 (unless they opt out), and Android 17 for every app targeting API 37.",
+   "fix": "Remove android:screenOrientation and lay the screen out by window size class; keep a lock only where it is essential (a camera viewfinder can follow the window instead).",
+   "refs": [
+    "tier3",
+    "android17",
+    "orientation"
+   ]
+  },
+  {
+   "id": "orientation-nosensor",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Config_Changes",
+   "detect": "static",
+   "severity": "warning",
+   "title": "Activity ignores the rotation sensor (nosensor)",
+   "why": "screenOrientation=\"nosensor\" keeps the natural orientation of the display. On a landscape foldable or a trifold the natural orientation differs from a phone's, so the activity opens sideways.",
+   "fix": "Remove screenOrientation=\"nosensor\"; take orientation from the window size, never from the device's rotation.",
+   "refs": [
+    "trifolds",
+    "android17"
+   ]
+  },
+  {
+   "id": "resize-disabled",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Config_Changes",
+   "detect": "static",
+   "severity": "warning",
+   "title": "Resizing turned off (resizeableActivity=\"false\")",
+   "why": "The app can't enter split screen or free-form windows and is letterboxed on large screens. Android 16 and 17 ignore the attribute on large screens once the app targets API 36 / 37.",
+   "fix": "Remove resizeableActivity=\"false\" and handle window size changes (window size classes, saved state).",
+   "refs": [
+    "tier3",
+    "android17",
+    "orientation"
+   ]
+  },
+  {
+   "id": "aspect-ratio-limited",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Config_Changes",
+   "detect": "static",
+   "severity": "warning",
+   "title": "Aspect ratio limited (min/maxAspectRatio)",
+   "why": "A fixed aspect ratio letterboxes the app on foldables, tablets and desktop windows. Android 16 and 17 ignore it on large screens once the app targets API 36 / 37.",
+   "fix": "Remove android:minAspectRatio / android:maxAspectRatio and let the layout adapt to the window.",
+   "refs": [
+    "android17",
+    "orientation"
+   ]
+  },
+  {
+   "id": "recreated-on-resize",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Config_Changes",
+   "detect": "static",
+   "severity": "info",
+   "title": "Activities recreated on fold, rotate and resize",
+   "why": "These activities don't handle size or orientation changes themselves, so Android recreates them on every fold, rotation and window resize. That is fine when state is saved; typed text and scroll position are lost when it isn't.",
+   "fix": "Keep UI state in a ViewModel or rememberSaveable (or onSaveInstanceState), then check by rotating and folding with text typed and a list scrolled.",
+   "refs": [
+    "tier3",
+    "trifolds"
+   ]
+  },
+  {
+   "id": "ios-requires-fullscreen",
+   "platform": "ios",
+   "tier": "hig",
+   "official_id": null,
+   "detect": "static",
+   "severity": "warning",
+   "title": "Opts out of multitasking (UIRequiresFullScreen)",
+   "why": "The app can't run in Split View, Slide Over or resizable windows on iPad, and its layout never meets the sizes iPad users work at.",
+   "fix": "Remove UIRequiresFullScreen and support every size class; HIG Layout asks for the same functionality at every size.",
+   "refs": [
+    "hig-layout"
+   ]
+  },
+  {
+   "id": "ios-no-scenes",
+   "platform": "ios",
+   "tier": "hig",
+   "official_id": null,
+   "detect": "static",
+   "severity": "warning",
+   "title": "No scene manifest (UIApplicationSceneManifest)",
+   "why": "Without the UIScene life cycle the app can't use scene geometry or more than one window, which Apple's iPhone Duo guidance relies on for resizing.",
+   "fix": "Adopt the UIScene life cycle (a scene delegate and UIApplicationSceneManifest in Info.plist).",
+   "refs": [
+    "duo-prep",
+    "hig-layout"
+   ]
+  },
+  {
+   "id": "ios-iphone-only",
+   "platform": "ios",
+   "tier": "hig",
+   "official_id": null,
+   "detect": "static",
+   "severity": "info",
+   "title": "iPhone only (no iPad in UIDeviceFamily)",
+   "why": "On iPad and Mac the app runs in an iPhone-sized compatibility window instead of using the space.",
+   "fix": "Add iPad to the target's supported destinations and lay out by size class.",
+   "refs": [
+    "hig-layout"
+   ]
+  },
+  {
+   "id": "ios-portrait-only",
+   "platform": "ios",
+   "tier": "hig",
+   "official_id": null,
+   "detect": "static",
+   "severity": "info",
+   "title": "Portrait only (UISupportedInterfaceOrientations)",
+   "why": "The app doesn't rotate. HIG asks apps to adapt to size classes rather than to a fixed orientation, and iPhone Duo's inner display is regular width.",
+   "fix": "Support landscape unless the experience needs one orientation; lay out by size class, not orientation.",
+   "refs": [
+    "hig-layout",
+    "duo"
+   ]
+  },
+  {
+   "id": "ios-built-before-duo",
+   "platform": "ios",
+   "tier": "hig",
+   "official_id": null,
+   "detect": "static",
+   "severity": "warning",
+   "title": "Built with Xcode 26 or earlier (iPhone Duo)",
+   "why": "Apple: when you build with Xcode 26 and earlier, the app doesn't extend under the status bar and camera on iPhone Duo.",
+   "fix": "Rebuild with the latest Xcode and check both displays and the fold in the iPhone Duo simulator.",
+   "refs": [
+    "duo-prep",
+    "duo"
+   ]
+  },
+  {
+   "id": "letterboxed",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Config_Changes",
+   "detect": "condition",
+   "severity": "warning",
+   "title": "Letterboxed: the app window is smaller than the display",
+   "refs": [
+    "tier3"
+   ]
+  },
+  {
+   "id": "bottom-nav-expanded",
+   "platform": "android",
+   "tier": "optimized",
+   "official_id": "Responsive_adaptive_layouts",
+   "detect": "condition",
+   "severity": "warning",
+   "title": "Bottom navigation bar kept at medium or expanded width",
+   "refs": [
+    "tier2",
+    "adapt"
+   ]
+  },
+  {
+   "id": "single-pane-expanded",
+   "platform": "android",
+   "tier": "optimized",
+   "official_id": "Responsive_adaptive_layouts",
+   "detect": "condition",
+   "severity": "info",
+   "title": "One pane on a list screen at expanded width",
+   "refs": [
+    "tier2",
+    "adapt"
+   ]
+  },
+  {
+   "id": "stretched-controls",
+   "platform": "android",
+   "tier": "optimized",
+   "official_id": "UI_Secondary_Elements",
+   "detect": "condition",
+   "severity": "warning",
+   "title": "Buttons, text fields or sheets stretched full width",
+   "refs": [
+    "tier2",
+    "adapt"
+   ]
+  },
+  {
+   "id": "clipped-after-resize",
+   "platform": "any",
+   "tier": "ready",
+   "official_id": null,
+   "detect": "condition",
+   "severity": "error",
+   "title": "Content clipped or off-window after a resize",
+   "refs": [
+    "tier3"
+   ]
+  },
+  {
+   "id": "touch-target-any-size",
+   "platform": "android",
+   "tier": "optimized",
+   "official_id": "Touch_Targets",
+   "detect": "condition",
+   "severity": "warning",
+   "title": "Touch target under 48 dp at some size",
+   "refs": [
+    "tier2"
+   ]
+  },
+  {
+   "id": "state-lost-on-rotate",
+   "platform": "any",
+   "tier": "ready",
+   "official_id": "Config_Changes",
+   "detect": "condition",
+   "severity": "error",
+   "title": "Typed text or scroll position lost on rotate or fold",
+   "refs": [
+    "tier3",
+    "trifolds"
+   ]
+  },
+  {
+   "id": "controls-missing-at-size",
+   "platform": "any",
+   "tier": "hig",
+   "official_id": null,
+   "detect": "condition",
+   "severity": "warning",
+   "title": "Controls present at one size, missing at another",
+   "refs": [
+    "hig-layout",
+    "duo"
+   ]
+  },
+  {
+   "id": "compact-height-bars",
+   "platform": "any",
+   "tier": "optimized",
+   "official_id": null,
+   "detect": "condition",
+   "severity": "warning",
+   "title": "Bars take most of a compact-height window",
+   "refs": [
+    "classes",
+    "adapt"
+   ]
+  },
+  {
+   "id": "keyboard",
+   "platform": "android",
+   "tier": "optimized",
+   "official_id": "Keyboard_Navigation",
+   "detect": "manual",
+   "severity": "warning",
+   "title": "Keyboard: navigation, focus and shortcuts",
+   "steps": "Connect a hardware keyboard (or the emulator's). Tab and arrow through every screen: focus is visible and reaches every control; Enter activates; common shortcuts (Ctrl+C/V, Ctrl+Z) work in text.",
+   "refs": [
+    "tier2"
+   ]
+  },
+  {
+   "id": "mouse-trackpad",
+   "platform": "android",
+   "tier": "optimized",
+   "official_id": "Hover_States",
+   "detect": "manual",
+   "severity": "warning",
+   "title": "Mouse and trackpad: hover, right-click, scroll",
+   "steps": "With a mouse: hover shows state on controls, right-click opens context menus where touch has long-press, the wheel and trackpad scroll every list.",
+   "refs": [
+    "tier2"
+   ]
+  },
+  {
+   "id": "stylus",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Stylus_Text_Input",
+   "detect": "manual",
+   "severity": "info",
+   "title": "Stylus: handwriting in text fields, drawing",
+   "steps": "With a stylus: write into each text field (handwriting to text); where the app draws, pressure and palm rejection work.",
+   "refs": [
+    "tier3"
+   ]
+  },
+  {
+   "id": "postures",
+   "platform": "android",
+   "tier": "differentiated",
+   "official_id": null,
+   "detect": "manual",
+   "severity": "info",
+   "title": "Foldable postures: tabletop and book",
+   "steps": "On the Pixel Fold emulator, half-fold to tabletop and book: content avoids the hinge and media controls move to the lower half.",
+   "refs": [
+    "foldables",
+    "tier1"
+   ]
+  },
+  {
+   "id": "fold-continuity",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Config_Changes",
+   "detect": "manual",
+   "severity": "warning",
+   "title": "Fold and unfold keep the task and state",
+   "steps": "Type text and scroll a list on the outer display, unfold, then fold again: the same screen, text and scroll position remain.",
+   "refs": [
+    "tier3",
+    "foldables",
+    "trifolds"
+   ]
+  },
+  {
+   "id": "multi-window",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Multi-Window_Functionality",
+   "detect": "manual",
+   "severity": "warning",
+   "title": "Split screen and multi-resume",
+   "steps": "Open the app in split screen beside another app at 1/3, 1/2 and 2/3: layout adapts; playback and camera keep running while the other app has focus.",
+   "refs": [
+    "tier3"
+   ]
+  },
+  {
+   "id": "camera-preview",
+   "platform": "android",
+   "tier": "ready",
+   "official_id": "Camera_Preview",
+   "detect": "manual",
+   "severity": "warning",
+   "title": "Camera preview follows the window",
+   "steps": "Open the camera screen on a foldable (folded, unfolded) and a tablet in both orientations: the preview is upright and not stretched.",
+   "refs": [
+    "tier3",
+    "trifolds"
+   ]
+  },
+  {
+   "id": "duo-displays",
+   "platform": "ios",
+   "tier": "hig",
+   "official_id": null,
+   "detect": "manual",
+   "severity": "warning",
+   "title": "iPhone Duo: both displays and every pose",
+   "steps": "In the iPhone Duo simulator, use every screen on the outer (compact) and inner (regular) display and move between them mid-task: the same controls exist on both, nothing sits in the reserved region, grids use an even number of columns.",
+   "refs": [
+    "duo",
+    "duo-prep"
+   ]
+  }
+ ]
+}

@@ -23,6 +23,8 @@ transition. The design and roadmap are in `docs/PLAN.md`; the data contract is i
     → `audits/stack.json`, build kept in `<canvas>/build/`;
     `libchecker.json` is a LibChecker-Rules snapshot (`make stack-rules-sync`)
   - `packages/store/`: store readiness (target / compile / min SDK vs Play and App Store rules, 365 days ahead; `requirements.json`)
+  - `packages/adaptive/`: adaptive UI audit: `rules.json` (Android adaptive quality tiers, Android 17, Apple HIG / iPhone Duo; each rule `static`, `condition` or `manual`)
+    and the static checks of the manifest / Info.plist → `audits/adaptive.json` (`appscreenmap adaptive`, also run by every crawl)
   - `packages/reports/`: health report, perf summary, the app report from every `audits/*.json` (`report --format md,html,pdf,docx,fixes`; `document.py` model, one renderer per format, PDF via headless Chrome, DOCX via python-docx, `builtin.py` writes coverage / stability / a11y / perf as audits) · `packages/regression/`: verify, visual diff ·
     `packages/exporters/`: Maestro, Mermaid
   - `packages/testkit/`: dev-only test helpers (`appscreenmap.testkit.helpers`: synthetic hierarchies, `REPO`;

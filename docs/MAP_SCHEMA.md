@@ -501,6 +501,10 @@ the rest.
                 "date": "2026-10-13" } ],
     "sample": false,                            // placeholder finding inside a real report
     "requirement": "met | due | blocked | upcoming | not_checked",  // optional: a store/platform requirement's state
+                                                // (adaptive also uses "exempt (game)" and "ignored on large screens")
+    "items": ["ScannerActivity → portrait"],    // optional: the instances one finding covers (activities, …)
+    "tier": "ready | optimized | differentiated | hig",  // optional (adaptive): Android adaptive app quality tier 3 / 2 / 1, or Apple HIG
+    "official_id": "Config_Changes",            // optional (adaptive): Google's guideline id the rule follows
     "screens": ["s004", "s007"],                // optional: every screen it was seen on (`screen` is the first)
     "elements": [ { "screen": "s004", "rid": "pkg:id/logo", "label": "logo", "bounds": [x1, y1, x2, y2] } ],  // optional: where in the screen; bounds (screenshot px) draw the report's evidence crop
     "triage": "open | confirmed | wontfix | false_positive",  // optional: from notes.json; wontfix / false_positive
@@ -529,6 +533,16 @@ every `audits/*.json` (not `index.json` or `*-evidence.json`; audits with `sourc
 
 Cite official sources only (Android Developers, Google Play, Apple Developer, W3C). The viewer's catalogue of
 sources is `apps/viewer/src/insights/sources.ts`. Update it when a platform or store publishes its yearly changes.
+
+### `audits/adaptive.json`
+
+Written by `appscreenmap adaptive <run> --apk <apk>` (or `--app` for iOS) and by every crawl, from the build's
+manifest (aapt2) or Info.plist. The rules are `packages/adaptive/…/rules.json`, each with `detect`: `static` (checked
+here: orientation locks, `nosensor`, `resizeableActivity="false"`, min/max aspect ratio, activities recreated on
+resize; iOS `UIRequiresFullScreen`, no scene manifest, iPhone only, portrait only, built with Xcode ≤ 26),
+`condition` (needs a crawl per device profile; reported as "size checks: not run" until then) or `manual` (in
+`manual`, not tested). The Android 17 rules carry `due` (Play's API 37 date) while `targetSdk` < 37, become errors after
+it, and are `info` for games. Findings add `tier` and `official_id`.
 
 ### `audits/stack.json`
 

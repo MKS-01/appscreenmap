@@ -21,6 +21,7 @@ VERIFY = {
     "perf": "Re-crawl, then `appscreenmap perf <canvas>`; the screen should load under budget with little jank.",
     "stability": "Re-crawl the scenario; the crawl should finish with no crash event.",
     "store": "Rebuild, then `appscreenmap store`; the requirement should read met.",
+    "adaptive": "Rebuild, then `appscreenmap adaptive --apk <apk>` (or `--app`); the rule should no longer be listed.",
     "security": "Rebuild, then `appscreenmap security`; the finding should be gone.",
     "stack": "Rebuild and install, then `appscreenmap stack --package <pkg>`.",
 }

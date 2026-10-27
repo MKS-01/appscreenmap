@@ -724,7 +724,7 @@ Acceptance criteria (phase 2, iOS):
 
 ### 8.7 2026-10-28: Adaptive UI audit and one exportable report (proposed)
 
-**Status:** in progress, branch `feat/report-export`. 2026-10-28: stage 2 built (`--format pdf,docx`, `--paper`,
+**Status:** in progress, branch `feat/report-export`. 2026-10-28: stage 3 built (`packages/adaptive`: `rules.json` with 28 rules, the static manifest / Info.plist checks, `appscreenmap adaptive`, run by every crawl; it depends on `drivers` for aapt2, like `store`, not on core only as first planned); verified on the Playground and Beetlebug APKs (ScannerActivity locked to portrait, due 2027-08-31). Stage 2 built (`--format pdf,docx`, `--paper`,
 `doctor` finds Chrome; every screen in a Screens section, up to 8 per finding, outlined evidence crops); the PDF prints on the `--print-*` paper palette (owner's call, recorded in the design-system
 skill). Open: the `.docx` → Google Docs import is checked by hand (the Drive connector can't take the file inline). Stage 1 built and verified on Playground and
 Beetlebug canvases (copies): `report --format md,html,fixes`, the engine writing the four built-in audits, HTML checked at
