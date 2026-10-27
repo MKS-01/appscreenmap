@@ -1,7 +1,7 @@
 [project]
 name = "appscreenmap-reports"
 version = "0.1.0"
-description = "AppScreenMap run reports: crawl health (wasted steps, identity issues) and navigation performance."
+description = "AppScreenMap run reports: crawl health, navigation performance, and the app report (Markdown, HTML, fix list) built from every audit."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -13,3 +13,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/appscreenmap"]
+
+# The HTML report inlines the design tokens; a checkout reads them from the repo instead.
+[tool.hatch.build.targets.wheel.force-include]
+"../design-tokens/tokens.css" = "appscreenmap/design/tokens.css"

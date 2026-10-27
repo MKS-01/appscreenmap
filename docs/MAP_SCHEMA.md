@@ -451,8 +451,12 @@ Rule ids: `target-size-min` (2.5.8), `label-in-name` (2.5.3), `not-focusable` (2
 
 ## `audits/<audit-id>.json`
 
-Every audit the viewer's Insights tab shows uses this one shape. Today the viewer builds `coverage`, `stability`,
-`a11y` and `perf` itself from `map.json`, `a11y.json` and `perf.json`. It shows `adaptive`, `platform`, `store`
+Every audit the viewer's Insights tab shows uses this one shape. The viewer builds `coverage`, `stability`,
+`a11y` and `perf` itself from `map.json`, `a11y.json` and `perf.json`; `appscreenmap report --format …` also writes
+those four as files (`appscreenmap.reports.builtin`, the same rules), so every audit exists as a file for the app
+report. A file is a snapshot: each `report --format …` rebuilds them (a11y applies `notes.json` triage over `a11y.json`),
+so viewer triage shows in the files after the next report. A file another tool wrote under one of these ids (its
+`tool` not `appscreenmap …`) is kept, not overwritten. It shows `adaptive`, `platform`, `store`
 and `security` from sample data (labelled as such) until a tool writes them. Any tool (the crawler, a jadx or
 frida scanner, a CI step) can add or replace an audit by writing this file into the run folder. A file always
 wins over the viewer's built-in or sample version. Ids the viewer doesn't know go in `audits/index.json` and
@@ -496,11 +500,30 @@ the rest.
     "refs": [ { "title": "…", "url": "https://developer.android.com/…", "publisher": "Android Developers",
                 "date": "2026-10-13" } ],
     "sample": false,                            // placeholder finding inside a real report
-    "requirement": "met | due | blocked | upcoming | not_checked"   // optional: a store/platform requirement's state
+    "requirement": "met | due | blocked | upcoming | not_checked",  // optional: a store/platform requirement's state
+    "screens": ["s004", "s007"],                // optional: every screen it was seen on (`screen` is the first)
+    "elements": [ { "screen": "s004", "rid": "pkg:id/logo", "label": "logo" } ],  // optional: where in the screen
+    "triage": "open | confirmed | wontfix | false_positive",  // optional: from notes.json; wontfix / false_positive
+                                                // stay in the report and are left out of the fix list
+    "verify": "Re-crawl, then …"                // optional: how to check it's fixed (fix list); else the audit's default
   } ],
+  "manual": [ { "id": "…", "title": "…", "steps": "…" } ],   // optional: checks a person must run, shown as not tested
   "refs": [ { "title": "…", "url": "…", "publisher": "…", "date": "…" } ]   // official docs the checks follow
 }
 ```
+
+### The app report (`<run>/reports/`)
+
+`appscreenmap report <run> --format md,html,fixes [--profile full|release|a11y] [--audits a,b] [--out <dir>]` reads
+every `audits/*.json` (not `index.json` or `*-evidence.json`; audits with `source: "sample"` and findings with
+`sample: true` are left out) and writes:
+
+| File | What |
+|---|---|
+| `report.md` + `report-assets/` | Cover, Summary (one row per audit, top findings, deadlines), Conditions (device, scenarios), one section per audit, Appendix (method, sources, glossary) |
+| `report.html` | The same, one self-contained file: design tokens and thumbnails inlined |
+| `fixes.md` | One task per distinct problem (errors and warnings; not `coverage`, not dismissed in triage), ordered by severity, deadline, screens touched; where, seen, fix, source, how to check |
+| `fixes.json` | The fix list's memory: `{ "schema": 1, "tasks": { "<audit>::<id>": { "title", "audit", "severity", "first_seen", "fixed_on", "verified_in", "dismissed" } } }`. A task whose audit ran again without it is ticked with the run it was gone in; one triaged won't fix / false positive is `dismissed`, never fixed; one whose audit wasn't in this report is listed as not re-checked |
 
 Cite official sources only (Android Developers, Google Play, Apple Developer, W3C). The viewer's catalogue of
 sources is `apps/viewer/src/insights/sources.ts`. Update it when a platform or store publishes its yearly changes.
