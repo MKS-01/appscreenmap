@@ -6,7 +6,20 @@ description: Build and run the iOS side of the app stack scan — reading an app
 # iOS stack scan
 
 The Android scan (`packages/stack`) reads the app installed on the emulator. iOS does the same on a booted **simulator**:
-no upload, no device. Plan and acceptance criteria: `docs/PLAN.md` §8.6, *iOS*. Simulator setup (booting, Device Hub,
+no upload, no device: `appscreenmap stack --platform ios --package <bundle-id>` (or New project in the dashboard, which
+lists booted simulators beside emulators).
+
+| File | What |
+|---|---|
+| `packages/stack/.../macho.py` | load commands, thin and fat (arm64 slice), `LC_BUILD_VERSION`, `LC_VERSION_MIN_IPHONEOS`, `LC_ENCRYPTION_INFO(_64)` |
+| `packages/stack/.../ios.py` | `fingerprint_app(.app)`: Info.plist, `Frameworks/`, bundle paths, binary strings, database names |
+| `packages/stack/.../detect.py` `IOS_RULES`, `storage.py` `IOS_STORAGE` | the iOS rules (kinds below) |
+| `packages/stack/.../audit.py` `build_ios_audit` | → `audits/stack.json` (`facts.platform: "ios"`, see `docs/MAP_SCHEMA.md`) |
+| `packages/drivers/.../ios.py` `app_container`, `user_apps` | simctl only (no idb): the `.app` / data folder, the User apps |
+| `apps/engine/.../cli/stack.py` `_cmd_stack_ios` | the canvas (`<project>-ios`), `build/app/<Name>.app`, the report |
+| `packages/stack/tests/test_ios.py` | synthetic Mach-O (`macho()`, `fat()`) and `.app` folders (`app()`), one case per framework |
+
+Plan and acceptance criteria: `docs/PLAN.md` §8.6, *iOS*. Simulator setup (booting, Device Hub,
 idb): the `ios-simulator` skill. Rule upkeep and confidence levels: the `stack-rules` skill.
 
 ## Where the facts come from
@@ -26,7 +39,11 @@ Scan both, or a debug KMP build reads as an empty Swift app.
 **Encrypted binaries.** An App Store install is FairPlay-encrypted (`cryptid` 1): its code strings are noise. Framework
 names, resources and Info.plist still work. Simulator builds are never encrypted. Say so in `notes`; never guess.
 
-## Fingerprints (first rule set; confidence as in `stack-rules`)
+## Fingerprints (`IOS_RULES`; confidence as in `stack-rules`)
+
+Rule kinds: `framework` (an embedded `Frameworks/<name>.framework`), `bundle-path` (a path prefix in the `.app`),
+`bundle-file` (a file name anywhere in the `.app`), `symbol` (bytes in an unencrypted binary: main executable, debug dylib, embedded frameworks), `dylib` (a linked
+library's install name contains it).
 
 | Stack | Marker | Confidence |
 |---|---|---|
@@ -57,11 +74,15 @@ strings, with SwiftUI linked; `LC_BUILD_VERSION` minos 18.0, sdk 27.0; no `LC_EN
 | Flutter shared_preferences | UserDefaults keys prefixed `flutter.` | plain |
 | Keychain | not in the container (the simulator's shared keychain) | encrypted |
 
-Also note the file protection class where it matters (`NSFileProtectionComplete`) once the data-at-rest scan reads files.
-Detection comes from the bundle (frameworks, symbols); `locations` are the paths above, verified on the simulator by listing
-the data container after the app has run.
+Database names come from the binaries: C strings and Kotlin/Native's UTF-16 literals, minus reverse-domain names (those
+are Kotlin packages like `com.example.db`). SQLDelight's native driver keeps them in `Library/Application Support/databases/`
+(checked on a simulator, 2026-10-27), so a KMP app gets that exact path; otherwise `**/<name>` (any folder).
 
-## Build order
+Also note the file protection class where it matters (`NSFileProtectionComplete`) once the data-at-rest scan reads files.
+Detection comes from the bundle (frameworks, symbols); check a new `locations` path on the simulator by listing the data
+container after the app has run.
+
+## Build order (1–4 built; 5 next)
 
 1. **Mach-O reader** (`packages/stack/.../macho.py`): load commands, fat slices, `LC_BUILD_VERSION`, `LC_ENCRYPTION_INFO_64`,
    dylib names. Tests on synthetic headers built with `struct` (like `elf()` in `test_stack.py`).
@@ -69,7 +90,8 @@ the data container after the app has run.
    `signals` / `storage` / `libraries` shape as Android, `platform: "ios"`. iOS rules live beside Android's with iOS kinds
    (`framework`, `bundle-path`, `symbol`, `dylib`).
 3. **Engine:** `appscreenmap stack --platform ios --package <bundle-id>` (simctl instead of adb), canvases in the
-   `<project>-ios` folder like iOS crawls, `build/app/` holding a copy of the `.app`.
+   `<project>-ios` folder like iOS crawls, `build/app/` holding a copy of the `.app`. Device facts come from the driver
+   when idb is installed, else from `simctl list` alone.
 4. **Viewer:** `StackDetails` already renders any `facts`; add the iOS fields (deployment target, Xcode, encryption) and
    iOS words (Swift / SwiftUI). New project lists booted simulators beside emulators.
 5. **Frida spike:** simulator apps are macOS processes, so `frida -n <process>` may attach without a jailbreak. Try it on the
@@ -78,9 +100,11 @@ the data container after the app has run.
 ## Verify
 
 ```bash
-uv run pytest -q packages/stack
+uv run pytest -q packages/stack apps/engine/tests/test_stack_cli.py apps/engine/tests/test_serve_stack.py
 xcrun simctl list devices booted
+xcrun simctl install booted <App>.app                      # a simulator build (an .ipa will not install)
 uv run appscreenmap-engine stack --platform ios --package <bundle-id> --out <scratch>/runs
+open "$(xcrun simctl get_app_container booted <bundle-id> data)"   # compare storage rows with what is really there
 ```
 
 Grade against the plan's iOS acceptance criteria. Real apps are scanned locally and never named in the repo; the in-repo

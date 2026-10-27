@@ -28,10 +28,17 @@ export interface StackStorage {
   source: SignalSource;
 }
 
-export interface StackFacts {
-  platform: "android" | "ios";
+interface StackFactsBase {
   package: string;
   version?: string | null;
+  stack: { kind: "native" | "cross-platform" | "kmp"; summary: string };
+  signals: StackSignal[];
+  storage: StackStorage[];
+  notes: string[];
+}
+
+export interface AndroidStackFacts extends StackFactsBase {
+  platform: "android";
   version_code?: number | null;
   min_sdk?: number | null;
   target_sdk?: number | null;
@@ -42,21 +49,42 @@ export interface StackFacts {
   primary_abi?: string | null;
   apks: string[];
   abis: string[];
-  stack: { kind: "native" | "cross-platform" | "kmp"; summary: string };
-  signals: StackSignal[];
   native_libs: { name: string; abis: string[]; library?: StackLibrary }[];
   components: { name: string; library: StackLibrary }[];
   libraries: { name: string; version: string }[];
-  storage: StackStorage[];
   page_16k: { path: string; abi: string; align: number | null; elf_ok: boolean; zip_ok: boolean | null }[];
-  notes: string[];
 }
+
+/** Read from the `.app` on a booted simulator: Info.plist, Frameworks/ and the Mach-O load commands. */
+export interface IosStackFacts extends StackFactsBase {
+  platform: "ios";
+  app: string;
+  executable?: string | null;
+  debug_build: boolean;
+  build?: string | null;
+  label?: string | null;
+  deployment_target?: string | null;
+  build_sdk?: string | null;
+  xcode?: string | null;
+  simulator_build?: boolean | null;
+  min_os?: string | null;
+  sdk?: string | null;
+  binary_platform?: string | null;
+  arches: string[];
+  /** FairPlay: true for an App Store build, null when the binary has no encryption command. */
+  encrypted: boolean | null;
+  frameworks: { name: string; version?: string }[];
+  linked: string[];
+  data_container?: string | null;
+}
+
+export type StackFacts = AndroidStackFacts | IosStackFacts;
 
 export const isStackFacts = (f: unknown): f is StackFacts =>
   !!f && typeof f === "object" && Array.isArray((f as StackFacts).signals) && Array.isArray((f as StackFacts).storage);
 
 /** Scan an installed app through `appscreenmap serve` (POST /api/stack). Resolves to the canvas folder. */
-export async function scanStack(body: { package: string; serial?: string; run?: string }): Promise<{ run: string; path: string }> {
+export async function scanStack(body: { package: string; platform?: "android" | "ios"; serial?: string; run?: string }): Promise<{ run: string; path: string }> {
   const r = await fetch("/api/stack", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error ?? (r.status === 404 ? "Scanning needs the dashboard server: run appscreenmap serve." : `${r.status} ${r.statusText}`));
@@ -66,9 +94,11 @@ export async function scanStack(body: { package: string; serial?: string; run?: 
 export interface DeviceRow {
   serial: string;
   state: string;
-  platform: "android";
+  platform: "android" | "ios";
   name?: string;
   api?: number | null;
+  /** iOS release of a simulator, "iOS 27.0". */
+  ios?: string | null;
   android?: string | null;
   build_type?: string | null;
 }
@@ -84,8 +114,8 @@ export async function listDevices(): Promise<DeviceRow[] | null> {
   }
 }
 
-export async function listApps(serial: string): Promise<{ package: string; run: string | null }[]> {
-  const r = await fetch(`/api/devices/${encodeURIComponent(serial)}/apps`, { cache: "no-store" });
+export async function listApps(serial: string, platform: "android" | "ios" = "android"): Promise<{ package: string; run: string | null }[]> {
+  const r = await fetch(`/api/devices/${encodeURIComponent(serial)}/apps?platform=${platform}`, { cache: "no-store" });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error ?? `${r.status} ${r.statusText}`);
   return data.apps;

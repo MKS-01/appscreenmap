@@ -8,15 +8,17 @@ import { Icon } from "./Icon";
 export default function EmptyCanvas({ run, map }: { run: string; map: AppMapData }) {
   const app = map.run.app;
   const name = app.label ?? app.package;
-  const prompt = `Map ${name} (${app.package}) on the emulator into its canvas`;
-  const cmd = `appscreenmap crawl --package ${app.package} --max-steps 200`;
+  const ios = map.run.device?.platform === "ios";
+  const where = ios ? "the iOS simulator" : "the emulator";
+  const prompt = `Map ${name} (${app.package}) on ${where} into its canvas`;
+  const cmd = `appscreenmap crawl ${ios ? "--platform ios " : ""}--package ${app.package} --max-steps 200`;
   const merge = `appscreenmap merge --into runs/${run} runs/<new-run> --labels "First crawl" --move`;
   return (
     <div className="page empty-canvas">
       <span className="ins-kicker">No screens yet</span>
       <h1>Map the screens of {name}</h1>
       <p className="muted">
-        This canvas was made from a scan of the build on the emulator. A crawl adds its screens here, as its first scenario.{" "}
+        This canvas was made from a scan of the build on {where}. A crawl adds its screens here, as its first scenario.{" "}
         <a href={href("r", run, "insights", "stack")}>See what it's built with →</a>
       </p>
       <div className="start-grid">

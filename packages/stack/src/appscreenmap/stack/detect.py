@@ -114,6 +114,85 @@ RULES: list[tuple[str, str, str, list[tuple[str, str, str]]]] = [
     ),
 ]
 
+# iOS, read from the `.app` (see ios.py). kind: framework = an embedded Frameworks/<name>.framework, bundle-path = a
+# path prefix inside the .app, symbol = bytes in an unencrypted binary (main executable, debug dylib, frameworks),
+# bundle-file = a file name anywhere in the .app, dylib = a linked library's install name (contains). Kotlin/Native
+# only exists for KMP, so `kfun:` is certain.
+IOS_RULES: list[tuple[str, str, str, list[tuple[str, str, str]]]] = [
+    (
+        "flutter",
+        "Flutter",
+        "framework",
+        [
+            ("framework", "Flutter", "certain"),
+            ("bundle-path", "Frameworks/App.framework/flutter_assets/", "certain"),
+        ],
+    ),
+    (
+        "react-native",
+        "React Native",
+        "framework",
+        [
+            ("framework", "React", "certain"),
+            ("bundle-path", "main.jsbundle", "strong"),
+            ("symbol", "RCTBridge", "strong"),
+            ("symbol", "RCTHost", "strong"),
+        ],
+    ),
+    (
+        "expo",
+        "Expo",
+        "framework",
+        [("framework", "ExpoModulesCore", "certain"), ("symbol", "ExpoModulesCore", "strong")],
+    ),
+    (
+        "hermes",
+        "Hermes JS engine",
+        "runtime",
+        [("framework", "hermes", "certain"), ("framework", "hermesvm", "certain")],
+    ),
+    ("unity", "Unity", "framework", [("framework", "UnityFramework", "certain")]),
+    (
+        "dotnet",
+        ".NET for iOS (Xamarin / MAUI)",
+        "framework",
+        [
+            ("bundle-file", "Microsoft.iOS.dll", "certain"),
+            ("bundle-file", "Xamarin.iOS.dll", "certain"),
+            ("symbol", "xamarin_main", "strong"),
+        ],
+    ),
+    ("maui", ".NET MAUI", "framework", [("bundle-file", "Microsoft.Maui.dll", "certain")]),
+    (
+        "capacitor",
+        "Capacitor",
+        "framework",
+        [("framework", "Capacitor", "certain"), ("bundle-path", "capacitor.config.json", "certain")],
+    ),
+    (
+        "cordova",
+        "Apache Cordova",
+        "framework",
+        [("framework", "Cordova", "certain"), ("bundle-path", "www/cordova.js", "certain")],
+    ),
+    ("nativescript", "NativeScript", "framework", [("framework", "NativeScript", "certain")]),
+    ("kotlin-native", "Kotlin/Native (shared KMP code)", "kmp", [("symbol", "kfun:", "certain")]),
+    (
+        "compose-multiplatform",
+        "Compose Multiplatform",
+        "kmp",
+        [
+            ("bundle-path", "compose-resources/", "strong"),
+            ("bundle-path", "composeResources/", "strong"),
+            ("symbol", "org.jetbrains.compose", "strong"),
+            ("symbol", "skiko", "strong"),
+        ],
+    ),
+    ("swift", "Swift", "language", [("dylib", "/libswiftCore.dylib", "strong")]),
+    ("swiftui", "SwiftUI", "ui", [("dylib", "/SwiftUI.framework/", "strong")]),
+    ("uikit", "UIKit", "ui", [("dylib", "/UIKit.framework/", "strong")]),
+]
+
 CROSS_PLATFORM = {
     "flutter",
     "react-native",
@@ -158,7 +237,7 @@ def detect(libs: set[str], paths: list[str], dex: bytes) -> list[dict]:
     return out
 
 
-def summarize(signals: list[dict]) -> dict:
+def summarize(signals: list[dict], platform: str = "android") -> dict:
     """{"kind": native | cross-platform | kmp, "summary": "…"}: the one line the overview card shows."""
     ids = {s["id"]: s for s in signals}
     frameworks = [s for s in signals if s["id"] in CROSS_PLATFORM]
@@ -169,6 +248,14 @@ def summarize(signals: list[dict]) -> dict:
             "kind": "cross-platform",
             "summary": main["label"] + (f" ({', '.join(extra)})" if extra else ""),
         }
+    if platform == "ios":
+        lang = "Swift" if "swift" in ids else "Objective-C"
+        ui = "SwiftUI" if "swiftui" in ids else "UIKit"
+        if "compose-multiplatform" in ids:
+            return {"kind": "kmp", "summary": "Kotlin Multiplatform: Compose Multiplatform UI"}
+        if "kotlin-native" in ids:
+            return {"kind": "kmp", "summary": f"Kotlin Multiplatform: shared Kotlin, {ui} UI"}
+        return {"kind": "native", "summary": f"Native iOS: {lang}, {ui}"}
     lang = "Kotlin" if "kotlin" in ids else "Java"
     ui = "Jetpack Compose" if "compose" in ids else "Android Views"
     if "compose-multiplatform" in ids:
